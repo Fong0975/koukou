@@ -42,6 +42,7 @@ export async function runMigrations(exec: ExecFileFn = defaultExec, cwd: string 
     env: process.env,
   });
   logger.debug("prisma migrate deploy finished", { stdout: stdout.trim() });
-  if (stderr.trim()) logger.warn("prisma migrate deploy wrote to stderr", { stderr: stderr.trim() });
+  // The CLI writes routine progress ("Loaded Prisma config…") to stderr; real failures exit non-zero and throw above.
+  if (stderr.trim()) logger.debug("prisma migrate deploy stderr", { stderr: stderr.trim() });
   return stdout;
 }

@@ -1,0 +1,55 @@
+# Git
+.git
+.github
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+
+# Docker configuration files
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# Environment files: secrets stay out of the image, and Next.js would load them at runtime.
+.env
+.env.*
+
+# Development tools
+.vscode
+.idea
+.claude
+.editorconfig
+.nvmrc
+.prettierrc.json
+.prettierignore
+.eslintcache
+
+# Dependencies and build output (rebuilt inside the image)
+node_modules
+.next
+out
+build
+src/generated
+*.tsbuildinfo
+next-env.d.ts
+
+# Tests
+coverage
+test-results.json
+**/*.test.ts
+**/*.test.tsx
+src/test
+vitest.config.ts
+vitest.setup.ts
+
+# Logs
+*.log
+logs
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini

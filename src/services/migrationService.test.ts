@@ -38,21 +38,25 @@ describe("runMigrations", () => {
     exec: ExecFileFn;
     expected?: string;
     error?: string;
-    expectedDebug?: unknown[];
-    expectedWarn?: unknown[];
+    expectedDebug: unknown[][];
   }[] = [
     {
       name: "returns stdout on success",
       exec: async () => ({ stdout: "All migrations have been successfully applied.\n", stderr: "" }),
       expected: "All migrations have been successfully applied.\n",
-      expectedDebug: ["prisma migrate deploy finished", { stdout: "All migrations have been successfully applied." }],
+      expectedDebug: [["prisma migrate deploy finished", { stdout: "All migrations have been successfully applied." }]],
     },
     {
-      name: "warns about output on stderr",
-      exec: async () => ({ stdout: "No pending migrations.", stderr: " warn: something odd \n" }),
+      name: "logs routine stderr output at debug",
+      exec: async () => ({
+        stdout: "No pending migrations.",
+        stderr: " Loaded Prisma config from prisma.config.ts.\n",
+      }),
       expected: "No pending migrations.",
-      expectedDebug: ["prisma migrate deploy finished", { stdout: "No pending migrations." }],
-      expectedWarn: ["prisma migrate deploy wrote to stderr", { stderr: "warn: something odd" }],
+      expectedDebug: [
+        ["prisma migrate deploy finished", { stdout: "No pending migrations." }],
+        ["prisma migrate deploy stderr", { stderr: "Loaded Prisma config from prisma.config.ts." }],
+      ],
     },
     {
       name: "rejects when the CLI fails",
@@ -60,6 +64,7 @@ describe("runMigrations", () => {
         throw new Error("P1001: Can't reach database server");
       },
       error: "P1001",
+      expectedDebug: [],
     },
   ];
 
@@ -73,10 +78,8 @@ describe("runMigrations", () => {
         await expect(runMigrations(exec, cwd)).resolves.toBe(tt.expected);
       }
 
-      if (tt.expectedDebug) expect(loggerMock.debug).toHaveBeenCalledWith(...tt.expectedDebug);
-      else expect(loggerMock.debug).not.toHaveBeenCalled();
-      if (tt.expectedWarn) expect(loggerMock.warn).toHaveBeenCalledWith(...tt.expectedWarn);
-      else expect(loggerMock.warn).not.toHaveBeenCalled();
+      expect(loggerMock.debug.mock.calls).toEqual(tt.expectedDebug);
+      expect(loggerMock.warn).not.toHaveBeenCalled();
       expect(exec).toHaveBeenCalledWith(process.execPath, [getPrismaCliPath(cwd), "migrate", "deploy"], {
         cwd,
         env: process.env,
