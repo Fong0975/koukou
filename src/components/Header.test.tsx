@@ -10,14 +10,14 @@ describe("Header", () => {
 
   for (const tt of tests) {
     it(tt.name, () => {
-      const onAdd = vi.fn();
-      render(<Header onAdd={onAdd} versionLabel={tt.versionLabel} />);
+      const onOpenList = vi.fn();
+      render(<Header onOpenList={onOpenList} versionLabel={tt.versionLabel} />);
 
       expect(screen.getByLabelText(`版本 ${tt.expectedLabel}`)).toHaveTextContent(tt.expectedLabel);
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("KouKou");
 
-      fireEvent.click(screen.getByRole("button", { name: "新增扣款" }));
-      expect(onAdd).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole("button", { name: "所有扣款" }));
+      expect(onOpenList).toHaveBeenCalledTimes(1);
     });
   }
 });

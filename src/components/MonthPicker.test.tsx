@@ -12,7 +12,6 @@ describe("MonthPicker", () => {
     act?: () => void;
     expectedChange?: YearMonth;
     expectedYears?: [number, number, number];
-    expectedTodayDisabled?: boolean;
   }[] = [
     {
       name: "previous month rolls back over the year",
@@ -39,18 +38,6 @@ describe("MonthPicker", () => {
       expectedChange: { year: 2026, month: 7 },
     },
     {
-      name: "jumping back goes to the current month",
-      value: { year: 2024, month: 2 },
-      act: () => fireEvent.click(screen.getByRole("button", { name: "回到本月" })),
-      expectedChange: current,
-      expectedTodayDisabled: false,
-    },
-    {
-      name: "the jump back is disabled on the current month",
-      value: current,
-      expectedTodayDisabled: true,
-    },
-    {
       name: "offers five years on each side of the current year",
       value: current,
       expectedYears: [2021, 2031, 11],
@@ -73,9 +60,6 @@ describe("MonthPicker", () => {
       else expect(onChange).not.toHaveBeenCalled();
       expect(screen.getByRole("combobox", { name: "年份" })).toHaveValue(String(tt.value.year));
       expect(screen.getByRole("combobox", { name: "月份" })).toHaveValue(String(tt.value.month));
-      if (tt.expectedTodayDisabled !== undefined) {
-        expect(screen.getByRole("button", { name: "回到本月" })).toHaveProperty("disabled", tt.expectedTodayDisabled);
-      }
       if (tt.expectedYears) {
         const [first, last, count] = tt.expectedYears;
         const years = screen

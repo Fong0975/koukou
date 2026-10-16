@@ -51,6 +51,15 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+/** Bulleted list, for opening the full subscription list. */
+export function ListIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+    </svg>
+  );
+}
+
 /** Left chevron, for "previous" navigation. */
 export function ChevronLeftIcon(props: IconProps) {
   return (

@@ -50,6 +50,7 @@ describe("CalendarSection", () => {
       expectDom: () => {
         expect(screen.getByRole("heading", { name: "2026 年 10 月" })).toBeInTheDocument();
         expect(screen.getByRole("cell", { name: "16 日（今天）" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "回到本月" })).toBeDisabled();
         expect(screen.getByText("2026 年度總計").nextElementSibling).toHaveTextContent("NT$ 390");
         expect(screen.getByRole("cell", { name: "5 日" })).toBeInTheDocument();
         expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
@@ -71,8 +72,22 @@ describe("CalendarSection", () => {
         expect(screen.getByRole("heading", { name: "2026 年 11 月" })).toBeInTheDocument();
         expect(screen.getByRole("cell", { name: "5 日：Netflix" })).toBeInTheDocument();
         expect(screen.queryByRole("cell", { name: /今天/ })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "回到本月" })).toBeEnabled();
         expect(screen.getByRole("list", { name: "本月扣款" })).toHaveTextContent("Netflix");
         expect(screen.getByText("共 1 次扣款，來自 1 個項目")).toBeInTheDocument();
+      },
+    },
+    {
+      name: "jumping back returns to the current month",
+      status: "ready",
+      items: [netflix],
+      act: () => {
+        fireEvent.click(screen.getByRole("button", { name: "下個月" }));
+        fireEvent.click(screen.getByRole("button", { name: "回到本月" }));
+      },
+      expectDom: () => {
+        expect(screen.getByRole("heading", { name: "2026 年 10 月" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "回到本月" })).toBeDisabled();
       },
     },
   ];

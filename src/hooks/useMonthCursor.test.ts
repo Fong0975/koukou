@@ -8,9 +8,14 @@ describe("useMonthCursor", () => {
     vi.useRealTimers();
   });
 
-  const tests: { name: string; select?: YearMonth; expected: YearMonth }[] = [
-    { name: "starts at the current local month", expected: { year: 2026, month: 10 } },
-    { name: "shows the chosen month", select: { year: 2025, month: 12 }, expected: { year: 2025, month: 12 } },
+  const tests: { name: string; selects: (YearMonth | null)[]; expected: YearMonth }[] = [
+    { name: "starts at the current local month", selects: [], expected: { year: 2026, month: 10 } },
+    { name: "shows the chosen month", selects: [{ year: 2025, month: 12 }], expected: { year: 2025, month: 12 } },
+    {
+      name: "clearing the choice returns to the current month",
+      selects: [{ year: 2025, month: 12 }, null],
+      expected: { year: 2026, month: 10 },
+    },
   ];
 
   for (const tt of tests) {
@@ -19,10 +24,7 @@ describe("useMonthCursor", () => {
       vi.setSystemTime(new Date(2026, 9, 16, 9, 0));
       const { result } = renderHook(() => useMonthCursor());
 
-      if (tt.select) {
-        const select = tt.select;
-        act(() => result.current.setCursor(select));
-      }
+      for (const select of tt.selects) act(() => result.current.setCursor(select));
 
       expect(result.current.today).toEqual({ year: 2026, month: 10, day: 16 });
       expect(result.current.cursor).toEqual(tt.expected);

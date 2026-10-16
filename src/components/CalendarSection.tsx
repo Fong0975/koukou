@@ -36,13 +36,20 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
     return <div className="glass h-[28rem] animate-pulse rounded-[1.75rem]" aria-busy="true" aria-label="讀取中" />;
   }
 
+  const isCurrentMonth = cursor.year === today.year && cursor.month === today.month;
+
   return (
     <div className="flex flex-col gap-6">
       <section aria-labelledby={titleId} className="glass rounded-[1.75rem] p-3 sm:p-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
-          <h2 id={titleId} className="font-num text-2xl">
-            {cursor.year} 年 {cursor.month} 月
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 id={titleId} className="font-num text-2xl">
+              {cursor.year} 年 {cursor.month} 月
+            </h2>
+            <button type="button" className="btn btn-ghost" onClick={() => setCursor(null)} disabled={isCurrentMonth}>
+              回到本月
+            </button>
+          </div>
           <MonthPicker value={cursor} current={today} onChange={setCursor} />
         </div>
         <BillingCalendar month={cursor} today={today} occurrences={occurrences} />

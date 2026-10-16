@@ -20,9 +20,9 @@ describe("SubscriptionCard", () => {
     schedules: string[];
   }[] = [
     {
-      name: "renders name, category, amount, schedules and card",
+      name: "renders name, amount, schedules and card",
       item,
-      texts: ["Netflix", "影音串流", "NT$", "390", "信用卡", "國泰 CUBE"],
+      texts: ["Netflix", "NT$", "390", "信用卡", "國泰 CUBE"],
       schedules: ["每月 1 日", "每月 15 日"],
     },
     {
@@ -40,10 +40,11 @@ describe("SubscriptionCard", () => {
       schedules: ["每年 3 月 1 日"],
     },
     {
-      name: "omits the category icon when absent",
-      item: { ...item, category: { ...item.category, icon: null } },
-      texts: ["影音串流"],
-      absentTexts: ["🎬"],
+      // The category is shown by the list's group heading instead.
+      name: "leaves out the category",
+      item,
+      texts: ["Netflix"],
+      absentTexts: ["影音串流", "🎬"],
       schedules: ["每月 1 日", "每月 15 日"],
     },
   ];

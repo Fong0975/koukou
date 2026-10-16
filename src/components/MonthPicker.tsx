@@ -3,7 +3,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "./Icons";
 
 interface MonthPickerProps {
   value: YearMonth;
-  /** The current month; anchors the year range and the "this month" shortcut. */
+  /** The current month; anchors the year range. */
   current: YearMonth;
   onChange: (value: YearMonth) => void;
 }
@@ -23,15 +23,13 @@ function yearOptions(currentYear: number, shownYear: number): number[] {
 }
 
 /**
- * Month navigation for the calendar: previous/next buttons, year and month selects, and a jump back to this month.
+ * Month navigation for the calendar: previous/next buttons and year and month selects.
  *
  * @param props.value - The month being shown.
  * @param props.current - The current month in local time.
  * @param props.onChange - Receives the newly chosen month.
  */
 export function MonthPicker({ value, current, onChange }: MonthPickerProps) {
-  const isCurrent = value.year === current.year && value.month === current.month;
-
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <button type="button" className="icon-btn" onClick={() => onChange(shiftMonth(value, -1))} aria-label="上個月">
@@ -63,9 +61,6 @@ export function MonthPicker({ value, current, onChange }: MonthPickerProps) {
       </select>
       <button type="button" className="icon-btn" onClick={() => onChange(shiftMonth(value, 1))} aria-label="下個月">
         <ChevronRightIcon />
-      </button>
-      <button type="button" className="btn btn-ghost" onClick={() => onChange(current)} disabled={isCurrent}>
-        回到本月
       </button>
     </div>
   );
