@@ -5,6 +5,7 @@ import { useLookups } from "@/hooks/useLookups";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import type { SubscriptionDto } from "@/types/dto";
+import { CalendarSection } from "./CalendarSection";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { Header } from "./Header";
 import { SubscriptionFormModal } from "./SubscriptionFormModal";
@@ -25,6 +26,8 @@ export function HomeView() {
   const openNew = () => setFormTarget("new");
   const editing = formTarget !== null && formTarget !== "new" ? formTarget : undefined;
 
+  const retry = () => void subscriptions.reload();
+
   const handleSubmit = (input: SubscriptionInput) =>
     editing ? subscriptions.update(editing.id, input) : subscriptions.create(input);
 
@@ -32,12 +35,18 @@ export function HomeView() {
     <div className="mx-auto max-w-7xl px-4 pt-3 pb-16 sm:px-6">
       <Header onAdd={openNew} />
 
-      <main className="mt-8">
+      <main className="mt-8 flex flex-col gap-8">
+        <CalendarSection
+          items={subscriptions.items}
+          status={subscriptions.status}
+          loadError={subscriptions.loadError}
+          onRetry={retry}
+        />
         <SubscriptionGrid
           items={subscriptions.items}
           status={subscriptions.status}
           loadError={subscriptions.loadError}
-          onRetry={() => void subscriptions.reload()}
+          onRetry={retry}
           onAdd={openNew}
           onEdit={setFormTarget}
           onDelete={setDeleting}

@@ -4,7 +4,7 @@ import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import { makeCategory, makePaymentMethod, makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
 
-const { INPUT, subscriptions, lookups, formProps } = vi.hoisted(() => ({
+const { INPUT, subscriptions, lookups, formProps, calendarProps } = vi.hoisted(() => ({
   INPUT: { name: "Netflix" } as SubscriptionInput,
   subscriptions: {
     items: [] as SubscriptionDto[],
@@ -17,12 +17,13 @@ const { INPUT, subscriptions, lookups, formProps } = vi.hoisted(() => ({
   },
   lookups: { categories: [], paymentMethods: [], addCategory: vi.fn(), addPaymentMethod: vi.fn() },
   formProps: vi.fn(),
+  calendarProps: vi.fn(),
 }));
 
 vi.mock("@/hooks/useSubscriptions", () => ({ useSubscriptions: () => subscriptions }));
 vi.mock("@/hooks/useLookups", () => ({ useLookups: () => lookups }));
 
-// The form and the dialog have their own tests; stand-ins expose only the callbacks HomeView wires up.
+// The calendar, the form and the dialog have their own tests; stand-ins expose only the callbacks HomeView wires up.
 vi.mock("./SubscriptionFormModal", () => ({
   SubscriptionFormModal: (props: {
     initial?: SubscriptionDto;
@@ -40,6 +41,12 @@ vi.mock("./SubscriptionFormModal", () => ({
         </button>
       </div>
     );
+  },
+}));
+vi.mock("./CalendarSection", () => ({
+  CalendarSection: (props: unknown) => {
+    calendarProps(props);
+    return <section aria-label="月曆" />;
   },
 }));
 vi.mock("./ConfirmDeleteDialog", () => ({
@@ -143,6 +150,13 @@ describe("HomeView", () => {
         if (expected) expect(subscriptions[name]).toHaveBeenCalledWith(...expected);
         else expect(subscriptions[name]).not.toHaveBeenCalled();
       }
+      expect(screen.getByRole("region", { name: "月曆" })).toBeInTheDocument();
+      expect(calendarProps).toHaveBeenLastCalledWith({
+        items: subscriptions.items,
+        status: subscriptions.status,
+        loadError: subscriptions.loadError,
+        onRetry: expect.any(Function),
+      });
       if (formProps.mock.calls.length > 0) {
         expect(formProps).toHaveBeenLastCalledWith(
           expect.objectContaining({

@@ -51,6 +51,24 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+/** Left chevron, for "previous" navigation. */
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M15 6l-6 6 6 6" />
+    </svg>
+  );
+}
+
+/** Right chevron, for "next" navigation. */
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 /** Credit card, for the payment method line. */
 export function CardIcon(props: IconProps) {
   return (
