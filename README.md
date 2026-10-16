@@ -5,7 +5,6 @@
 <h1 align="center">KouKou 扣扣帳本</h1>
 
 <p align="center">
-  <a href="https://github.com/OWNER/koukou/actions/workflows/ci.yml"><img src="https://github.com/OWNER/koukou/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
   <img src="https://img.shields.io/badge/node-%5E20.19%20%7C%20%5E22.12%20%7C%20%3E%3D24-5FA04E?logo=nodedotjs&logoColor=white" alt="Node.js ^20.19 | ^22.12 | >=24" />
   <img src="https://img.shields.io/badge/npm-%3E%3D11-CB3837?logo=npm&logoColor=white" alt="npm >=11" />
   <img src="https://img.shields.io/badge/MySQL-8.x-4479A1?logo=mysql&logoColor=white" alt="MySQL 8.x" />
