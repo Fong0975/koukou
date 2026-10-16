@@ -1,0 +1,45 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+/build/
+next-env.d.ts
+*.tsbuildinfo
+
+# prisma generated client
+/src/generated/
+
+# testing
+/coverage
+test-results.json
+
+# lint cache
+.eslintcache
+
+# env (keep the template)
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# editors
+.idea/
+.vscode/
+
+# Claude Code personal settings
+.claude/settings.local.json
+CLAUDE.local.md
+
+# deployment / secrets
+.vercel
+*.pem

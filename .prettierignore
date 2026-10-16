@@ -1,0 +1,10 @@
+.next
+node_modules
+coverage
+src/generated
+prisma/migrations
+package-lock.json
+next-env.d.ts
+public
+*.log
+.github/pull_request_template.md

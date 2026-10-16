@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum PaymentType {
+  CREDIT_CARD
+  BANK_ACCOUNT
+  OTHER
+}
+
+enum Currency {
+  TWD
+  USD
+}
+
+enum BillingCycle {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+/// Subscription category, e.g. membership, telecom, insurance.
+model Category {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique @db.VarChar(50)
+  icon          String?        @db.VarChar(16)
+  sortOrder     Int            @default(0) @map("sort_order")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  subscriptions Subscription[]
+
+  @@map("categories")
+}
+
+/// Where the money is charged from, e.g. a specific credit card or bank account.
+model PaymentMethod {
+  id            Int            @id @default(autoincrement())
+  type          PaymentType
+  name          String         @db.VarChar(100)
+  note          String?        @db.VarChar(255)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  subscriptions Subscription[]
+
+  @@unique([type, name])
+  @@map("payment_methods")
+}
+
+/// A recurring payment item.
+model Subscription {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(100)
+  categoryId      Int               @map("category_id")
+  paymentMethodId Int               @map("payment_method_id")
+  currency        Currency          @default(TWD)
+  amount          Decimal           @db.Decimal(12, 2)
+  note            String?           @db.VarChar(255)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  category        Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  paymentMethod   PaymentMethod     @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  schedules       BillingSchedule[]
+
+  @@index([categoryId])
+  @@index([paymentMethodId])
+  @@map("subscriptions")
+}
+
+/// One billing rule of a subscription. Which day fields are used depends on `cycle`:
+/// DAILY uses none, WEEKLY uses dayOfWeek (0 = Sunday), MONTHLY uses dayOfMonth,
+/// YEARLY uses month + dayOfMonth.
+model BillingSchedule {
+  id             Int          @id @default(autoincrement())
+  subscriptionId Int          @map("subscription_id")
+  cycle          BillingCycle
+  dayOfWeek      Int?         @map("day_of_week") @db.TinyInt
+  dayOfMonth     Int?         @map("day_of_month") @db.TinyInt
+  month          Int?         @db.TinyInt
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@map("billing_schedules")
+}

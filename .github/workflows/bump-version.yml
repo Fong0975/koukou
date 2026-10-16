@@ -1,0 +1,114 @@
+name: Bump Version
+
+# The version lives only in package.json (and its mirror in package-lock.json); the
+# frontend and backend ship as one Next.js app, so this single number covers both.
+on:
+  push:
+    branches: [main]
+    # Changes that do not affect the shipped app do not produce a new version.
+    paths:
+      - "**"
+      - "!.github/**"
+      - "!**/*.md"
+      - "!LICENSE"
+      - "!.editorconfig"
+      - "!.gitattributes"
+      - "!.gitignore"
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: Version bump type
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      notes:
+        description: Optional release notes (appended to the commit body)
+        required: false
+        type: string
+
+# Bumps run one at a time, in order, and are never cancelled half-way.
+concurrency:
+  group: bump-version
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  bump-version:
+    name: Bump version
+    runs-on: ubuntu-latest
+    steps:
+      # An app token is used so the push can be allowed through main's branch protection.
+      - name: Generate GitHub App token
+        id: app_token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.app_token.outputs.token }}
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      # `npm version` rewrites the version in package.json and package-lock.json only;
+      # it needs no installed dependencies.
+      - name: Bump version
+        id: version
+        env:
+          BUMP_TYPE: ${{ github.event_name == 'workflow_dispatch' && inputs.bump_type || 'patch' }}
+        run: |
+          OLD_VERSION=$(node -p "require('./package.json').version")
+          NEW_VERSION=$(npm version "$BUMP_TYPE" --no-git-tag-version | sed 's/^v//')
+          echo "old_version=$OLD_VERSION" >> "$GITHUB_OUTPUT"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build commit body
+        id: body
+        env:
+          COMMITS_JSON: ${{ toJson(github.event.commits) }}
+          MANUAL_NOTES: ${{ inputs.notes }}
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            EXTRA=$(echo "$COMMITS_JSON" | jq -r '.[].message | split("\n")[0]' | sed 's/^/- /')
+          else
+            EXTRA="$MANUAL_NOTES"
+          fi
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 2>/dev/null | base64)
+          {
+            echo "value<<${EOF_MARKER}"
+            echo "${EXTRA}"
+            echo "${EOF_MARKER}"
+          } >> "$GITHUB_OUTPUT"
+
+      # "[skip ci]" stops this commit from starting any push workflow again, including
+      # ci.yml and this workflow, so the bump cannot loop. Tags are not built by ci.yml.
+      - name: Commit, push and tag
+        env:
+          OLD: ${{ steps.version.outputs.old_version }}
+          NEW: ${{ steps.version.outputs.new_version }}
+          EXTRA_BODY: ${{ steps.body.outputs.value }}
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          BODY="- ${OLD} → ${NEW}"
+          if [ -n "$EXTRA_BODY" ]; then
+            BODY="${BODY}"$'\n'"${EXTRA_BODY}"
+          fi
+          git commit -m "chore: bump version to v${NEW} [skip ci]" -m "${BODY}"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          git tag "v${NEW}"
+          git push origin "v${NEW}"

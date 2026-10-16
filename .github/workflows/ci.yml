@@ -1,0 +1,250 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch: # Manual full run
+
+# Cancel superseded runs of the same PR; never cancel runs on main.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+  # prisma.config.ts resolves this during `npm ci` (postinstall `prisma generate`), and
+  # route modules import src/lib/db.ts, which requires it to exist. No job opens a
+  # database connection, so a placeholder is enough.
+  DATABASE_URL: mysql://ci:ci@localhost:3306/koukou
+
+jobs:
+  # Decides which checks a PR needs. Path filtering lives here instead of in `on.*.paths`
+  # so that checks which are not needed report as "skipped" (which satisfies required
+  # status checks) rather than never starting. Pushes to main and manual runs skip this
+  # filtering and run every check.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      format: ${{ steps.filter.outputs.format }}
+      app: ${{ steps.filter.outputs.app }}
+      test: ${{ steps.filter.outputs.test }}
+      code: ${{ steps.filter.outputs.code }}
+      any: ${{ steps.filter.outputs.any }}
+      ci: ${{ steps.filter.outputs.ci }}
+    steps:
+      - name: Filter changed paths
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          # A file counts for a filter only if it matches every pattern in it:
+          # the first pattern lists what is relevant, the `!` patterns carve out the rest.
+          predicate-quantifier: every
+          filters: |
+            # Paths that never trigger any check.
+            exclusions: &exclusions
+              - '!**/*.{png,jpg,jpeg,gif,webp,ico,svg}'
+              - '!LICENSE'
+              - '!.github/pull_request_template.md'
+              - '!.editorconfig'
+              - '!.gitattributes'
+              - '!.gitignore'
+
+            # Anything Prettier, ESLint or tsc reads (Markdown included).
+            format:
+              - '{**/*.{ts,tsx,mjs,js,json,css,md,yml,yaml},.prettierignore,.nvmrc}'
+              - *exclusions
+
+            # Inputs of `next build` (tests excluded).
+            app:
+              - '{src/**,public/**,prisma/**,next.config.ts,postcss.config.mjs,tsconfig.json,package.json,package-lock.json,.nvmrc}'
+              - '!**/*.test.{ts,tsx}'
+              - '!src/test/**'
+              - *exclusions
+
+            # Inputs of the unit tests and coverage.
+            test:
+              - '{src/**,prisma/schema.prisma,vitest.config.ts,vitest.setup.ts,tsconfig.json,package.json,package-lock.json,.nvmrc}'
+              - *exclusions
+
+            # Source scanned by Semgrep.
+            code:
+              - '{src/**,prisma/**,*.config.{ts,mjs},.github/workflows/**}'
+              - *exclusions
+
+            # Gitleaks: secrets can hide in any file.
+            any:
+              - '**'
+              - *exclusions
+
+            # Editing this workflow re-runs every check.
+            ci:
+              - '.github/workflows/ci.yml'
+
+  lint:
+    name: Lint & Format
+    needs: changes
+    if: >-
+      github.event_name != 'pull_request' ||
+      needs.changes.outputs.format == 'true' ||
+      needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+  build:
+    name: Build
+    needs: changes
+    if: >-
+      github.event_name != 'pull_request' ||
+      needs.changes.outputs.app == 'true' ||
+      needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+  test:
+    name: Unit Tests
+    needs: changes
+    if: >-
+      github.event_name != 'pull_request' ||
+      needs.changes.outputs.test == 'true' ||
+      needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The 85% line threshold lives in vitest.config.ts; Vitest fails this step below it.
+      - name: Run unit tests with coverage
+        run: npm run test:coverage -- --reporter=default --reporter=json --outputFile.json=test-results.json
+
+      - name: Build test report
+        if: always()
+        run: |
+          THRESHOLD=85
+          {
+            echo "### 🧪 Unit Tests"
+            echo ""
+            if [ -f test-results.json ]; then
+              jq -r '"| Total | Passed | Failed | Skipped |\n| --- | --- | --- | --- |\n| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests + .numTodoTests) |"' test-results.json
+            else
+              echo "_Test results are not available for this run._"
+            fi
+            echo ""
+            SUMMARY=coverage/coverage-summary.json
+            if [ -f "$SUMMARY" ]; then
+              jq -r '.total | "**Coverage:** lines \(.lines.pct)% · statements \(.statements.pct)% · branches \(.branches.pct)% · functions \(.functions.pct)% (threshold: lines '"$THRESHOLD"'%)"' "$SUMMARY"
+              WEAK=$(jq -r --arg root "$GITHUB_WORKSPACE/" --argjson threshold "$THRESHOLD" '
+                to_entries[]
+                | select(.key != "total" and .value.lines.pct < $threshold)
+                | "\(.key | ltrimstr($root)): \(.value.lines.pct)%"
+              ' "$SUMMARY")
+              echo ""
+              if [ -n "$WEAK" ]; then
+                echo "<details><summary>⚠️ Files under ${THRESHOLD}% line coverage</summary>"
+                echo ""
+                echo '```'
+                echo "$WEAK"
+                echo '```'
+                echo "</details>"
+              else
+                echo "✅ Every file is at or above ${THRESHOLD}% line coverage"
+              fi
+            else
+              echo "_Coverage data is not available for this run._"
+            fi
+          } > test-report.md
+          cat test-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment test report on PR
+        if: always() && github.event_name == 'pull_request' && hashFiles('test-report.md') != ''
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        with:
+          header: unit-test-report
+          path: test-report.md
+
+  security:
+    name: SAST & Security Scan
+    needs: changes
+    if: >-
+      github.event_name != 'pull_request' ||
+      needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # Semgrep baseline diff and Gitleaks history scan need full history
+
+      - name: Install Semgrep
+        if: github.event_name != 'pull_request' || needs.changes.outputs.code == 'true' || needs.changes.outputs.ci == 'true'
+        run: pipx install semgrep
+
+      # On PRs only findings introduced by the PR fail the check.
+      - name: Run Semgrep (PR diff)
+        if: github.event_name == 'pull_request' && (needs.changes.outputs.code == 'true' || needs.changes.outputs.ci == 'true')
+        run: >-
+          semgrep scan --error
+          --config=p/security-audit --config=p/owasp-top-ten
+          --config=p/typescript --config=p/react --config=p/nextjs
+          --baseline-commit=${{ github.event.pull_request.base.sha }}
+
+      - name: Run Semgrep (full repository)
+        if: github.event_name != 'pull_request'
+        run: >-
+          semgrep scan --error
+          --config=p/security-audit --config=p/owasp-top-ten
+          --config=p/typescript --config=p/react --config=p/nextjs
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Only required if the repository moves under a GitHub Organization.
+          # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
