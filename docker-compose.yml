@@ -35,3 +35,5 @@ services:
       start_period: 60s
     volumes:
       - ${LOG_HOST_DIR:-./logs}:/app/logs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
