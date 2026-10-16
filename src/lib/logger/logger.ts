@@ -80,6 +80,12 @@ export function createLogRuntime(
   }
 
   for (const warning of warnings) emit(runtime, "WARN", LOGGER_SOURCE, warning);
+  emit(runtime, "INFO", LOGGER_SOURCE, "Logging configured", {
+    level: config.level,
+    file: config.fileEnabled ? config.filePath : "disabled",
+    max_file_size_mb: config.fileEnabled ? config.maxFileBytes / (1024 * 1024) : undefined,
+    max_files: config.fileEnabled ? config.maxFiles : undefined,
+  });
   return runtime;
 }
 

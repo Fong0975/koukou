@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/db";
 import { DEFAULT_CATEGORIES, type DefaultCategory } from "@/lib/constants/defaultCategories";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("seedService");
 
 /**
  * Inserts default categories that do not exist yet. Existing rows are left untouched
@@ -18,5 +21,6 @@ export async function seedDefaults(categories: readonly DefaultCategory[] = DEFA
       }),
     ),
   );
+  logger.debug("Default categories ensured", { count: categories.length });
   return categories.length;
 }

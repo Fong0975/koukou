@@ -1,8 +1,10 @@
+import { createLogger, type Logger } from "@/lib/logger";
+
 /** Collaborators of {@link initializeDatabase}, injectable for testing. */
 export interface DbInitDeps {
   runMigrations: () => Promise<unknown>;
   seedDefaults: () => Promise<unknown>;
-  logger: Pick<Console, "info" | "error">;
+  logger: Pick<Logger, "info" | "error">;
 }
 
 /**
@@ -14,7 +16,7 @@ async function loadDefaultDeps(): Promise<DbInitDeps> {
     import("@/services/migrationService"),
     import("@/services/seedService"),
   ]);
-  return { runMigrations: () => runMigrations(), seedDefaults: () => seedDefaults(), logger: console };
+  return { runMigrations: () => runMigrations(), seedDefaults: () => seedDefaults(), logger: createLogger("dbInit") };
 }
 
 /**
@@ -30,17 +32,17 @@ export async function initializeDatabase(deps?: DbInitDeps): Promise<boolean> {
 
   try {
     await runMigrations();
-    logger.info("[koukou] Database migrations applied.");
+    logger.info("Database migrations applied");
   } catch (error) {
-    logger.error("[koukou] Failed to apply database migrations:", error);
+    logger.error("Failed to apply database migrations", undefined, error);
     return false;
   }
 
   try {
     await seedDefaults();
-    logger.info("[koukou] Default data seeded.");
+    logger.info("Default data seeded");
   } catch (error) {
-    logger.error("[koukou] Failed to seed default data:", error);
+    logger.error("Failed to seed default data", undefined, error);
     return false;
   }
 

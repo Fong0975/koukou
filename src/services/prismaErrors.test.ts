@@ -1,8 +1,15 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import { loggerMock } from "@/test/logger";
 import { prismaError } from "@/test/prismaError";
 import { rethrowPrismaError } from "./prismaErrors";
+
+vi.mock("@/lib/logger", () => import("@/test/logger"));
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
 
 describe("rethrowPrismaError", () => {
   const all = { notFound: "nf", conflict: "dup", foreignKey: "fk" };
@@ -75,7 +82,15 @@ describe("rethrowPrismaError", () => {
       }
       expect(caught).toBeInstanceOf(tt.expectedType);
       expect((caught as Error).message).toBe(tt.expectedMessage);
-      if (tt.expectedType === Error) expect(caught).toBe(tt.error);
+      if (tt.expectedType === Error) {
+        expect(caught).toBe(tt.error);
+        expect(loggerMock.debug).not.toHaveBeenCalled();
+      } else {
+        expect(loggerMock.debug).toHaveBeenCalledWith("Prisma error translated", {
+          prisma_code: (tt.error as { code: string }).code,
+          code: (caught as { code: string }).code,
+        });
+      }
     });
   }
 });

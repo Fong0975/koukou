@@ -1,5 +1,9 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
+import { describeDatabaseUrl } from "@/lib/databaseUrl";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("db");
 
 /**
  * Creates a Prisma client backed by the MariaDB/MySQL driver adapter.
@@ -12,7 +16,9 @@ function createPrismaClient(): PrismaClient {
   if (!url) {
     throw new Error("DATABASE_URL is not set. Copy .env.example to .env and fill it in.");
   }
-  return new PrismaClient({ adapter: new PrismaMariaDb(url) });
+  const client = new PrismaClient({ adapter: new PrismaMariaDb(url) });
+  logger.debug("Prisma client created", describeDatabaseUrl(url));
+  return client;
 }
 
 // Reuse a single client across hot reloads in development to avoid exhausting DB connections.

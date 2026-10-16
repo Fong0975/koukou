@@ -2,6 +2,7 @@
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EnvVars } from "./config";
+import { formatContext } from "./format";
 import type { LogLevel } from "./levels";
 import { createLogger, createLogRuntime, type Logger, type LogRuntime } from "./logger";
 import type { LogSink, RotatingFileSinkOptions } from "./rotatingFileSink";
@@ -102,6 +103,15 @@ describe("createLogger", () => {
 });
 
 describe("createLogRuntime", () => {
+  const defaultFile = path.resolve("koukou.log");
+  const defaultSink = { filePath: defaultFile, maxBytes: 10 * 1024 * 1024, maxFiles: 5 };
+  const defaultInfo = `INFO  | logger | Logging configured ${formatContext({
+    level: "INFO",
+    file: defaultFile,
+    max_file_size_mb: 10,
+    max_files: 5,
+  })}`;
+
   const tests: {
     name: string;
     env: EnvVars;
@@ -110,14 +120,17 @@ describe("createLogRuntime", () => {
     /** Simulates the sink reporting a write failure. */
     writeError?: Error;
     expectedWarnings: string[];
+    /** Expected "Logging configured" record, or undefined when INFO is filtered out. */
+    expectedInfo?: string;
     expectedErrors?: RegExp[];
   }[] = [
     {
       name: "file logging enabled by default",
       env: {},
       expectedLevel: "INFO",
-      expectedSink: { filePath: path.resolve("koukou.log"), maxBytes: 10 * 1024 * 1024, maxFiles: 5 },
+      expectedSink: defaultSink,
       expectedWarnings: [],
+      expectedInfo: defaultInfo,
     },
     {
       name: "file logging disabled creates no sink",
@@ -130,14 +143,16 @@ describe("createLogRuntime", () => {
       env: { LOG_FILE_ENABLED: "false", LOG_MAX_FILES: "0" },
       expectedLevel: "INFO",
       expectedWarnings: ['WARN  | logger | Invalid LOG_MAX_FILES="0", using default 5'],
+      expectedInfo: "INFO  | logger | Logging configured [level=INFO, file=disabled]",
     },
     {
       name: "a file write failure is reported on the console",
       env: {},
       expectedLevel: "INFO",
-      expectedSink: { filePath: path.resolve("koukou.log"), maxBytes: 10 * 1024 * 1024, maxFiles: 5 },
+      expectedSink: defaultSink,
       writeError: new Error("disk full"),
       expectedWarnings: [],
+      expectedInfo: defaultInfo,
       expectedErrors: [
         /^ERROR \| logger \| Failed to write log file; file logging is disabled \[path=.*koukou\.log"?\]\n {4}Error: disk full/,
       ],
@@ -162,6 +177,9 @@ describe("createLogRuntime", () => {
       }
       expect(consoleSpies.warn.mock.calls.map(([line]) => String(line).replace(PREFIX, ""))).toEqual(
         tt.expectedWarnings,
+      );
+      expect(consoleSpies.info.mock.calls.map(([line]) => String(line).replace(PREFIX, ""))).toEqual(
+        tt.expectedInfo ? [tt.expectedInfo] : [],
       );
       const errors = consoleSpies.error.mock.calls.map(([line]) => String(line).replace(PREFIX, ""));
       expect(errors).toHaveLength(tt.expectedErrors?.length ?? 0);

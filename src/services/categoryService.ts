@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/db";
+import { createLogger } from "@/lib/logger";
 import type { CategoryData } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
 import { rethrowPrismaError } from "./prismaErrors";
+
+const logger = createLogger("categoryService");
 
 const categorySelect = { id: true, name: true, icon: true, sortOrder: true } as const;
 
@@ -11,10 +14,12 @@ const categorySelect = { id: true, name: true, icon: true, sortOrder: true } as 
  * @returns Categories sorted by sortOrder, then id.
  */
 export async function listCategories(): Promise<CategoryDto[]> {
-  return prisma.category.findMany({
+  const categories = await prisma.category.findMany({
     select: categorySelect,
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
   });
+  logger.debug("Categories listed", { count: categories.length });
+  return categories;
 }
 
 /**
@@ -26,10 +31,12 @@ export async function listCategories(): Promise<CategoryDto[]> {
  */
 export async function createCategory(data: CategoryData): Promise<CategoryDto> {
   try {
-    return await prisma.category.create({
+    const category = await prisma.category.create({
       data: { ...data, sortOrder: 500 },
       select: categorySelect,
     });
+    logger.info("Category created", { id: category.id, name: category.name });
+    return category;
   } catch (error) {
     rethrowPrismaError(error, { conflict: `類型「${data.name}」已存在` });
   }

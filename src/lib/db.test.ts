@@ -6,6 +6,9 @@ vi.mock("@prisma/adapter-mariadb", () => ({
     constructor(readonly url: string) {}
   },
 }));
+// Held by reference so the same mock is seen after every vi.resetModules().
+const { loggerMock } = await vi.hoisted(() => import("@/test/logger"));
+vi.mock("@/lib/logger", () => ({ createLogger: () => loggerMock }));
 vi.mock("@/generated/prisma/client", () => ({
   PrismaClient: class {
     constructor(readonly options: { adapter: { url: string } }) {}
@@ -18,6 +21,7 @@ const globalForPrisma = globalThis as unknown as { prisma?: unknown };
 describe("prisma", () => {
   beforeEach(() => {
     vi.resetModules();
+    vi.clearAllMocks();
     delete globalForPrisma.prisma;
   });
   afterEach(() => {
@@ -34,6 +38,8 @@ describe("prisma", () => {
     existingClient?: unknown;
     expectedError?: string;
     expectedUrl?: string;
+    /** Context of the "Prisma client created" record, when a client is created. */
+    expectedLog?: Record<string, string>;
     expectCached: boolean;
   }[] = [
     {
@@ -48,6 +54,7 @@ describe("prisma", () => {
       url: "mysql://dev",
       nodeEnv: "development",
       expectedUrl: "mysql://dev",
+      expectedLog: { host: "dev" },
       expectCached: true,
     },
     {
@@ -55,6 +62,7 @@ describe("prisma", () => {
       url: "mysql://prod",
       nodeEnv: "production",
       expectedUrl: "mysql://prod",
+      expectedLog: { host: "prod" },
       expectCached: false,
     },
     {
@@ -82,6 +90,8 @@ describe("prisma", () => {
       if (tt.existingClient) expect(prisma).toBe(tt.existingClient);
       else expect((prisma as unknown as FakeClient).options.adapter.url).toBe(tt.expectedUrl);
       expect(globalForPrisma.prisma === prisma).toBe(tt.expectCached);
+      if (tt.expectedLog) expect(loggerMock.debug).toHaveBeenCalledWith("Prisma client created", tt.expectedLog);
+      else expect(loggerMock.debug).not.toHaveBeenCalled();
     });
   }
 });

@@ -1,7 +1,14 @@
 // @vitest-environment node
 import path from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { loggerMock } from "@/test/logger";
 import { getPrismaCliPath, runMigrations, type ExecFileFn } from "./migrationService";
+
+vi.mock("@/lib/logger", () => import("@/test/logger"));
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
 
 describe("getPrismaCliPath", () => {
   const tests = [
@@ -26,11 +33,26 @@ describe("getPrismaCliPath", () => {
 
 describe("runMigrations", () => {
   const cwd = "/project";
-  const tests: { name: string; exec: ExecFileFn; expected?: string; error?: string }[] = [
+  const tests: {
+    name: string;
+    exec: ExecFileFn;
+    expected?: string;
+    error?: string;
+    expectedDebug?: unknown[];
+    expectedWarn?: unknown[];
+  }[] = [
     {
       name: "returns stdout on success",
-      exec: async () => ({ stdout: "All migrations have been successfully applied.", stderr: "" }),
-      expected: "All migrations have been successfully applied.",
+      exec: async () => ({ stdout: "All migrations have been successfully applied.\n", stderr: "" }),
+      expected: "All migrations have been successfully applied.\n",
+      expectedDebug: ["prisma migrate deploy finished", { stdout: "All migrations have been successfully applied." }],
+    },
+    {
+      name: "warns about output on stderr",
+      exec: async () => ({ stdout: "No pending migrations.", stderr: " warn: something odd \n" }),
+      expected: "No pending migrations.",
+      expectedDebug: ["prisma migrate deploy finished", { stdout: "No pending migrations." }],
+      expectedWarn: ["prisma migrate deploy wrote to stderr", { stderr: "warn: something odd" }],
     },
     {
       name: "rejects when the CLI fails",
@@ -51,6 +73,10 @@ describe("runMigrations", () => {
         await expect(runMigrations(exec, cwd)).resolves.toBe(tt.expected);
       }
 
+      if (tt.expectedDebug) expect(loggerMock.debug).toHaveBeenCalledWith(...tt.expectedDebug);
+      else expect(loggerMock.debug).not.toHaveBeenCalled();
+      if (tt.expectedWarn) expect(loggerMock.warn).toHaveBeenCalledWith(...tt.expectedWarn);
+      else expect(loggerMock.warn).not.toHaveBeenCalled();
       expect(exec).toHaveBeenCalledWith(process.execPath, [getPrismaCliPath(cwd), "migrate", "deploy"], {
         cwd,
         env: process.env,
