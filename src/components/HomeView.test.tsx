@@ -3,8 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import { makeCategory, makePaymentMethod, makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
+import type { SubscriptionListProps } from "./SubscriptionList";
 
-const { INPUT, subscriptions, lookups, formProps } = vi.hoisted(() => ({
+const { INPUT, subscriptions, lookups, formProps, calendarProps, listProps } = vi.hoisted(() => ({
   INPUT: { name: "Netflix" } as SubscriptionInput,
   subscriptions: {
     items: [] as SubscriptionDto[],
@@ -17,12 +18,45 @@ const { INPUT, subscriptions, lookups, formProps } = vi.hoisted(() => ({
   },
   lookups: { categories: [], paymentMethods: [], addCategory: vi.fn(), addPaymentMethod: vi.fn() },
   formProps: vi.fn(),
+  calendarProps: vi.fn(),
+  listProps: vi.fn(),
 }));
 
 vi.mock("@/hooks/useSubscriptions", () => ({ useSubscriptions: () => subscriptions }));
 vi.mock("@/hooks/useLookups", () => ({ useLookups: () => lookups }));
 
-// The form and the dialog have their own tests; stand-ins expose only the callbacks HomeView wires up.
+// The calendar, the list dialog, the form and the confirmation have their own tests;
+// stand-ins expose only the callbacks HomeView wires up.
+vi.mock("./CalendarSection", () => ({
+  CalendarSection: (props: unknown) => {
+    calendarProps(props);
+    return <section aria-label="月曆" />;
+  },
+}));
+vi.mock("./AllSubscriptionsModal", () => ({
+  AllSubscriptionsModal: (props: SubscriptionListProps & { onClose: () => void }) => {
+    listProps(props);
+    return (
+      <div role="dialog" aria-label="所有扣款">
+        <button type="button" onClick={props.onAdd}>
+          新增
+        </button>
+        <button type="button" onClick={() => props.onEdit(props.items[0])}>
+          編輯第一筆
+        </button>
+        <button type="button" onClick={() => props.onDelete(props.items[0])}>
+          刪除第一筆
+        </button>
+        <button type="button" onClick={props.onRetry}>
+          重新讀取
+        </button>
+        <button type="button" onClick={props.onClose}>
+          關閉清單
+        </button>
+      </div>
+    );
+  },
+}));
 vi.mock("./SubscriptionFormModal", () => ({
   SubscriptionFormModal: (props: {
     initial?: SubscriptionDto;
@@ -59,7 +93,9 @@ import { HomeView } from "./HomeView";
 
 const item = makeSubscription({ id: 1, name: "Netflix" });
 
-const click = (name: string) => fireEvent.click(screen.getByRole("button", { name }));
+const click = (...names: string[]) => {
+  for (const name of names) fireEvent.click(screen.getByRole("button", { name }));
+};
 
 describe("HomeView", () => {
   beforeEach(() => {
@@ -70,78 +106,76 @@ describe("HomeView", () => {
 
   const tests: {
     name: string;
-    status?: "error";
-    act: () => void;
-    expectedDialog: string | null;
+    clicks: string[];
+    expectedDialogs: string[];
     expectedCalls: Partial<Record<"create" | "update" | "remove" | "reload", unknown[]>>;
   }[] = [
+    { name: "starts with only the calendar", clicks: [], expectedDialogs: [], expectedCalls: {} },
     {
-      name: "the header button opens an empty form that creates",
-      act: () => {
-        click("新增扣款");
-        click("送出表單");
-      },
-      expectedDialog: "新增",
+      name: "the header button opens the list",
+      clicks: ["所有扣款"],
+      expectedDialogs: ["所有扣款"],
+      expectedCalls: {},
+    },
+    {
+      name: "adding from the list opens an empty form above it, which creates",
+      clicks: ["所有扣款", "新增", "送出表單"],
+      expectedDialogs: ["所有扣款", "新增"],
       expectedCalls: { create: [INPUT] },
     },
     {
-      name: "a card's edit button opens its form, which updates that item",
-      act: () => {
-        click("編輯「Netflix」");
-        click("送出表單");
-      },
-      expectedDialog: "編輯 1",
+      name: "editing from the list opens that item's form, which updates it",
+      clicks: ["所有扣款", "編輯第一筆", "送出表單"],
+      expectedDialogs: ["所有扣款", "編輯 1"],
       expectedCalls: { update: [1, INPUT] },
     },
     {
-      name: "closing the form removes it",
-      act: () => {
-        click("新增扣款");
-        click("關閉表單");
-      },
-      expectedDialog: null,
+      name: "closing the form returns to the list",
+      clicks: ["所有扣款", "新增", "關閉表單"],
+      expectedDialogs: ["所有扣款"],
       expectedCalls: {},
     },
     {
-      name: "a card's delete button asks first, and confirming removes the item",
-      act: () => {
-        click("刪除「Netflix」");
-        click("確認");
-      },
-      expectedDialog: "確認刪除 1",
+      name: "deleting from the list asks first, and confirming removes the item",
+      clicks: ["所有扣款", "刪除第一筆", "確認"],
+      expectedDialogs: ["所有扣款", "確認刪除 1"],
       expectedCalls: { remove: [1] },
     },
     {
-      name: "closing the delete dialog removes it",
-      act: () => {
-        click("刪除「Netflix」");
-        click("關閉確認");
-      },
-      expectedDialog: null,
+      name: "closing the confirmation returns to the list",
+      clicks: ["所有扣款", "刪除第一筆", "關閉確認"],
+      expectedDialogs: ["所有扣款"],
       expectedCalls: {},
     },
+    { name: "closing the list removes it", clicks: ["所有扣款", "關閉清單"], expectedDialogs: [], expectedCalls: {} },
     {
-      name: "retry after a load error reloads",
-      status: "error",
-      act: () => click("重新讀取"),
-      expectedDialog: null,
+      name: "retrying from the list reloads",
+      clicks: ["所有扣款", "重新讀取"],
+      expectedDialogs: ["所有扣款"],
       expectedCalls: { reload: [] },
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      if (tt.status) subscriptions.status = tt.status;
       render(<HomeView />);
 
-      tt.act();
+      click(...tt.clicks);
 
-      if (tt.expectedDialog) expect(screen.getByRole("dialog", { name: tt.expectedDialog })).toBeInTheDocument();
-      else expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.queryAllByRole("dialog").map((dialog) => dialog.getAttribute("aria-label"))).toEqual(
+        tt.expectedDialogs,
+      );
       for (const name of ["create", "update", "remove", "reload"] as const) {
         const expected = tt.expectedCalls[name];
         if (expected) expect(subscriptions[name]).toHaveBeenCalledWith(...expected);
         else expect(subscriptions[name]).not.toHaveBeenCalled();
+      }
+
+      const data = { items: subscriptions.items, status: subscriptions.status, loadError: subscriptions.loadError };
+      expect(screen.getByRole("region", { name: "月曆" })).toBeInTheDocument();
+      expect(calendarProps).toHaveBeenLastCalledWith({ ...data, onRetry: expect.any(Function) });
+      if (listProps.mock.calls.length > 0) {
+        expect(listProps).toHaveBeenLastCalledWith(expect.objectContaining(data));
       }
       if (formProps.mock.calls.length > 0) {
         expect(formProps).toHaveBeenLastCalledWith(

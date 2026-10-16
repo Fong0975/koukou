@@ -1,20 +1,20 @@
 import Image from "next/image";
 import { APP_VERSION_LABEL } from "@/lib/appVersion";
-import { PlusIcon } from "./Icons";
+import { ListIcon } from "./Icons";
 
 interface HeaderProps {
-  onAdd: () => void;
+  onOpenList: () => void;
   /** Version label shown next to the brand; defaults to the running build's version. */
   versionLabel?: string;
 }
 
 /**
- * Top bar with the KouKou brand, the app version and the primary "add" action.
+ * Top bar with the KouKou brand, the app version and the button that opens the full subscription list.
  *
- * @param props.onAdd - Opens the add-subscription form.
+ * @param props.onOpenList - Opens the subscription list dialog.
  * @param props.versionLabel - Overrides the displayed version (used by tests).
  */
-export function Header({ onAdd, versionLabel = APP_VERSION_LABEL }: HeaderProps) {
+export function Header({ onOpenList, versionLabel = APP_VERSION_LABEL }: HeaderProps) {
   return (
     <header className="glass sticky top-3 z-10 flex items-center justify-between gap-3 rounded-full py-2 pr-2 pl-3">
       <div className="flex items-center gap-2.5">
@@ -33,9 +33,9 @@ export function Header({ onAdd, versionLabel = APP_VERSION_LABEL }: HeaderProps)
           </span>
         </div>
       </div>
-      <button type="button" className="btn btn-primary" onClick={onAdd}>
-        <PlusIcon />
-        新增扣款
+      <button type="button" className="btn btn-primary" onClick={onOpenList}>
+        <ListIcon />
+        所有扣款
       </button>
     </header>
   );

@@ -51,6 +51,33 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+/** Bulleted list, for opening the full subscription list. */
+export function ListIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+    </svg>
+  );
+}
+
+/** Left chevron, for "previous" navigation. */
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M15 6l-6 6 6 6" />
+    </svg>
+  );
+}
+
+/** Right chevron, for "next" navigation. */
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 /** Credit card, for the payment method line. */
 export function CardIcon(props: IconProps) {
   return (
