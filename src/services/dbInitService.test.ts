@@ -42,7 +42,7 @@ describe("initializeDatabase", () => {
       errorLogged: true,
     },
     {
-      name: "uses the real services and console when no deps are given",
+      name: "uses the real services and the shared logger when no deps are given",
       migrate: ok,
       seed: ok,
       expected: true,
@@ -69,6 +69,7 @@ describe("initializeDatabase", () => {
       expect(runMigrations).toHaveBeenCalledTimes(1);
       expect(seedDefaults).toHaveBeenCalledTimes(tt.seedCalled ? 1 : 0);
       expect(logger.error).toHaveBeenCalledTimes(tt.errorLogged ? 1 : 0);
+      if (tt.errorLogged) expect(logger.error).toHaveBeenCalledWith(expect.any(String), undefined, expect.any(Error));
     });
   }
 });

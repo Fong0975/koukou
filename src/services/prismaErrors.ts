@@ -1,4 +1,7 @@
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import { type AppError, ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("prismaErrors");
 
 /** User-facing messages for the Prisma error codes the services translate. */
 export interface PrismaErrorMessages {
@@ -6,6 +9,13 @@ export interface PrismaErrorMessages {
   conflict?: string;
   foreignKey?: string;
 }
+
+/** Which domain error each translated Prisma code becomes, and which message it uses. */
+const TRANSLATIONS: Record<string, { key: keyof PrismaErrorMessages; ErrorType: new (message: string) => AppError }> = {
+  P2025: { key: "notFound", ErrorType: NotFoundError },
+  P2002: { key: "conflict", ErrorType: ConflictError },
+  P2003: { key: "foreignKey", ErrorType: ValidationError },
+};
 
 /**
  * Reads a Prisma known-request error code without importing the runtime class,
@@ -32,8 +42,11 @@ function getPrismaCode(error: unknown): string | undefined {
  */
 export function rethrowPrismaError(error: unknown, messages: PrismaErrorMessages): never {
   const code = getPrismaCode(error);
-  if (code === "P2025" && messages.notFound) throw new NotFoundError(messages.notFound);
-  if (code === "P2002" && messages.conflict) throw new ConflictError(messages.conflict);
-  if (code === "P2003" && messages.foreignKey) throw new ValidationError(messages.foreignKey);
-  throw error;
+  const translation = code === undefined ? undefined : TRANSLATIONS[code];
+  const message = translation && messages[translation.key];
+  if (!translation || !message) throw error;
+
+  const domainError = new translation.ErrorType(message);
+  logger.debug("Prisma error translated", { prisma_code: code, code: domainError.code });
+  throw domainError;
 }

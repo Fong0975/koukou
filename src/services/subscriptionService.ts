@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/db";
 import { NotFoundError } from "@/lib/errors";
+import { createLogger } from "@/lib/logger";
 import type { SubscriptionData } from "@/lib/validation/subscriptionSchema";
 import type { SubscriptionDto } from "@/types/dto";
 import { rethrowPrismaError, type PrismaErrorMessages } from "./prismaErrors";
 import { subscriptionInclude, toSubscriptionDto } from "./subscriptionMapper";
+
+const logger = createLogger("subscriptionService");
 
 const notFoundMessage = (id: number) => `找不到扣款項目 #${id}`;
 
@@ -34,6 +37,7 @@ export async function listSubscriptions(): Promise<SubscriptionDto[]> {
     include: subscriptionInclude,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   });
+  logger.debug("Subscriptions listed", { count: records.length });
   return records.map(toSubscriptionDto);
 }
 
@@ -63,6 +67,7 @@ export async function createSubscription(data: SubscriptionData): Promise<Subscr
       data: { ...toSubscriptionColumns(data), schedules: { create: data.schedules } },
       include: subscriptionInclude,
     });
+    logger.info("Subscription created", { id: record.id, schedules: data.schedules.length });
     return toSubscriptionDto(record);
   } catch (error) {
     rethrowPrismaError(error, writeErrorMessages());
@@ -86,6 +91,7 @@ export async function updateSubscription(id: number, data: SubscriptionData): Pr
       data: { ...toSubscriptionColumns(data), schedules: { deleteMany: {}, create: data.schedules } },
       include: subscriptionInclude,
     });
+    logger.info("Subscription updated", { id, schedules: data.schedules.length });
     return toSubscriptionDto(record);
   } catch (error) {
     rethrowPrismaError(error, writeErrorMessages(id));
@@ -101,6 +107,7 @@ export async function updateSubscription(id: number, data: SubscriptionData): Pr
 export async function deleteSubscription(id: number): Promise<void> {
   try {
     await prisma.subscription.delete({ where: { id } });
+    logger.info("Subscription deleted", { id });
   } catch (error) {
     rethrowPrismaError(error, { notFound: notFoundMessage(id) });
   }

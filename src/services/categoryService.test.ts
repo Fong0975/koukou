@@ -7,7 +7,9 @@ const { prismaMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: prismaMock }));
+vi.mock("@/lib/logger", () => import("@/test/logger"));
 
+import { loggerMock } from "@/test/logger";
 import { prismaError } from "@/test/prismaError";
 import { createCategory, listCategories } from "./categoryService";
 
@@ -30,6 +32,11 @@ describe("listCategories", () => {
       const promise = listCategories();
       if (tt.error) await expect(promise).rejects.toThrow(tt.error);
       else await expect(promise).resolves.toEqual(tt.expected);
+      if (tt.error) expect(loggerMock.debug).not.toHaveBeenCalled();
+      else
+        expect(loggerMock.debug).toHaveBeenCalledWith("Categories listed", {
+          count: (tt.expected as unknown[]).length,
+        });
       expect(prismaMock.category.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] }),
       );
@@ -65,8 +72,10 @@ describe("createCategory", () => {
       const promise = createCategory(data);
       if (tt.error) {
         await expect(promise).rejects.toBeInstanceOf(tt.error);
+        expect(loggerMock.info).not.toHaveBeenCalled();
       } else {
         await expect(promise).resolves.toEqual(tt.expected);
+        expect(loggerMock.info).toHaveBeenCalledWith("Category created", { id: 9, name: "健身房" });
         expect(prismaMock.category.create).toHaveBeenCalledWith(
           expect.objectContaining({ data: { ...data, sortOrder: 500 } }),
         );

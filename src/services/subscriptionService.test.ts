@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import type { SubscriptionData } from "@/lib/validation/subscriptionSchema";
+import { loggerMock } from "@/test/logger";
 import { prismaError } from "@/test/prismaError";
 import type { SubscriptionRecord } from "./subscriptionMapper";
 
@@ -18,6 +19,7 @@ const { prismaMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: prismaMock }));
+vi.mock("@/lib/logger", () => import("@/test/logger"));
 
 import {
   createSubscription,
@@ -84,6 +86,7 @@ describe("listSubscriptions", () => {
       expect(prismaMock.subscription.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ orderBy: [{ createdAt: "desc" }, { id: "desc" }] }),
       );
+      expect(loggerMock.debug).toHaveBeenCalledWith("Subscriptions listed", { count: tt.expectedLength });
     });
   }
 });
@@ -121,9 +124,11 @@ describe("createSubscription", () => {
       const promise = createSubscription(data);
       if (tt.error) {
         await expect(promise).rejects.toBeInstanceOf(tt.error);
+        expect(loggerMock.info).not.toHaveBeenCalled();
         return;
       }
       await expect(promise).resolves.toMatchObject({ id: 1, amount: "390.00" });
+      expect(loggerMock.info).toHaveBeenCalledWith("Subscription created", { id: 1, schedules: 2 });
       expect(prismaMock.subscription.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: { ...columns, schedules: { create: data.schedules } } }),
       );
@@ -152,9 +157,11 @@ describe("updateSubscription", () => {
       const promise = updateSubscription(1, data);
       if (tt.error) {
         await expect(promise).rejects.toBeInstanceOf(tt.error);
+        expect(loggerMock.info).not.toHaveBeenCalled();
         return;
       }
       await expect(promise).resolves.toMatchObject({ id: 1 });
+      expect(loggerMock.info).toHaveBeenCalledWith("Subscription updated", { id: 1, schedules: 2 });
       expect(prismaMock.subscription.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 1 },
@@ -177,6 +184,8 @@ describe("deleteSubscription", () => {
       const promise = deleteSubscription(1);
       if (tt.error) await expect(promise).rejects.toBeInstanceOf(tt.error);
       else await expect(promise).resolves.toBeUndefined();
+      if (tt.error) expect(loggerMock.info).not.toHaveBeenCalled();
+      else expect(loggerMock.info).toHaveBeenCalledWith("Subscription deleted", { id: 1 });
       expect(prismaMock.subscription.delete).toHaveBeenCalledWith({ where: { id: 1 } });
     });
   }

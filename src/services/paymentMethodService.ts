@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/db";
+import { createLogger } from "@/lib/logger";
 import type { PaymentMethodData } from "@/lib/validation/paymentMethodSchema";
 import type { PaymentMethodDto } from "@/types/dto";
 import { rethrowPrismaError } from "./prismaErrors";
+
+const logger = createLogger("paymentMethodService");
 
 const paymentMethodSelect = { id: true, type: true, name: true, note: true } as const;
 
@@ -11,10 +14,12 @@ const paymentMethodSelect = { id: true, type: true, name: true, note: true } as 
  * @returns Payment methods sorted by type, then name.
  */
 export async function listPaymentMethods(): Promise<PaymentMethodDto[]> {
-  return prisma.paymentMethod.findMany({
+  const paymentMethods = await prisma.paymentMethod.findMany({
     select: paymentMethodSelect,
     orderBy: [{ type: "asc" }, { name: "asc" }],
   });
+  logger.debug("Payment methods listed", { count: paymentMethods.length });
+  return paymentMethods;
 }
 
 /**
@@ -26,7 +31,13 @@ export async function listPaymentMethods(): Promise<PaymentMethodDto[]> {
  */
 export async function createPaymentMethod(data: PaymentMethodData): Promise<PaymentMethodDto> {
   try {
-    return await prisma.paymentMethod.create({ data, select: paymentMethodSelect });
+    const paymentMethod = await prisma.paymentMethod.create({ data, select: paymentMethodSelect });
+    logger.info("Payment method created", {
+      id: paymentMethod.id,
+      type: paymentMethod.type,
+      name: paymentMethod.name,
+    });
+    return paymentMethod;
   } catch (error) {
     rethrowPrismaError(error, { conflict: `扣款方式「${data.name}」已存在` });
   }

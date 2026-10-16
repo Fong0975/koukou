@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
+import { createLogger } from "@/lib/logger";
 
 /** Minimal execFile signature, injectable for testing. */
 export type ExecFileFn = (
@@ -8,6 +9,8 @@ export type ExecFileFn = (
   args: string[],
   options: { cwd: string; env: NodeJS.ProcessEnv },
 ) => Promise<{ stdout: string; stderr: string }>;
+
+const logger = createLogger("migrationService");
 
 const execFileAsync = promisify(execFile);
 
@@ -34,9 +37,11 @@ export function getPrismaCliPath(cwd: string = process.cwd()): string {
  * @throws Error when the CLI exits with a non-zero code.
  */
 export async function runMigrations(exec: ExecFileFn = defaultExec, cwd: string = process.cwd()): Promise<string> {
-  const { stdout } = await exec(process.execPath, [getPrismaCliPath(cwd), "migrate", "deploy"], {
+  const { stdout, stderr } = await exec(process.execPath, [getPrismaCliPath(cwd), "migrate", "deploy"], {
     cwd,
     env: process.env,
   });
+  logger.debug("prisma migrate deploy finished", { stdout: stdout.trim() });
+  if (stderr.trim()) logger.warn("prisma migrate deploy wrote to stderr", { stderr: stderr.trim() });
   return stdout;
 }

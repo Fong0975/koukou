@@ -7,7 +7,9 @@ const { prismaMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: prismaMock }));
+vi.mock("@/lib/logger", () => import("@/test/logger"));
 
+import { loggerMock } from "@/test/logger";
 import { prismaError } from "@/test/prismaError";
 import { createPaymentMethod, listPaymentMethods } from "./paymentMethodService";
 
@@ -30,6 +32,11 @@ describe("listPaymentMethods", () => {
       const promise = listPaymentMethods();
       if (tt.error) await expect(promise).rejects.toThrow(tt.error);
       else await expect(promise).resolves.toEqual(tt.expected);
+      if (tt.error) expect(loggerMock.debug).not.toHaveBeenCalled();
+      else
+        expect(loggerMock.debug).toHaveBeenCalledWith("Payment methods listed", {
+          count: (tt.expected as unknown[]).length,
+        });
       expect(prismaMock.paymentMethod.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ orderBy: [{ type: "asc" }, { name: "asc" }] }),
       );
@@ -65,8 +72,14 @@ describe("createPaymentMethod", () => {
       const promise = createPaymentMethod(data);
       if (tt.error) {
         await expect(promise).rejects.toBeInstanceOf(tt.error);
+        expect(loggerMock.info).not.toHaveBeenCalled();
       } else {
         await expect(promise).resolves.toEqual(tt.expected);
+        expect(loggerMock.info).toHaveBeenCalledWith("Payment method created", {
+          id: 1,
+          type: "CREDIT_CARD",
+          name: "國泰 CUBE",
+        });
         expect(prismaMock.paymentMethod.create).toHaveBeenCalledWith(expect.objectContaining({ data }));
       }
     });

@@ -25,6 +25,7 @@ test-results.json
 
 # logs
 *.log
+/logs/
 npm-debug.log*
 
 # OS

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_CATEGORIES, type DefaultCategory } from "@/lib/constants/defaultCategories";
+import { loggerMock } from "@/test/logger";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -10,6 +11,7 @@ const { prismaMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: prismaMock }));
+vi.mock("@/lib/logger", () => import("@/test/logger"));
 
 import { seedDefaults } from "./seedService";
 
@@ -41,6 +43,7 @@ describe("seedDefaults", () => {
       if (tt.error) {
         prismaMock.$transaction.mockRejectedValue(new Error(tt.error));
         await expect(seedDefaults(tt.input)).rejects.toThrow(tt.error);
+        expect(loggerMock.debug).not.toHaveBeenCalled();
         return;
       }
 
@@ -57,6 +60,7 @@ describe("seedDefaults", () => {
       });
       expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
       expect(prismaMock.$transaction.mock.calls[0][0]).toHaveLength(tt.expected.length);
+      expect(loggerMock.debug).toHaveBeenCalledWith("Default categories ensured", { count: tt.expected.length });
     });
   }
 });

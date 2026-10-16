@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    // Keep test runs from creating log files in the project root, and keep routine records out of the output.
+    env: { LOG_FILE_ENABLED: "false", LOG_LEVEL: "ERROR" },
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.test.{ts,tsx}", "prisma/**/*.test.ts"],
     coverage: {
