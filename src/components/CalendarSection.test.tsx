@@ -50,7 +50,10 @@ describe("CalendarSection", () => {
       expectDom: () => {
         expect(screen.getByRole("heading", { name: "2026 年 10 月" })).toBeInTheDocument();
         expect(screen.getByRole("cell", { name: "16 日（今天）" })).toBeInTheDocument();
+        expect(screen.getByText("2026 年度總計").nextElementSibling).toHaveTextContent("NT$ 390");
         expect(screen.getByRole("cell", { name: "5 日" })).toBeInTheDocument();
+        expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
+        expect(screen.getByText("共 0 次扣款，來自 0 個項目")).toBeInTheDocument();
       },
     },
     {
@@ -68,6 +71,8 @@ describe("CalendarSection", () => {
         expect(screen.getByRole("heading", { name: "2026 年 11 月" })).toBeInTheDocument();
         expect(screen.getByRole("cell", { name: "5 日：Netflix" })).toBeInTheDocument();
         expect(screen.queryByRole("cell", { name: /今天/ })).not.toBeInTheDocument();
+        expect(screen.getByRole("list", { name: "本月扣款" })).toHaveTextContent("Netflix");
+        expect(screen.getByText("共 1 次扣款，來自 1 個項目")).toBeInTheDocument();
       },
     },
   ];

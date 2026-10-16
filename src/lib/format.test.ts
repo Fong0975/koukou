@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { formatAmount, formatSchedule } from "./format";
+import { formatAmount, formatCents, formatDays, formatSchedule } from "./format";
 
 describe("formatAmount", () => {
   const tests = [
@@ -51,6 +51,35 @@ describe("formatSchedule", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatSchedule(tt.schedule)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatCents", () => {
+  const tests = [
+    { name: "TWD whole amount", currency: "TWD", cents: 129000, expected: "NT$ 1,290" },
+    { name: "TWD zero", currency: "TWD", cents: 0, expected: "NT$ 0" },
+    { name: "TWD with cents", currency: "TWD", cents: 9950, expected: "NT$ 99.50" },
+    { name: "USD keeps cents", currency: "USD", cents: 4647, expected: "US$ 46.47" },
+    { name: "USD whole amount still shows cents", currency: "USD", cents: 2000, expected: "US$ 20.00" },
+  ] as const;
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatCents(tt.currency, tt.cents)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatDays", () => {
+  const tests = [
+    { name: "single day", days: [5], expected: "5 日" },
+    { name: "several days", days: [1, 15, 28], expected: "1、15、28 日" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatDays(tt.days)).toBe(tt.expected);
     });
   }
 });

@@ -46,3 +46,25 @@ export function formatSchedule(
       return `${label} ${schedule.month} 月 ${schedule.dayOfMonth} 日`;
   }
 }
+
+/**
+ * Formats a whole-cent total as a single string, e.g. "NT$ 1,290" or "US$ 46.47".
+ *
+ * @param currency - The currency.
+ * @param cents - Amount in hundredths of the currency unit.
+ * @returns The prefixed, grouped amount.
+ */
+export function formatCents(currency: Currency, cents: number): string {
+  const { prefix, value } = formatAmount(currency, (cents / 100).toFixed(2));
+  return `${prefix} ${value}`;
+}
+
+/**
+ * Lists days of a month in plain Chinese, e.g. "1、15 日".
+ *
+ * @param days - Days of the month, already in display order.
+ * @returns The joined days with the "日" suffix.
+ */
+export function formatDays(days: number[]): string {
+  return `${days.join("、")} 日`;
+}
