@@ -1,0 +1,35 @@
+# Production deployment. Variables are resolved from the env file given on the command line:
+#   docker compose --env-file .env.production up -d --build
+# Start-up applies pending Prisma migrations, so the DATABASE_URL account needs DDL rights.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+      args:
+        APP_PORT: ${APP_PORT:-3000}
+    container_name: koukou
+    image: fong/koukou
+    network_mode: host
+    environment:
+      PORT: ${APP_PORT:-3000}
+      DATABASE_URL: ${DATABASE_URL}
+      TZ: ${TZ:-Asia/Taipei}
+      LOG_FILE_ENABLED: ${LOG_FILE_ENABLED:-true}
+      # Fixed path inside the container; choose the host directory with LOG_HOST_DIR instead.
+      LOG_FILE_PATH: /app/logs/koukou.log
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_MAX_FILE_SIZE_MB: ${LOG_MAX_FILE_SIZE_MB:-10}
+      LOG_MAX_FILES: ${LOG_MAX_FILES:-5}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:${APP_PORT:-3000}/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      # Leave time for migrations on start-up
+      start_period: 60s
+    volumes:
+      - ${LOG_HOST_DIR:-./logs}:/app/logs
