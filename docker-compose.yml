@@ -12,6 +12,8 @@ services:
         APP_PORT: ${APP_PORT:-3000}
     container_name: koukou
     image: fong/koukou
+    # Run as a low-privilege host account that can write LOG_HOST_DIR (defaults to the image's node user).
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
     network_mode: host
     environment:
       PORT: ${APP_PORT:-3000}

@@ -33,8 +33,11 @@ RUN npm prune --omit=dev && rm -rf .next/cache
 # Final stage
 FROM base AS runner
 
+# The container may run as a UID with no home directory, so keep the Prisma CLI from trying to
+# write its update-check cache there.
 ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1 \
+    CHECKPOINT_DISABLE=1
 
 # Only what `next start` and `prisma migrate deploy` need at runtime
 COPY --from=builder /app/package.json /app/next.config.ts /app/prisma.config.ts ./
@@ -43,13 +46,18 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 
-# Mount point for the log directory
-RUN mkdir -p /app/logs
+# The app files stay root-owned and read-only. Only the log directory (a mount point) and the
+# next/image cache must be writable, by whichever UID Compose runs the container as, so they are
+# world-writable with the sticky bit, like /tmp.
+RUN mkdir -p /app/logs /app/.next/cache && chmod 1777 /app/logs /app/.next/cache
 
 # Define build argument for port
 ARG APP_PORT=3000
 ENV PORT=${APP_PORT}
 EXPOSE ${APP_PORT}
+
+# Never run as root; Compose can override the UID/GID with APP_UID/APP_GID
+USER node
 
 # Run Next.js directly (not through npm) so it receives SIGTERM on `docker stop`
 CMD ["node_modules/.bin/next", "start"]
