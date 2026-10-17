@@ -1,4 +1,5 @@
 import type { Occurrence } from "@/lib/billingOccurrences";
+import { toDateKey } from "@/lib/dateKey";
 import type { CategoryDto, PaymentMethodDto, SubscriptionDto } from "@/types/dto";
 
 /**
@@ -48,12 +49,20 @@ export function makeSubscription(overrides: Partial<SubscriptionDto> = {}): Subs
  *
  * @param day - Day of the month.
  * @param subscription - The charged subscription.
- * @param overrides - Fields replacing the defaults (scheduleId defaults to `subscription.id * 10`).
+ * @param overrides - Fields replacing the defaults (scheduleId defaults to `subscription.id * 10`, date to that
+ *   day of January 2026).
  */
 export function makeOccurrence(
   day: number,
   subscription: SubscriptionDto,
   overrides: Partial<Omit<Occurrence, "day" | "subscription">> = {},
 ): Occurrence {
-  return { day, subscription, scheduleId: subscription.id * 10, amount: subscription.amount, ...overrides };
+  return {
+    day,
+    date: toDateKey({ year: 2026, month: 1, day }),
+    subscription,
+    scheduleId: subscription.id * 10,
+    amount: subscription.amount,
+    ...overrides,
+  };
 }

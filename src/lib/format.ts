@@ -1,5 +1,6 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { BillingScheduleDto } from "@/types/dto";
+import { currencyEntries, type CurrencyTotals } from "./billingSummary";
 import type { CalendarDate } from "./calendarMonth";
 import { CURRENCY_PREFIX, CYCLE_LABELS, WEEKDAY_LABELS } from "./labels";
 
@@ -94,4 +95,38 @@ export function formatReserve(currency: Currency, reserveCents: number, averageC
  */
 export function formatReserveTerm({ year, month, day }: CalendarDate): string {
   return `${year} 年期（${month}/${day} 扣款）`;
+}
+
+/** A total converted to TWD, with the original amounts per currency when any of them was converted. */
+export interface ConvertedTotal {
+  /** E.g. "NT$ 1,500". */
+  total: string;
+  /** E.g. "NT$ 500, US$ 31.00", or null when everything was already in TWD. */
+  breakdown: string | null;
+}
+
+/**
+ * Formats a total converted to TWD together with what it is made of, read as
+ * "NT$ 1,500 (NT$ 500, US$ 31.00)" or "NT$ 1,000 (US$ 31.00)"; a TWD-only total has no breakdown.
+ *
+ * @param twdCents - The converted total in whole cents.
+ * @param totals - The original whole-cent totals per currency.
+ * @returns The total and its breakdown, kept apart so they can be styled separately.
+ */
+export function formatConvertedTotal(twdCents: number, totals: CurrencyTotals): ConvertedTotal {
+  const entries = currencyEntries(totals);
+  const converted = entries.some(([currency]) => currency !== "TWD");
+  return {
+    total: formatCents("TWD", twdCents),
+    breakdown: converted ? entries.map(([currency, cents]) => formatCents(currency, cents)).join(", ") : null,
+  };
+}
+
+/**
+ * Formats a converted amount as an approximation, e.g. "≈ NT$ 1,003".
+ *
+ * @param twdCents - The converted amount in whole cents.
+ */
+export function formatApproxTwd(twdCents: number): string {
+  return `≈ ${formatCents("TWD", twdCents)}`;
 }

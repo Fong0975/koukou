@@ -8,8 +8,8 @@ describe("GroupTotalsList", () => {
     {
       name: "lists each group with its icon and per-currency totals",
       groups: [
-        { key: 1, label: "音樂", icon: "🎵", totals: { USD: 1549 } },
-        { key: 2, label: "影音串流", icon: null, totals: { TWD: 39000, USD: 500 } },
+        { key: 1, label: "音樂", icon: "🎵", totals: { USD: 1549 }, occurrences: [] },
+        { key: 2, label: "影音串流", icon: null, totals: { TWD: 39000, USD: 500 }, occurrences: [] },
       ],
       expected: ["🎵 音樂US$ 15.49", "影音串流NT$ 390US$ 5.00"],
     },

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { makeOccurrence, makeSubscription } from "@/test/fixtures";
 import type { BillingScheduleDto } from "@/types/dto";
-import { monthOccurrences, occurrencesByDay, scheduleDaysInMonth } from "./billingOccurrences";
+import { monthOccurrences, occurrencesByDay, scheduleDaysInMonth, yearOccurrences } from "./billingOccurrences";
+import { toDateKey } from "./dateKey";
 
 const rule = (overrides: Partial<BillingScheduleDto>): BillingScheduleDto => ({
   id: 1,
@@ -176,6 +177,48 @@ describe("monthOccurrences", () => {
       expect(
         result.map((o) => ({ day: o.day, name: o.subscription.name, scheduleId: o.scheduleId, amount: o.amount })),
       ).toEqual(tt.expected);
+      expect(result.map((o) => o.date)).toEqual(tt.expected.map(({ day }) => toDateKey({ ...tt.month, day })));
+    });
+  }
+});
+
+describe("yearOccurrences", () => {
+  const domain = makeSubscription({
+    id: 2,
+    name: "Domain",
+    startDate: "2026-02-01",
+    schedules: [rule({ id: 20, cycle: "YEARLY", month: 3, dayOfMonth: 1 })],
+  });
+  const gym = makeSubscription({
+    id: 3,
+    name: "Gym",
+    startDate: "2026-02-01",
+    schedules: [
+      rule({ id: 30, cycle: "YEARLY", month: 1, dayOfMonth: 5 }),
+      rule({ id: 31, cycle: "MONTHLY", dayOfMonth: 20 }),
+    ],
+  });
+
+  const tests = [
+    { name: "no subscriptions", items: [], year: 2026, expected: [] },
+    { name: "a yearly charge appears once", items: [domain], year: 2026, expected: ["2026-03-01"] },
+    {
+      name: "covers every month in date order and skips days before the start date",
+      items: [gym, domain],
+      year: 2026,
+      expected: [
+        "2026-02-20",
+        "2026-03-01",
+        "2026-03-20",
+        ...["04", "05", "06", "07", "08", "09", "10", "11", "12"].map((month) => `2026-${month}-20`),
+      ],
+    },
+    { name: "a year before the start date has no charges", items: [domain], year: 2025, expected: [] },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(yearOccurrences(tt.items, tt.year).map((o) => o.date)).toEqual(tt.expected);
     });
   }
 });
