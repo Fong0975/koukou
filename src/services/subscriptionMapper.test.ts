@@ -9,6 +9,7 @@ const baseRecord: SubscriptionRecord = {
   name: "Netflix",
   currency: "TWD",
   amount: decimal(390),
+  amortize: false,
   startDate: new Date("2026-01-15T00:00:00.000Z"),
   note: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -24,12 +25,17 @@ describe("toSubscriptionDto", () => {
     {
       name: "formats integer amount with 2 decimals",
       record: baseRecord,
-      expected: { amount: "390.00", amountPeriods: [] },
+      expected: { amount: "390.00", amortize: false, amountPeriods: [] },
     },
     {
       name: "keeps cents",
       record: { ...baseRecord, amount: decimal(15.49) },
-      expected: { amount: "15.49", amountPeriods: [] },
+      expected: { amount: "15.49", amortize: false, amountPeriods: [] },
+    },
+    {
+      name: "keeps the amortize flag",
+      record: { ...baseRecord, amortize: true },
+      expected: { amount: "390.00", amortize: true, amountPeriods: [] },
     },
     {
       name: "serializes past amounts with date-only end dates",
@@ -42,6 +48,7 @@ describe("toSubscriptionDto", () => {
       },
       expected: {
         amount: "390.00",
+        amortize: false,
         amountPeriods: [
           { id: 7, amount: "330.00", endDate: "2026-03-31" },
           { id: 8, amount: "350.50", endDate: "2026-06-30" },
@@ -58,6 +65,7 @@ describe("toSubscriptionDto", () => {
         name: "Netflix",
         currency: "TWD",
         amount: tt.expected.amount,
+        amortize: tt.expected.amortize,
         startDate: "2026-01-15",
         amountPeriods: tt.expected.amountPeriods,
         note: null,

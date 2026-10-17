@@ -103,6 +103,7 @@ describe("POST /api/subscriptions", () => {
             name: "Netflix",
             currency: "TWD",
             amount: 390,
+            amortize: false,
             startDate: "2026-01-01",
             amountPeriods: [],
           }),

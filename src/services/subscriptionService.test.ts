@@ -36,6 +36,7 @@ const record: SubscriptionRecord = {
   name: "Netflix",
   currency: "TWD",
   amount: { toFixed: (d: number) => (390).toFixed(d) },
+  amortize: true,
   startDate: new Date("2026-01-01T00:00:00.000Z"),
   note: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -57,6 +58,7 @@ const data: SubscriptionData = {
   paymentMethodId: 3,
   currency: "TWD",
   amount: 390,
+  amortize: true,
   startDate: "2026-01-01",
   amountPeriods: [{ amount: 330, endDate: "2026-03-31" }],
   note: null,
@@ -72,6 +74,7 @@ const columns = {
   paymentMethodId: 3,
   currency: "TWD",
   amount: "390.00",
+  amortize: true,
   startDate: new Date("2026-01-01T00:00:00.000Z"),
   note: null,
 };
@@ -139,6 +142,7 @@ describe("createSubscription", () => {
       await expect(promise).resolves.toMatchObject({
         id: 1,
         amount: "390.00",
+        amortize: true,
         startDate: "2026-01-01",
         amountPeriods: [{ id: 20, amount: "330.00", endDate: "2026-03-31" }],
       });

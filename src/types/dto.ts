@@ -35,13 +35,14 @@ export interface AmountPeriodDto {
 /**
  * Subscription with its relations, serialized for JSON (amounts as fixed 2-decimal strings,
  * dates as "YYYY-MM-DD"). `amount` is the current amount; `amountPeriods` hold the past ones,
- * ordered by end date.
+ * ordered by end date. `amortize` spreads each YEARLY charge over the 12 months before it.
  */
 export interface SubscriptionDto {
   id: number;
   name: string;
   currency: Currency;
   amount: string;
+  amortize: boolean;
   startDate: string;
   amountPeriods: AmountPeriodDto[];
   note: string | null;

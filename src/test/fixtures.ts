@@ -30,6 +30,7 @@ export function makeSubscription(overrides: Partial<SubscriptionDto> = {}): Subs
     name: "Netflix",
     currency: "TWD",
     amount: "390.00",
+    amortize: false,
     startDate: "2026-01-01",
     amountPeriods: [],
     note: null,

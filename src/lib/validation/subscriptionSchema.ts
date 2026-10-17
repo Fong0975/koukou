@@ -13,6 +13,7 @@ export const subscriptionInputSchema = z
     paymentMethodId: requiredId("扣款方式"),
     currency: z.enum(Currency, { error: "幣別只支援台幣或美金" }).default(Currency.TWD),
     amount: amountSchema,
+    amortize: z.boolean({ error: "均攤設定格式錯誤" }).default(false),
     startDate: requiredDate("起始日"),
     amountPeriods: amountPeriodsSchema,
     note: optionalText("備註", 255),

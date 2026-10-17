@@ -29,11 +29,18 @@ describe("subscriptionInputSchema", () => {
         paymentMethodId: 2,
         currency: "USD",
         amount: 15.49,
+        amortize: false,
         startDate: "2026-01-15",
         amountPeriods: [],
         note: null,
       },
     },
+    {
+      name: "keeps amortize when enabled",
+      input: { ...valid, amortize: true, schedules: [{ cycle: "YEARLY", month: 10, dayOfMonth: 11 }] },
+      expected: { amortize: true },
+    },
+    { name: "rejects non-boolean amortize", input: { ...valid, amortize: "yes" }, errorPath: "amortize" },
     {
       name: "accepts past amounts ending on or after the start date",
       input: {

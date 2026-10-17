@@ -52,6 +52,7 @@ model PaymentMethod {
 
 /// A recurring payment item. `amount` is the current amount, applying from the day after
 /// the latest `amountPeriods` end date (or from `startDate` when there are none).
+/// `amortize` spreads each YEARLY charge over the 12 months before it as a monthly reserve.
 model Subscription {
   id              Int                        @id @default(autoincrement())
   name            String                     @db.VarChar(100)
@@ -61,6 +62,7 @@ model Subscription {
   startDate       DateTime                   @map("start_date") @db.Date
   currency        Currency                   @default(TWD)
   amount          Decimal                    @db.Decimal(12, 2)
+  amortize        Boolean                    @default(false)
   note           String?                    @db.VarChar(255)
   createdAt       DateTime                   @default(now()) @map("created_at")
   updatedAt       DateTime                   @updatedAt @map("updated_at")
