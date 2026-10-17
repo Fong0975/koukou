@@ -48,7 +48,7 @@ body {
 
 /*
  * Thin, leaf-tinted scrollbars on every scrolling area. Chromium and Safari use the
- * ::-webkit-scrollbar parts, which also allow a track margin (see .dialog-panel); setting
+ * ::-webkit-scrollbar parts, which also allow a track margin (see .dialog-body); setting
  * scrollbar-width/scrollbar-color there would disable them, so those apply only to Firefox.
  */
 ::-webkit-scrollbar {
@@ -247,12 +247,16 @@ dialog::backdrop {
 
 dialog[open] > .dialog-panel {
   animation: dialog-in 180ms ease-out;
+}
+
+/* The scrolling part of a dialog panel, below its fixed header. */
+.dialog-body {
   overscroll-behavior: contain;
 }
 
-/* Keeps the panel's scrollbar inside its rounded corners (radius 1.75rem). */
-.dialog-panel::-webkit-scrollbar-track {
-  margin-block: 1.75rem;
+/* Keeps the body's scrollbar clear of the panel's rounded bottom corners (radius 1.75rem). */
+.dialog-body::-webkit-scrollbar-track {
+  margin-block-end: 1.75rem;
 }
 
 @keyframes dialog-in {
