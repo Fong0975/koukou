@@ -10,7 +10,7 @@ const spotify = makeSubscription({
   name: "Spotify",
   currency: "USD",
   amount: "15.49",
-  category: makeCategory({ id: 1, name: "音樂", icon: null }),
+  category: makeCategory({ id: 1, name: "音樂", icon: null, sortOrder: 10 }),
 });
 
 const occurrences = [
@@ -41,7 +41,7 @@ describe("MonthChargeList", () => {
       ],
     },
     {
-      // Both categories share sortOrder 20, so 音樂 (id 1) goes before 影音串流 (id 2).
+      // 音樂 (sortOrder 10) goes before 影音串流 (sortOrder 20).
       name: "picking category groups by category, only for categories with charges",
       occurrences,
       order: "分類",

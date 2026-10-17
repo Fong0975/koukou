@@ -5,7 +5,7 @@ import { makeCategory, makeOccurrence, makeSubscription } from "@/test/fixtures"
 import type { ExchangeRateDto } from "@/types/dto";
 import { ChargeGroupList } from "./ChargeGroupList";
 
-const music = makeCategory({ id: 1, name: "音樂", icon: "🎵" });
+const music = makeCategory({ id: 1, name: "音樂", icon: "🎵", sortOrder: 10 });
 const netflix = makeSubscription({ id: 1, name: "Netflix", currency: "TWD", amount: "390.00" });
 const spotify = makeSubscription({ id: 2, name: "Spotify", currency: "USD", amount: "15.49", category: music });
 
