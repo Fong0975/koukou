@@ -71,20 +71,29 @@ export function formatDays(days: number[]): string {
   return `${days.join("、")} 日`;
 }
 
+/** A monthly reserve split into its rounded-up amount and the exact average, for separate styling. */
+export interface FormattedReserve {
+  /** The rounded-up whole amount, e.g. "NT$ 84". */
+  amount: string;
+  /** The exact average to one decimal place, e.g. "NT$ 83.3", or null when the average is whole. */
+  average: string | null;
+}
+
 /**
- * Formats a monthly reserve as its rounded-up whole amount, followed by the exact average
- * to one decimal place when that average is not whole, e.g. "NT$ 84 (83.3)" or "NT$ 100".
+ * Formats a monthly reserve as its rounded-up whole amount and, when the average is not whole, the exact
+ * average to one decimal place; together they read as "NT$ 84 (NT$ 83.3)".
  *
  * @param currency - The currency.
  * @param reserveCents - The rounded-up reserve in cents; always a whole currency unit.
  * @param averageCents - The exact monthly share in cents; may be fractional.
- * @returns The formatted reserve.
+ * @returns The amount and the average.
  */
-export function formatReserve(currency: Currency, reserveCents: number, averageCents: number): string {
-  const amount = `${CURRENCY_PREFIX[currency]} ${(reserveCents / 100).toLocaleString("en-US")}`;
-  if (averageCents === reserveCents) return amount;
+export function formatReserve(currency: Currency, reserveCents: number, averageCents: number): FormattedReserve {
+  const prefix = CURRENCY_PREFIX[currency];
+  const amount = `${prefix} ${(reserveCents / 100).toLocaleString("en-US")}`;
+  if (averageCents === reserveCents) return { amount, average: null };
   const average = (averageCents / 100).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  return `${amount} (${average})`;
+  return { amount, average: `${prefix} ${average}` };
 }
 
 /**

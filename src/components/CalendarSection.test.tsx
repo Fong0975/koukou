@@ -112,7 +112,7 @@ describe("CalendarSection", () => {
       expectDom: () => {
         expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("NT$ 1,000");
         expect(screen.getByRole("list", { name: "預扣款項" })).toHaveTextContent(
-          "網域2027 年期（10/11 扣款）NT$ 84 (83.3)",
+          "網域2027 年期（10/11 扣款）NT$ 84(NT$ 83.3)",
         );
         expect(screen.getByText("預留小計").nextElementSibling).toHaveTextContent("NT$ 84");
       },
