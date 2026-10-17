@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import { ConflictError, NotFoundError, UpstreamError, ValidationError } from "@/lib/errors";
 import { type ApiError, jsonData, jsonError, toApiError, withErrorHandling } from "./apiResponse";
 
 const { logRequest } = vi.hoisted(() => ({ logRequest: vi.fn() }));
@@ -79,6 +79,11 @@ describe("toApiError", () => {
       name: "ConflictError → 409",
       error: new ConflictError("dup"),
       expected: { status: 409, code: "CONFLICT", message: "dup" },
+    },
+    {
+      name: "UpstreamError → 502",
+      error: new UpstreamError("down"),
+      expected: { status: 502, code: "UPSTREAM_ERROR", message: "down" },
     },
     { name: "unknown Error → 500 without leaking", error: new Error("secret"), expected: internal },
     { name: "non-Error value → 500", error: "oops", expected: internal },

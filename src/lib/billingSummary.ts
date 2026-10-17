@@ -1,6 +1,6 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { SubscriptionDto } from "@/types/dto";
-import { monthOccurrences, type Occurrence } from "./billingOccurrences";
+import type { Occurrence } from "./billingOccurrences";
 import { CURRENCY_PREFIX, PAYMENT_TYPE_LABELS } from "./labels";
 
 /** Totals in whole cents per currency; currencies without charges are absent. */
@@ -16,6 +16,8 @@ export interface SubscriptionCharges {
   totalCents: number;
   /** Amount of every charge in whole cents, or null when the charges differ (the amount changed mid-month). */
   unitCents: number | null;
+  /** The charges themselves, in input order. */
+  occurrences: Occurrence[];
 }
 
 /** A labelled subtotal, e.g. one category or one payment method. */
@@ -24,6 +26,8 @@ export interface GroupTotal {
   label: string;
   icon: string | null;
   totals: CurrencyTotals;
+  /** The group's charges, in input order. */
+  occurrences: Occurrence[];
 }
 
 /** How a subscription is assigned to a group, and where that group sorts. */
@@ -93,10 +97,19 @@ export function sumByCurrency(occurrences: Occurrence[]): CurrencyTotals {
  */
 export function chargesBySubscription(occurrences: Occurrence[]): SubscriptionCharges[] {
   const byId = new Map<number, SubscriptionCharges>();
-  for (const { day, subscription, amount } of occurrences) {
+  for (const occurrence of occurrences) {
+    const { day, subscription, amount } = occurrence;
     const cents = toCents(amount);
-    const entry = byId.get(subscription.id) ?? { subscription, days: [], count: 0, totalCents: 0, unitCents: cents };
+    const entry = byId.get(subscription.id) ?? {
+      subscription,
+      days: [],
+      count: 0,
+      totalCents: 0,
+      unitCents: cents,
+      occurrences: [],
+    };
     if (!entry.days.includes(day)) entry.days.push(day);
+    entry.occurrences.push(occurrence);
     entry.count += 1;
     entry.totalCents += cents;
     if (entry.unitCents !== cents) entry.unitCents = null;
@@ -126,7 +139,13 @@ function groupTotals(occurrences: Occurrence[], groupOf: (subscription: Subscrip
 
   return [...groups.values()]
     .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
-    .map(({ key, label, icon, occurrences: grouped }) => ({ key, label, icon, totals: sumByCurrency(grouped) }));
+    .map(({ key, label, icon, occurrences: grouped }) => ({
+      key,
+      label,
+      icon,
+      totals: sumByCurrency(grouped),
+      occurrences: grouped,
+    }));
 }
 
 /**
@@ -155,16 +174,4 @@ export function totalsByPaymentMethod(occurrences: Occurrence[]): GroupTotal[] {
     icon: null,
     order: paymentMethod.id,
   }));
-}
-
-/**
- * Adds up every charge of a calendar year, per currency.
- *
- * @param items - The subscriptions.
- * @param year - The year.
- * @returns Whole-cent totals per currency.
- */
-export function yearTotals(items: SubscriptionDto[], year: number): CurrencyTotals {
-  const months = Array.from({ length: 12 }, (_, index) => index + 1);
-  return sumByCurrency(months.flatMap((month) => monthOccurrences(items, { year, month })));
 }

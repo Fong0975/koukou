@@ -1,5 +1,6 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { BillingScheduleDto } from "@/types/dto";
+import { currencyEntries, type CurrencyTotals } from "./billingSummary";
 import type { CalendarDate } from "./calendarMonth";
 import { CURRENCY_PREFIX, CYCLE_LABELS, WEEKDAY_LABELS } from "./labels";
 
@@ -70,20 +71,29 @@ export function formatDays(days: number[]): string {
   return `${days.join("、")} 日`;
 }
 
+/** A monthly reserve split into its rounded-up amount and the exact average, for separate styling. */
+export interface FormattedReserve {
+  /** The rounded-up whole amount, e.g. "NT$ 84". */
+  amount: string;
+  /** The exact average to one decimal place, e.g. "NT$ 83.3", or null when the average is whole. */
+  average: string | null;
+}
+
 /**
- * Formats a monthly reserve as its rounded-up whole amount, followed by the exact average
- * to one decimal place when that average is not whole, e.g. "NT$ 84 (83.3)" or "NT$ 100".
+ * Formats a monthly reserve as its rounded-up whole amount and, when the average is not whole, the exact
+ * average to one decimal place; together they read as "NT$ 84 (NT$ 83.3)".
  *
  * @param currency - The currency.
  * @param reserveCents - The rounded-up reserve in cents; always a whole currency unit.
  * @param averageCents - The exact monthly share in cents; may be fractional.
- * @returns The formatted reserve.
+ * @returns The amount and the average.
  */
-export function formatReserve(currency: Currency, reserveCents: number, averageCents: number): string {
-  const amount = `${CURRENCY_PREFIX[currency]} ${(reserveCents / 100).toLocaleString("en-US")}`;
-  if (averageCents === reserveCents) return amount;
+export function formatReserve(currency: Currency, reserveCents: number, averageCents: number): FormattedReserve {
+  const prefix = CURRENCY_PREFIX[currency];
+  const amount = `${prefix} ${(reserveCents / 100).toLocaleString("en-US")}`;
+  if (averageCents === reserveCents) return { amount, average: null };
   const average = (averageCents / 100).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  return `${amount} (${average})`;
+  return { amount, average: `${prefix} ${average}` };
 }
 
 /**
@@ -94,4 +104,38 @@ export function formatReserve(currency: Currency, reserveCents: number, averageC
  */
 export function formatReserveTerm({ year, month, day }: CalendarDate): string {
   return `${year} 年期（${month}/${day} 扣款）`;
+}
+
+/** A total converted to TWD, with the original amounts per currency when any of them was converted. */
+export interface ConvertedTotal {
+  /** E.g. "NT$ 1,500". */
+  total: string;
+  /** E.g. "NT$ 500, US$ 31.00", or null when everything was already in TWD. */
+  breakdown: string | null;
+}
+
+/**
+ * Formats a total converted to TWD together with what it is made of, read as
+ * "NT$ 1,500 (NT$ 500, US$ 31.00)" or "NT$ 1,000 (US$ 31.00)"; a TWD-only total has no breakdown.
+ *
+ * @param twdCents - The converted total in whole cents.
+ * @param totals - The original whole-cent totals per currency.
+ * @returns The total and its breakdown, kept apart so they can be styled separately.
+ */
+export function formatConvertedTotal(twdCents: number, totals: CurrencyTotals): ConvertedTotal {
+  const entries = currencyEntries(totals);
+  const converted = entries.some(([currency]) => currency !== "TWD");
+  return {
+    total: formatCents("TWD", twdCents),
+    breakdown: converted ? entries.map(([currency, cents]) => formatCents(currency, cents)).join(", ") : null,
+  };
+}
+
+/**
+ * Formats a converted amount as an approximation, e.g. "≈ NT$ 1,003".
+ *
+ * @param twdCents - The converted amount in whole cents.
+ */
+export function formatApproxTwd(twdCents: number): string {
+  return `≈ ${formatCents("TWD", twdCents)}`;
 }

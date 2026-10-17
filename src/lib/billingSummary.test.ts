@@ -11,7 +11,6 @@ import {
   totalByCurrency,
   totalsByCategory,
   totalsByPaymentMethod,
-  yearTotals,
   type CurrencyTotals,
 } from "./billingSummary";
 
@@ -126,39 +125,44 @@ describe("chargesBySubscription", () => {
       name: "one row per subscription; same first day sorts by name",
       occurrences: [occ(1, spotify), occ(1, netflix, 10), occ(15, netflix, 11)],
       expected: [
-        { name: "Netflix", days: [1, 15], count: 2, totalCents: 78000, unitCents: 39000 },
-        { name: "Spotify", days: [1], count: 1, totalCents: 1549, unitCents: 1549 },
+        { name: "Netflix", days: [1, 15], count: 2, totalCents: 78000, unitCents: 39000, scheduleIds: [10, 11] },
+        { name: "Spotify", days: [1], count: 1, totalCents: 1549, unitCents: 1549, scheduleIds: [20] },
       ],
     },
     {
       name: "orders by first charge day",
       occurrences: [occ(20, netflix), occ(3, gym)],
       expected: [
-        { name: "健身房", days: [3], count: 1, totalCents: 99950, unitCents: 99950 },
-        { name: "Netflix", days: [20], count: 1, totalCents: 39000, unitCents: 39000 },
+        { name: "健身房", days: [3], count: 1, totalCents: 99950, unitCents: 99950, scheduleIds: [30] },
+        { name: "Netflix", days: [20], count: 1, totalCents: 39000, unitCents: 39000, scheduleIds: [10] },
       ],
     },
     {
       name: "two schedules on the same day count twice but list the day once",
       occurrences: [occ(1, netflix, 10), occ(1, netflix, 11), occ(2, netflix, 10)],
-      expected: [{ name: "Netflix", days: [1, 2], count: 3, totalCents: 117000, unitCents: 39000 }],
+      expected: [
+        { name: "Netflix", days: [1, 2], count: 3, totalCents: 117000, unitCents: 39000, scheduleIds: [10, 11, 10] },
+      ],
     },
     {
       name: "an amount change mid-month leaves no single unit amount",
       occurrences: [occ(1, netflix, 10, "330.00"), occ(15, netflix, 11)],
-      expected: [{ name: "Netflix", days: [1, 15], count: 2, totalCents: 72000, unitCents: null }],
+      expected: [
+        { name: "Netflix", days: [1, 15], count: 2, totalCents: 72000, unitCents: null, scheduleIds: [10, 11] },
+      ],
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
       const result = chargesBySubscription(tt.occurrences).map(
-        ({ subscription, days, count, totalCents, unitCents }) => ({
+        ({ subscription, days, count, totalCents, unitCents, occurrences }) => ({
           name: subscription.name,
           days,
           count,
           totalCents,
           unitCents,
+          scheduleIds: occurrences.map((o) => o.scheduleId),
         }),
       );
 
@@ -175,16 +179,16 @@ describe("totalsByCategory / totalsByPaymentMethod", () => {
       name: "per category, in configured order",
       group: totalsByCategory,
       expected: [
-        { key: 1, label: "音樂", icon: "🎵", totals: { USD: 3098 } },
-        { key: 2, label: "影音串流", icon: "🎬", totals: { TWD: 138950 } },
+        { key: 1, label: "音樂", icon: "🎵", totals: { USD: 3098 }, days: [1, 8] },
+        { key: 2, label: "影音串流", icon: "🎬", totals: { TWD: 138950 }, days: [1, 5] },
       ],
     },
     {
       name: "per payment method, labelled with its type",
       group: totalsByPaymentMethod,
       expected: [
-        { key: 3, label: "信用卡・國泰 CUBE", icon: null, totals: { TWD: 138950 } },
-        { key: 4, label: "帳戶扣款・台新 Richart", icon: null, totals: { USD: 3098 } },
+        { key: 3, label: "信用卡・國泰 CUBE", icon: null, totals: { TWD: 138950 }, days: [1, 5] },
+        { key: 4, label: "帳戶扣款・台新 Richart", icon: null, totals: { USD: 3098 }, days: [1, 8] },
       ],
     },
     { name: "no charges gives no groups", group: totalsByCategory, occurrences: [], expected: [] },
@@ -192,46 +196,11 @@ describe("totalsByCategory / totalsByPaymentMethod", () => {
 
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(tt.group(tt.occurrences ?? occurrences)).toEqual(tt.expected);
-    });
-  }
-});
+      const result = tt
+        .group(tt.occurrences ?? occurrences)
+        .map(({ occurrences: grouped, ...group }) => ({ ...group, days: grouped.map((o) => o.day) }));
 
-describe("yearTotals", () => {
-  const leapDayDomain = makeSubscription({
-    id: 4,
-    name: "Domain",
-    currency: "USD",
-    amount: "10.00",
-    schedules: [{ id: 40, cycle: "YEARLY", dayOfWeek: null, dayOfMonth: 29, month: 2 }],
-  });
-  const repricedNetflix = makeSubscription({
-    ...netflix,
-    startDate: "2026-03-15",
-    amountPeriods: [{ id: 1, amount: "330.00", endDate: "2026-06-30" }],
-  });
-
-  const tests = [
-    { name: "no subscriptions", items: [], year: 2026, expected: {} },
-    { name: "monthly charges twelve times", items: [netflix], year: 2026, expected: { TWD: 468000 } },
-    {
-      name: "Feb 29 still charges once in a common year",
-      items: [netflix, leapDayDomain],
-      year: 2026,
-      expected: { TWD: 468000, USD: 1000 },
-    },
-    {
-      // March 1st is before the start date; April–June charge 330, July–December 390.
-      name: "follows the start date and past amounts",
-      items: [repricedNetflix],
-      year: 2026,
-      expected: { TWD: 3 * 33000 + 6 * 39000 },
-    },
-  ];
-
-  for (const tt of tests) {
-    it(tt.name, () => {
-      expect(yearTotals(tt.items, tt.year)).toEqual(tt.expected);
+      expect(result).toEqual(tt.expected);
     });
   }
 });

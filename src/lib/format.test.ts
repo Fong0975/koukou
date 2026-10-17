@@ -1,6 +1,17 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { formatAmount, formatCents, formatDays, formatReserve, formatReserveTerm, formatSchedule } from "./format";
+import type { CurrencyTotals } from "./billingSummary";
+import {
+  formatAmount,
+  formatApproxTwd,
+  formatCents,
+  formatConvertedTotal,
+  formatDays,
+  formatReserve,
+  formatReserveTerm,
+  formatSchedule,
+  type ConvertedTotal,
+} from "./format";
 
 describe("formatAmount", () => {
   const tests = [
@@ -91,41 +102,41 @@ describe("formatReserve", () => {
       currency: "TWD",
       reserveCents: 8400,
       averageCents: 100000 / 12,
-      expected: "NT$ 84 (83.3)",
+      expected: { amount: "NT$ 84", average: "NT$ 83.3" },
     },
     {
       name: "whole average shows only the amount",
       currency: "TWD",
       reserveCents: 10000,
       averageCents: 10000,
-      expected: "NT$ 100",
+      expected: { amount: "NT$ 100", average: null },
     },
     {
       name: "average rounding up to a whole number keeps one decimal",
       currency: "TWD",
       reserveCents: 8400,
       averageCents: 100750 / 12,
-      expected: "NT$ 84 (84.0)",
+      expected: { amount: "NT$ 84", average: "NT$ 84.0" },
     },
     {
       name: "groups thousands",
       currency: "TWD",
       reserveCents: 125000,
       averageCents: 1499880 / 12,
-      expected: "NT$ 1,250 (1,249.9)",
+      expected: { amount: "NT$ 1,250", average: "NT$ 1,249.9" },
     },
     {
       name: "USD shows a whole amount without cents",
       currency: "USD",
       reserveCents: 900,
       averageCents: 9999 / 12,
-      expected: "US$ 9 (8.3)",
+      expected: { amount: "US$ 9", average: "US$ 8.3" },
     },
   ] as const;
 
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(formatReserve(tt.currency, tt.reserveCents, tt.averageCents)).toBe(tt.expected);
+      expect(formatReserve(tt.currency, tt.reserveCents, tt.averageCents)).toEqual(tt.expected);
     });
   }
 });
@@ -139,6 +150,44 @@ describe("formatReserveTerm", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatReserveTerm(tt.date)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatConvertedTotal", () => {
+  const tests: { name: string; twdCents: number; totals: CurrencyTotals; expected: ConvertedTotal }[] = [
+    { name: "no charges", twdCents: 0, totals: {}, expected: { total: "NT$ 0", breakdown: null } },
+    { name: "TWD only", twdCents: 50000, totals: { TWD: 50000 }, expected: { total: "NT$ 500", breakdown: null } },
+    {
+      name: "USD only",
+      twdCents: 100000,
+      totals: { USD: 3100 },
+      expected: { total: "NT$ 1,000", breakdown: "US$ 31.00" },
+    },
+    {
+      name: "TWD and USD",
+      twdCents: 150000,
+      totals: { USD: 3100, TWD: 50000 },
+      expected: { total: "NT$ 1,500", breakdown: "NT$ 500, US$ 31.00" },
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatConvertedTotal(tt.twdCents, tt.totals)).toEqual(tt.expected);
+    });
+  }
+});
+
+describe("formatApproxTwd", () => {
+  const tests = [
+    { name: "whole dollars", twdCents: 100300, expected: "≈ NT$ 1,003" },
+    { name: "zero", twdCents: 0, expected: "≈ NT$ 0" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatApproxTwd(tt.twdCents)).toBe(tt.expected);
     });
   }
 });

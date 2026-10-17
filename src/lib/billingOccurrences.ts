@@ -6,6 +6,8 @@ import { toDateKey } from "./dateKey";
 /** One charge of a subscription on a specific day of a month. */
 export interface Occurrence {
   day: number;
+  /** The charge day as "YYYY-MM-DD". */
+  date: string;
   subscription: SubscriptionDto;
   scheduleId: number;
   /** Amount charged that day, taken from the amount period covering it. */
@@ -58,7 +60,7 @@ function subscriptionOccurrences(subscription: SubscriptionDto, target: YearMont
     scheduleDaysInMonth(schedule, target).flatMap((day) => {
       const dateKey = toDateKey({ ...target, day });
       if (dateKey < subscription.startDate) return [];
-      return [{ day, subscription, scheduleId: schedule.id, amount: amountOn(subscription, dateKey) }];
+      return [{ day, date: dateKey, subscription, scheduleId: schedule.id, amount: amountOn(subscription, dateKey) }];
     }),
   );
 }
@@ -72,6 +74,18 @@ function subscriptionOccurrences(subscription: SubscriptionDto, target: YearMont
  */
 export function monthOccurrences(items: SubscriptionDto[], target: YearMonth): Occurrence[] {
   return items.flatMap((subscription) => subscriptionOccurrences(subscription, target)).sort((a, b) => a.day - b.day);
+}
+
+/**
+ * Expands subscriptions into every charge they make in a calendar year.
+ *
+ * @param items - The subscriptions.
+ * @param year - The year.
+ * @returns The charges, ordered by date (ties keep the input order).
+ */
+export function yearOccurrences(items: SubscriptionDto[], year: number): Occurrence[] {
+  const months = Array.from({ length: 12 }, (_, index) => index + 1);
+  return months.flatMap((month) => monthOccurrences(items, { year, month }));
 }
 
 /**

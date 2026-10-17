@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import { makeCategory, makeOccurrence, makeSubscription } from "@/test/fixtures";
+import type { ExchangeRateDto } from "@/types/dto";
 import { MonthChargeList } from "./MonthChargeList";
 
 const netflix = makeSubscription({ id: 1, name: "Netflix", currency: "TWD", amount: "390.00" });
@@ -14,7 +15,12 @@ const spotify = makeSubscription({
 });
 
 describe("MonthChargeList", () => {
-  const tests: { name: string; occurrences: Occurrence[]; expectedRows: string[] | null }[] = [
+  const tests: {
+    name: string;
+    occurrences: Occurrence[];
+    rates?: ExchangeRateDto[];
+    expectedRows: string[] | null;
+  }[] = [
     { name: "a month without charges says so", occurrences: [], expectedRows: null },
     {
       name: "one row per subscription with days, unit price and subtotal",
@@ -33,11 +39,25 @@ describe("MonthChargeList", () => {
       ],
       expectedRows: ["Netflix🎬 影音串流・1、15 日NT$ 720共 2 次"],
     },
+    {
+      // 15.49 × 31.5 = 487.94 → 488 and 15.49 × 32 = 495.68 → 496, each with its own day's rate.
+      name: "foreign rows also show their approximate TWD amount",
+      occurrences: [
+        makeOccurrence(1, netflix, { scheduleId: 10 }),
+        makeOccurrence(3, spotify, { scheduleId: 20 }),
+        makeOccurrence(20, spotify, { scheduleId: 21 }),
+      ],
+      rates: [
+        { date: "2026-01-01", rate: 31.5 },
+        { date: "2026-01-15", rate: 32 },
+      ],
+      expectedRows: ["Netflix🎬 影音串流・1 日NT$ 390", "Spotify音樂・3、20 日US$ 30.98≈ NT$ 984US$ 15.49 × 2"],
+    },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      render(<MonthChargeList occurrences={tt.occurrences} />);
+      render(<MonthChargeList occurrences={tt.occurrences} rates={tt.rates ?? null} />);
 
       expect(screen.getByRole("heading", { name: "本月扣款清單" })).toBeInTheDocument();
       if (tt.expectedRows === null) {
