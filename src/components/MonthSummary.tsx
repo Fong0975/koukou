@@ -1,30 +1,24 @@
 import { useId } from "react";
-import type { Reserve } from "@/lib/amortization";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import { sumByCurrency, totalsByCategory, totalsByPaymentMethod, type CurrencyTotals } from "@/lib/billingSummary";
 import { CurrencyAmounts } from "./CurrencyAmounts";
 import { GroupTotalsList } from "./GroupTotalsList";
-import { ReserveList } from "./ReserveList";
 
 interface MonthSummaryProps {
   occurrences: Occurrence[];
-  /** What to set aside this month for upcoming amortized yearly charges. */
-  reserves: Reserve[];
   year: number;
   /** All charges of `year`, per currency. */
   yearTotal: CurrencyTotals;
 }
 
 /**
- * Month totals per currency, charge counts, subtotals per category and payment method, reserves for
- * amortized yearly charges, and the year's total.
+ * Month totals per currency, charge counts, subtotals per category and payment method, and the year's total.
  *
  * @param props.occurrences - The month's charges.
- * @param props.reserves - The month's reserves; kept out of the month and year totals.
  * @param props.year - The year the month belongs to.
  * @param props.yearTotal - That year's totals.
  */
-export function MonthSummary({ occurrences, reserves, year, yearTotal }: MonthSummaryProps) {
+export function MonthSummary({ occurrences, year, yearTotal }: MonthSummaryProps) {
   const titleId = useId();
   const subscriptionCount = new Set(occurrences.map((o) => o.subscription.id)).size;
 
@@ -48,8 +42,6 @@ export function MonthSummary({ occurrences, reserves, year, yearTotal }: MonthSu
           <GroupTotalsList title="依付款方式" groups={totalsByPaymentMethod(occurrences)} />
         </>
       )}
-
-      <ReserveList reserves={reserves} />
 
       <div className="flex items-start justify-between gap-3 border-t border-leaf-500/15 pt-4">
         <span className="text-sm text-ink-soft">{year} 年度總計</span>

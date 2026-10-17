@@ -11,6 +11,7 @@ import { BillingCalendar } from "./BillingCalendar";
 import { LoadErrorNotice } from "./LoadErrorNotice";
 import { MonthChargeList } from "./MonthChargeList";
 import { MonthPicker } from "./MonthPicker";
+import { MonthReserveList } from "./MonthReserveList";
 import { MonthSummary } from "./MonthSummary";
 
 interface CalendarSectionProps {
@@ -21,8 +22,8 @@ interface CalendarSectionProps {
 }
 
 /**
- * Home screen calendar: month navigation, the month's charges on a calendar, a list of them, their totals and
- * the reserves for amortized yearly charges, with loading and error states.
+ * Home screen calendar: month navigation, the month's charges on a calendar, a list of them, the reserves for
+ * amortized yearly charges and their totals, with loading and error states.
  */
 export function CalendarSection({ items, status, loadError, onRetry }: CalendarSectionProps) {
   const { today, cursor, setCursor } = useMonthCursor();
@@ -57,8 +58,11 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
         <BillingCalendar month={cursor} today={today} occurrences={occurrences} />
       </section>
       <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
-        <MonthChargeList occurrences={occurrences} />
-        <MonthSummary occurrences={occurrences} reserves={reserves} year={cursor.year} yearTotal={yearTotal} />
+        <div className="flex flex-col gap-6">
+          <MonthReserveList reserves={reserves} />
+          <MonthChargeList occurrences={occurrences} />
+        </div>
+        <MonthSummary occurrences={occurrences} year={cursor.year} yearTotal={yearTotal} />
       </div>
     </div>
   );

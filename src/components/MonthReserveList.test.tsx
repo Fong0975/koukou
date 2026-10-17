@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Reserve } from "@/lib/amortization";
 import { makeSubscription } from "@/test/fixtures";
-import { ReserveList } from "./ReserveList";
+import { MonthReserveList } from "./MonthReserveList";
 
 const domain = makeSubscription({ id: 5, name: "網域", currency: "TWD" });
 const cloud = makeSubscription({ id: 6, name: "雲端空間", currency: "USD" });
@@ -15,9 +15,9 @@ const reserve = (overrides: Partial<Reserve> & Pick<Reserve, "subscription">): R
   ...overrides,
 });
 
-describe("ReserveList", () => {
-  const tests: { name: string; reserves: Reserve[]; expectedRows: string[]; expectedSubtotal: string[] }[] = [
-    { name: "renders nothing without reserves", reserves: [], expectedRows: [], expectedSubtotal: [] },
+describe("MonthReserveList", () => {
+  const tests: { name: string; reserves: Reserve[]; expectedRows: string[] | null; expectedSubtotal?: string[] }[] = [
+    { name: "renders nothing without reserves", reserves: [], expectedRows: null },
     {
       name: "lists each reserve with its term and the subtotal per currency",
       reserves: [
@@ -41,13 +41,13 @@ describe("ReserveList", () => {
 
   for (const tt of tests) {
     it(tt.name, () => {
-      render(<ReserveList reserves={tt.reserves} />);
+      render(<MonthReserveList reserves={tt.reserves} />);
 
-      if (tt.expectedRows.length === 0) {
+      if (tt.expectedRows === null) {
         expect(screen.queryByRole("heading", { name: "預扣款項" })).not.toBeInTheDocument();
         return;
       }
-      expect(screen.getByRole("heading", { name: "預扣款項" })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "預扣款項" })).toBeInTheDocument();
       const list = screen.getByRole("list", { name: "預扣款項" });
       expect(
         within(list)
