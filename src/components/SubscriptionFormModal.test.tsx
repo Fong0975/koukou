@@ -26,6 +26,7 @@ const filledInput: SubscriptionInput = {
   paymentMethodId: "3",
   currency: "USD",
   amount: "10.99",
+  amortize: false,
   startDate: todayKey(),
   amountPeriods: [],
   note: "",
@@ -68,6 +69,7 @@ describe("SubscriptionFormModal", () => {
         paymentMethodId: "3",
         currency: "TWD",
         amount: "390",
+        amortize: false,
         startDate: "2026-01-01",
         amountPeriods: [],
         note: "家庭方案",
@@ -89,6 +91,7 @@ describe("SubscriptionFormModal", () => {
         paymentMethodId: "3",
         currency: "TWD",
         amount: "390",
+        amortize: false,
         startDate: "2026-01-15",
         amountPeriods: [{ amount: "330", endDate: "2026-03-31" }],
         note: "",
@@ -111,6 +114,50 @@ describe("SubscriptionFormModal", () => {
         amount: "12.99",
         startDate: "2026-01-01",
         amountPeriods: [{ amount: "10.99", endDate: todayKey() }],
+      },
+      expectedCloses: 1,
+    },
+    {
+      name: "a yearly schedule shows the amortize toggle and submits it",
+      fill: true,
+      act: () => {
+        expect(screen.queryByRole("checkbox", { name: "年繳金額均攤預留" })).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("第 1 個扣款日的週期"), { target: { value: "YEARLY" } });
+        fireEvent.click(screen.getByRole("checkbox", { name: "年繳金額均攤預留" }));
+      },
+      click: "新增扣款",
+      expectedTitle: "新增扣款",
+      expectedInput: {
+        ...filledInput,
+        amortize: true,
+        schedules: [{ cycle: "YEARLY", month: "1", dayOfMonth: "1" }],
+      },
+      expectedCloses: 1,
+    },
+    {
+      name: "removing the yearly schedule hides the toggle and turns amortize off",
+      initial: makeSubscription({
+        amortize: true,
+        schedules: [{ id: 10, cycle: "YEARLY", dayOfWeek: null, dayOfMonth: 11, month: 10 }],
+      }),
+      act: () => {
+        expect(screen.getByRole("checkbox", { name: "年繳金額均攤預留" })).toBeChecked();
+        fireEvent.change(screen.getByLabelText("第 1 個扣款日的週期"), { target: { value: "MONTHLY" } });
+        expect(screen.queryByRole("checkbox", { name: "年繳金額均攤預留" })).not.toBeInTheDocument();
+      },
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedInput: {
+        name: "Netflix",
+        categoryId: "2",
+        paymentMethodId: "3",
+        currency: "TWD",
+        amount: "390",
+        amortize: false,
+        startDate: "2026-01-01",
+        amountPeriods: [],
+        note: "",
+        schedules: [{ cycle: "MONTHLY", dayOfMonth: "11" }],
       },
       expectedCloses: 1,
     },

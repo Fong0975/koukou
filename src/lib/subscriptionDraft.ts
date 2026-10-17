@@ -31,6 +31,8 @@ export interface SubscriptionDraft {
   currency: Currency;
   /** Current amount, applying after the latest past amount ends. */
   amount: string;
+  /** Spread yearly charges into monthly reserves; only takes effect with a YEARLY schedule. */
+  amortize: boolean;
   startDate: string;
   amountPeriods: AmountPeriodDraft[];
   note: string;
@@ -46,6 +48,15 @@ let draftKeySeq = 0;
 function nextDraftKey(prefix: string): string {
   draftKeySeq += 1;
   return `${prefix}-${draftKeySeq}`;
+}
+
+/**
+ * Tells whether any schedule bills yearly, the only cycle amortization applies to.
+ *
+ * @param schedules - Billing rules, from the form or the API.
+ */
+export function hasYearlySchedule(schedules: readonly { cycle: BillingCycle }[]): boolean {
+  return schedules.some((schedule) => schedule.cycle === "YEARLY");
 }
 
 /** Shows a "390.00"-style API amount as typed by a person, e.g. "390" or "15.5". */
@@ -106,6 +117,7 @@ export function emptyDraft(startDate: string): SubscriptionDraft {
     paymentMethodId: "",
     currency: "TWD",
     amount: "",
+    amortize: false,
     startDate,
     amountPeriods: [],
     note: "",
@@ -126,6 +138,7 @@ export function draftFromDto(dto: SubscriptionDto): SubscriptionDraft {
     paymentMethodId: String(dto.paymentMethod.id),
     currency: dto.currency,
     amount: amountText(dto.amount),
+    amortize: dto.amortize,
     startDate: dto.startDate,
     amountPeriods: dto.amountPeriods.map((period) =>
       newAmountPeriodDraft({ amount: amountText(period.amount), endDate: period.endDate }),
@@ -158,7 +171,8 @@ function scheduleToInput(schedule: ScheduleDraft): ScheduleInput {
 
 /**
  * Converts form state into the API payload. Values stay as strings; the shared
- * zod schema coerces and validates them on both client and server.
+ * zod schema coerces and validates them on both client and server. `amortize` is
+ * sent as false once no yearly schedule is left, so a hidden toggle never stays on.
  *
  * @param draft - Form state.
  */
@@ -169,6 +183,7 @@ export function draftToInput(draft: SubscriptionDraft): SubscriptionInput {
     paymentMethodId: draft.paymentMethodId,
     currency: draft.currency,
     amount: draft.amount,
+    amortize: draft.amortize && hasYearlySchedule(draft.schedules),
     startDate: draft.startDate,
     amountPeriods: draft.amountPeriods.map(({ amount, endDate }) => ({ amount, endDate })),
     note: draft.note,

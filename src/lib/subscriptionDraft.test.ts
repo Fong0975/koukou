@@ -5,6 +5,7 @@ import {
   draftFromDto,
   draftToInput,
   emptyDraft,
+  hasYearlySchedule,
   newAmountPeriodDraft,
   newScheduleDraft,
   nextAmountPeriodDraft,
@@ -128,6 +129,7 @@ describe("emptyDraft", () => {
         paymentMethodId: "",
         currency: "TWD",
         amount: "",
+        amortize: false,
         startDate: tt.startDate,
         amountPeriods: [],
         note: "",
@@ -149,6 +151,7 @@ describe("draftFromDto", () => {
         paymentMethodId: "3",
         currency: "USD",
         amount: "15.5",
+        amortize: false,
         startDate: "2026-02-10",
         note: "",
       },
@@ -167,6 +170,16 @@ describe("draftFromDto", () => {
       expected: { amount: "390", note: "家庭方案" },
       expectedSchedules: [{ cycle: "MONTHLY" }, { cycle: "WEEKLY" }],
       expectedAmountPeriods: [],
+    },
+    {
+      name: "keeps the amortize flag",
+      dto: { ...dto, amortize: true },
+      expected: { amortize: true },
+      expectedSchedules: [{ cycle: "MONTHLY" }, { cycle: "WEEKLY" }],
+      expectedAmountPeriods: [
+        { amount: "12", endDate: "2026-03-31" },
+        { amount: "13.99", endDate: "2026-06-30" },
+      ],
     },
   ];
 
@@ -189,6 +202,7 @@ describe("draftToInput", () => {
     paymentMethodId: "3",
     currency: "TWD",
     amount: "390",
+    amortize: true,
     startDate: "2026-01-01",
     amountPeriods: [newAmountPeriodDraft({ amount: "350", endDate: "2026-05-31" })],
     note: "",
@@ -198,30 +212,69 @@ describe("draftToInput", () => {
     newScheduleDraft({ cycle, dayOfWeek: "3", dayOfMonth: "15", month: "6" });
 
   const tests = [
-    { name: "daily keeps no day fields", cycle: "DAILY", expected: { cycle: "DAILY" } },
-    { name: "weekly keeps dayOfWeek", cycle: "WEEKLY", expected: { cycle: "WEEKLY", dayOfWeek: "3" } },
-    { name: "monthly keeps dayOfMonth", cycle: "MONTHLY", expected: { cycle: "MONTHLY", dayOfMonth: "15" } },
     {
-      name: "yearly keeps month and day",
+      name: "daily keeps no day fields and drops amortize",
+      cycle: "DAILY",
+      expected: { cycle: "DAILY" },
+      expectedAmortize: false,
+    },
+    {
+      name: "weekly keeps dayOfWeek and drops amortize",
+      cycle: "WEEKLY",
+      expected: { cycle: "WEEKLY", dayOfWeek: "3" },
+      expectedAmortize: false,
+    },
+    {
+      name: "monthly keeps dayOfMonth and drops amortize",
+      cycle: "MONTHLY",
+      expected: { cycle: "MONTHLY", dayOfMonth: "15" },
+      expectedAmortize: false,
+    },
+    {
+      name: "yearly keeps month, day and amortize",
       cycle: "YEARLY",
       expected: { cycle: "YEARLY", month: "6", dayOfMonth: "15" },
+      expectedAmortize: true,
+    },
+    {
+      name: "yearly keeps amortize off when not enabled",
+      cycle: "YEARLY",
+      amortize: false,
+      expected: { cycle: "YEARLY", month: "6", dayOfMonth: "15" },
+      expectedAmortize: false,
     },
   ] as const;
 
   for (const tt of tests) {
     it(tt.name, () => {
-      const input = draftToInput({ ...base, schedules: [schedule(tt.cycle)] });
+      const amortize = "amortize" in tt ? tt.amortize : base.amortize;
+      const input = draftToInput({ ...base, amortize, schedules: [schedule(tt.cycle)] });
       expect(input).toEqual({
         name: "Netflix",
         categoryId: "2",
         paymentMethodId: "3",
         currency: "TWD",
         amount: "390",
+        amortize: tt.expectedAmortize,
         startDate: "2026-01-01",
         amountPeriods: [{ amount: "350", endDate: "2026-05-31" }],
         note: "",
         schedules: [tt.expected],
       });
+    });
+  }
+});
+
+describe("hasYearlySchedule", () => {
+  const tests = [
+    { name: "no schedules", cycles: [], expected: false },
+    { name: "only non-yearly schedules", cycles: ["DAILY", "WEEKLY", "MONTHLY"], expected: false },
+    { name: "a yearly schedule among others", cycles: ["MONTHLY", "YEARLY"], expected: true },
+  ] as const;
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(hasYearlySchedule(tt.cycles.map((cycle) => ({ cycle })))).toBe(tt.expected);
     });
   }
 });
