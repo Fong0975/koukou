@@ -1,6 +1,7 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { SubscriptionDto } from "@/types/dto";
 import type { Occurrence } from "./billingOccurrences";
+import { sortCharges } from "./chargeOrder";
 import { CURRENCY_PREFIX, PAYMENT_TYPE_LABELS } from "./labels";
 
 /** Totals in whole cents per currency; currencies without charges are absent. */
@@ -116,9 +117,8 @@ export function chargesBySubscription(occurrences: Occurrence[]): SubscriptionCh
     byId.set(subscription.id, entry);
   }
 
-  return [...byId.values()]
-    .map((entry) => ({ ...entry, days: [...entry.days].sort((a, b) => a - b) }))
-    .sort((a, b) => a.days[0] - b.days[0] || a.subscription.name.localeCompare(b.subscription.name));
+  const entries = [...byId.values()].map((entry) => ({ ...entry, days: [...entry.days].sort((a, b) => a - b) }));
+  return sortCharges(entries, "date");
 }
 
 /**

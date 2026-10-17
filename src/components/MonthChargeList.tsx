@@ -1,10 +1,14 @@
-import { useId } from "react";
+"use client";
+
+import { useId, useMemo, useState } from "react";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import { chargesBySubscription } from "@/lib/billingSummary";
+import { CHARGE_ORDER_LABELS, sortCharges, type ChargeOrder } from "@/lib/chargeOrder";
 import { sumTwdCents } from "@/lib/currencyConversion";
 import { formatApproxTwd, formatCents, formatDays } from "@/lib/format";
 import type { ExchangeRateDto } from "@/types/dto";
 import { CoinListItem } from "./CoinListItem";
+import { SegmentedControl } from "./SegmentedControl";
 
 interface MonthChargeListProps {
   occurrences: Occurrence[];
@@ -14,20 +18,24 @@ interface MonthChargeListProps {
 
 /**
  * The month's charges, one row per subscription with its charge days and subtotal; foreign subtotals also show
- * their approximate TWD amount.
+ * their approximate TWD amount. A toggle in the header orders the rows by date or by category.
  *
  * @param props.occurrences - The month's charges.
  * @param props.rates - The year's exchange rates.
  */
 export function MonthChargeList({ occurrences, rates }: MonthChargeListProps) {
   const titleId = useId();
-  const charges = chargesBySubscription(occurrences);
+  const [order, setOrder] = useState<ChargeOrder>("date");
+  const charges = useMemo(() => sortCharges(chargesBySubscription(occurrences), order), [occurrences, order]);
 
   return (
     <section aria-labelledby={titleId} className="glass rounded-[1.75rem] p-5 sm:p-6">
-      <h2 id={titleId} className="mb-2 text-xl">
-        本月扣款清單
-      </h2>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <h2 id={titleId} className="text-xl">
+          本月扣款清單
+        </h2>
+        <SegmentedControl labels={CHARGE_ORDER_LABELS} value={order} onChange={setOrder} aria-label="排序方式" />
+      </div>
       {charges.length === 0 ? (
         <p className="py-3 text-ink-soft">這個月沒有扣款。</p>
       ) : (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useId } from "react";
-import type { Currency } from "@/generated/prisma/enums";
 import { amountPeriodRanges } from "@/lib/amountPeriods";
 import { todayKey } from "@/lib/dateKey";
 import { CURRENCY_LABELS } from "@/lib/labels";
@@ -9,6 +8,7 @@ import { nextAmountPeriodDraft, type FieldErrors, type SubscriptionDraft } from 
 import { AmountInput } from "./AmountInput";
 import { AmountPeriodEditor } from "./AmountPeriodEditor";
 import { PlusIcon } from "./Icons";
+import { SegmentedControl } from "./SegmentedControl";
 
 /** The draft fields this section edits. */
 export type AmountFields = Pick<SubscriptionDraft, "currency" | "amount" | "amountPeriods">;
@@ -19,8 +19,6 @@ interface AmountSectionProps extends AmountFields {
   /** Field errors of the whole form, keyed by dotted path. */
   errors: FieldErrors;
 }
-
-const CURRENCIES = Object.keys(CURRENCY_LABELS) as Currency[];
 
 /**
  * Currency, current amount and past amounts of a subscription. "新增金額紀錄" moves a copy
@@ -41,26 +39,13 @@ export function AmountSection({ currency, amount, amountPeriods, startDate, onCh
         金額
       </span>
       <div className="flex gap-2">
-        <div
-          role="radiogroup"
+        <SegmentedControl
+          labels={CURRENCY_LABELS}
+          value={currency}
+          onChange={(option) => onChange({ currency: option })}
           aria-labelledby={labelId}
-          className="flex shrink-0 rounded-[0.875rem] bg-leaf-100/70 p-1"
-        >
-          {CURRENCIES.map((option) => (
-            <button
-              key={option}
-              type="button"
-              role="radio"
-              aria-checked={currency === option}
-              onClick={() => onChange({ currency: option })}
-              className={`rounded-[0.625rem] px-3 text-sm ${
-                currency === option ? "bg-white text-leaf-800 shadow-sm" : "text-ink-soft"
-              }`}
-            >
-              {CURRENCY_LABELS[option]}
-            </button>
-          ))}
-        </div>
+          className="shrink-0"
+        />
         <AmountInput
           className="flex-1"
           currency={currency}
