@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "@/lib/apiClient";
+import { sortPaymentMethods } from "@/lib/paymentMethodOrder";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import type { CategoryDto, PaymentMethodDto } from "@/types/dto";
 
 /**
  * Loads the category and payment method option lists used by the subscription form,
- * and lets the form add new entries on the fly.
+ * and lets the form add new entries on the fly. Payment methods stay ordered by type, then name.
  */
 export function useLookups() {
   const [categories, setCategories] = useState<CategoryDto[]>([]);
@@ -20,7 +21,7 @@ export function useLookups() {
       .then(([loadedCategories, loadedPaymentMethods]) => {
         if (cancelled) return;
         setCategories(loadedCategories);
-        setPaymentMethods(loadedPaymentMethods);
+        setPaymentMethods(sortPaymentMethods(loadedPaymentMethods));
       })
       .catch((error) => console.error("[koukou] Failed to load form options:", error));
     return () => {
@@ -36,7 +37,7 @@ export function useLookups() {
 
   const addPaymentMethod = useCallback(async (input: PaymentMethodInput) => {
     const created = await apiRequest<PaymentMethodDto>("/api/payment-methods", { method: "POST", body: input });
-    setPaymentMethods((prev) => [...prev, created]);
+    setPaymentMethods((prev) => sortPaymentMethods([...prev, created]));
     return created;
   }, []);
 

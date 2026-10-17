@@ -87,7 +87,7 @@ describe("CalendarSection", () => {
       items: [netflix, spotify],
       rates,
       expectDom: () => {
-        expect(screen.getByRole("list", { name: "本月扣款" })).toHaveTextContent("US$ 10.00≈ NT$ 320");
+        expect(screen.getByRole("region", { name: "本月扣款清單" })).toHaveTextContent("US$ 10.00≈ NT$ 320");
         expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("NT$ 320(US$ 10.00)");
         expect(screen.getByText("2026 年度總計").nextElementSibling).toHaveTextContent(
           "NT$ 4,230(NT$ 390, US$ 120.00)",
@@ -100,7 +100,7 @@ describe("CalendarSection", () => {
       status: "ready",
       items: [spotify],
       expectDom: () => {
-        expect(screen.getByRole("list", { name: "本月扣款" })).not.toHaveTextContent("≈");
+        expect(screen.getByRole("region", { name: "本月扣款清單" })).not.toHaveTextContent("≈");
         expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("US$ 10.00");
       },
       expectedRateRequest: [2026, true],
@@ -143,7 +143,7 @@ describe("CalendarSection", () => {
         expect(screen.getByRole("cell", { name: "5 日：Netflix" })).toBeInTheDocument();
         expect(screen.queryByRole("cell", { name: /今天/ })).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "回到本月" })).toBeEnabled();
-        expect(screen.getByRole("list", { name: "本月扣款" })).toHaveTextContent("Netflix");
+        expect(screen.getByRole("region", { name: "本月扣款清單" })).toHaveTextContent("Netflix");
         expect(screen.getByText("共 1 次扣款，來自 1 個項目")).toBeInTheDocument();
       },
     },

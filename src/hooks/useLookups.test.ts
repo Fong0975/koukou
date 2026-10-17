@@ -11,6 +11,7 @@ import { useLookups } from "./useLookups";
 const streaming = makeCategory({ id: 2, name: "影音串流", sortOrder: 20 });
 const telecom = makeCategory({ id: 5, name: "電信", sortOrder: 40 });
 const card = makePaymentMethod({ id: 3, name: "國泰 CUBE" });
+const account = makePaymentMethod({ id: 4, type: "BANK_ACCOUNT", name: "台新 Richart" });
 
 /** Answers the two initial list requests by path. */
 function respondWith(categories: () => Promise<unknown>, paymentMethods: () => Promise<unknown>) {
@@ -24,6 +25,7 @@ describe("useLookups", () => {
   const tests: {
     name: string;
     categories?: () => Promise<unknown>;
+    paymentMethods?: unknown[];
     act?: (hook: ReturnType<typeof useLookups>) => Promise<unknown>;
     created?: unknown;
     expectedCategories: string[];
@@ -35,6 +37,12 @@ describe("useLookups", () => {
       name: "loads both option lists on mount",
       expectedCategories: ["影音串流", "電信"],
       expectedPaymentMethods: ["國泰 CUBE"],
+    },
+    {
+      name: "orders loaded payment methods by type, then name",
+      paymentMethods: [account, card],
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["國泰 CUBE", "台新 Richart"],
     },
     {
       name: "logs and keeps empty lists when loading fails",
@@ -64,18 +72,27 @@ describe("useLookups", () => {
       expectedPaymentMethods: ["國泰 CUBE"],
     },
     {
-      name: "addPaymentMethod appends the new entry",
+      name: "addPaymentMethod inserts by type",
       act: (hook) => hook.addPaymentMethod({ type: "BANK_ACCOUNT", name: "台新 Richart" }),
-      created: makePaymentMethod({ id: 4, type: "BANK_ACCOUNT", name: "台新 Richart" }),
+      created: account,
       expectedCategories: ["影音串流", "電信"],
       expectedPaymentMethods: ["國泰 CUBE", "台新 Richart"],
+    },
+    {
+      name: "addPaymentMethod inserts by name within its type",
+      act: (hook) => hook.addPaymentMethod({ type: "CREDIT_CARD", name: "國泰 Amex" }),
+      created: makePaymentMethod({ id: 9, name: "國泰 Amex" }),
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["國泰 Amex", "國泰 CUBE"],
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, async () => {
       const logSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      respondWith(tt.categories ?? (() => Promise.resolve([streaming, telecom])), () => Promise.resolve([card]));
+      respondWith(tt.categories ?? (() => Promise.resolve([streaming, telecom])), () =>
+        Promise.resolve(tt.paymentMethods ?? [card]),
+      );
 
       const { result, unmount } = renderHook(() => useLookups());
       if (tt.unmountBeforeLoad) unmount();

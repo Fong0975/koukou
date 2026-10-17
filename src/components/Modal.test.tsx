@@ -21,6 +21,16 @@ describe("Modal", () => {
       expectedCloses: 0,
     },
     {
+      name: "header actions sit beside the close button, outside the scrolling body",
+      act: () => {
+        const action = screen.getByRole("button", { name: "動作" });
+        expect(action.closest(".dialog-body")).toBeNull();
+        expect(action.parentElement).toBe(screen.getByRole("button", { name: "關閉" }).parentElement);
+        expect(screen.getByText("內容").closest(".dialog-body")).not.toBeNull();
+      },
+      expectedCloses: 0,
+    },
+    {
       name: "Esc (cancel) is intercepted and calls onClose",
       act: (dialog) => {
         const cancel = new Event("cancel", { cancelable: true });
@@ -35,7 +45,7 @@ describe("Modal", () => {
     it(tt.name, () => {
       const onClose = vi.fn();
       const { unmount } = render(
-        <Modal title="新增扣款" onClose={onClose}>
+        <Modal title="新增扣款" onClose={onClose} actions={<button type="button">動作</button>}>
           <p>內容</p>
         </Modal>,
       );

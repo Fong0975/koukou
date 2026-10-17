@@ -2,6 +2,7 @@ import type { Currency } from "@/generated/prisma/enums";
 import type { SubscriptionDto } from "@/types/dto";
 import type { Occurrence } from "./billingOccurrences";
 import { CURRENCY_PREFIX, PAYMENT_TYPE_LABELS } from "./labels";
+import { paymentTypeRank } from "./paymentMethodOrder";
 
 /** Totals in whole cents per currency; currencies without charges are absent. */
 export type CurrencyTotals = Partial<Record<Currency, number>>;
@@ -30,8 +31,8 @@ export interface GroupTotal {
   occurrences: Occurrence[];
 }
 
-/** How a subscription is assigned to a group, and where that group sorts. */
-interface GroupOf {
+/** How a charge is assigned to a group, and where that group sorts. */
+export interface GroupOf {
   key: number;
   label: string;
   icon: string | null;
@@ -125,13 +126,13 @@ export function chargesBySubscription(occurrences: Occurrence[]): SubscriptionCh
  * Adds charges up per group, keeping each group's currencies apart.
  *
  * @param occurrences - The charges.
- * @param groupOf - Assigns a subscription to its group.
- * @returns One subtotal per group, ordered by the group's `order`, then label.
+ * @param groupOf - Assigns a charge to its group.
+ * @returns One subtotal per group that has charges, ordered by the group's `order`, then label.
  */
-function groupTotals(occurrences: Occurrence[], groupOf: (subscription: SubscriptionDto) => GroupOf): GroupTotal[] {
+export function groupTotals(occurrences: Occurrence[], groupOf: (occurrence: Occurrence) => GroupOf): GroupTotal[] {
   const groups = new Map<number, GroupOf & { occurrences: Occurrence[] }>();
   for (const occurrence of occurrences) {
-    const group = groupOf(occurrence.subscription);
+    const group = groupOf(occurrence);
     const entry = groups.get(group.key) ?? { ...group, occurrences: [] };
     entry.occurrences.push(occurrence);
     groups.set(group.key, entry);
@@ -154,7 +155,7 @@ function groupTotals(occurrences: Occurrence[], groupOf: (subscription: Subscrip
  * @param occurrences - The charges.
  */
 export function totalsByCategory(occurrences: Occurrence[]): GroupTotal[] {
-  return groupTotals(occurrences, ({ category }) => ({
+  return groupTotals(occurrences, ({ subscription: { category } }) => ({
     key: category.id,
     label: category.name,
     icon: category.icon,
@@ -163,15 +164,15 @@ export function totalsByCategory(occurrences: Occurrence[]): GroupTotal[] {
 }
 
 /**
- * Subtotals per payment method (card or account), in creation order.
+ * Subtotals per payment method (card or account), ordered by payment type, then name.
  *
  * @param occurrences - The charges.
  */
 export function totalsByPaymentMethod(occurrences: Occurrence[]): GroupTotal[] {
-  return groupTotals(occurrences, ({ paymentMethod }) => ({
+  return groupTotals(occurrences, ({ subscription: { paymentMethod } }) => ({
     key: paymentMethod.id,
     label: `${PAYMENT_TYPE_LABELS[paymentMethod.type]}・${paymentMethod.name}`,
     icon: null,
-    order: paymentMethod.id,
+    order: paymentTypeRank(paymentMethod.type),
   }));
 }

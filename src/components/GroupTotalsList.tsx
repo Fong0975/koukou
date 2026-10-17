@@ -2,6 +2,7 @@ import type { GroupTotal } from "@/lib/billingSummary";
 import { convertedTwdCents } from "@/lib/currencyConversion";
 import type { ExchangeRateDto } from "@/types/dto";
 import { ConvertedAmounts } from "./ConvertedAmounts";
+import { IconLabel } from "./IconLabel";
 
 interface GroupTotalsListProps {
   title: string;
@@ -25,8 +26,7 @@ export function GroupTotalsList({ title, groups, rates }: GroupTotalsListProps) 
         {groups.map((group) => (
           <li key={group.key} className="flex items-start justify-between gap-3 text-sm">
             <span className="min-w-0 truncate">
-              {group.icon && <span aria-hidden="true">{group.icon} </span>}
-              {group.label}
+              <IconLabel icon={group.icon} label={group.label} />
             </span>
             <ConvertedAmounts totals={group.totals} twdCents={convertedTwdCents(group.occurrences, rates)} />
           </li>

@@ -48,7 +48,7 @@ body {
 
 /*
  * Thin, leaf-tinted scrollbars on every scrolling area. Chromium and Safari use the
- * ::-webkit-scrollbar parts, which also allow a track margin (see .dialog-panel); setting
+ * ::-webkit-scrollbar parts, which also allow a track margin (see .dialog-body); setting
  * scrollbar-width/scrollbar-color there would disable them, so those apply only to Firefox.
  */
 ::-webkit-scrollbar {
@@ -175,6 +175,56 @@ body {
   .field[aria-invalid="true"] {
     border-color: var(--color-berry);
   }
+  /*
+   * Chromium on Windows opens a <select>'s native popup as a separate OS window that shows
+   * black for about a second before its options appear. Where supported, base-select draws
+   * the popup inside the page instead; other browsers keep the native popup.
+   */
+  @supports (appearance: base-select) {
+    select.field,
+    select.field::picker(select) {
+      appearance: base-select;
+    }
+    select.field {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    select.field::picker-icon {
+      margin-inline-start: auto;
+      color: var(--color-ink-soft);
+      transition: rotate 150ms;
+    }
+    select.field:open::picker-icon {
+      rotate: 180deg;
+    }
+    select.field::picker(select) {
+      margin-block: 0.375rem;
+      padding: 0.25rem;
+      max-height: 18rem;
+      border: 1px solid rgb(78 154 74 / 0.28);
+      border-radius: 0.875rem;
+      background: #fff;
+      color: var(--color-ink);
+      box-shadow: 0 18px 40px -18px rgb(42 90 44 / 0.45);
+    }
+    select.field option {
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.625rem;
+    }
+    select.field option:hover,
+    select.field option:focus-visible {
+      background: var(--color-leaf-50);
+      outline: none;
+    }
+    select.field option:checked {
+      background: var(--color-leaf-100);
+      color: var(--color-leaf-800);
+    }
+    select.field option::checkmark {
+      display: none;
+    }
+  }
 
   .field-label {
     display: block;
@@ -197,12 +247,16 @@ dialog::backdrop {
 
 dialog[open] > .dialog-panel {
   animation: dialog-in 180ms ease-out;
+}
+
+/* The scrolling part of a dialog panel, below its fixed header. */
+.dialog-body {
   overscroll-behavior: contain;
 }
 
-/* Keeps the panel's scrollbar inside its rounded corners (radius 1.75rem). */
-.dialog-panel::-webkit-scrollbar-track {
-  margin-block: 1.75rem;
+/* Keeps the body's scrollbar clear of the panel's rounded bottom corners (radius 1.75rem). */
+.dialog-body::-webkit-scrollbar-track {
+  margin-block-end: 1.75rem;
 }
 
 @keyframes dialog-in {

@@ -15,19 +15,23 @@ interface AllSubscriptionsModalProps extends SubscriptionListProps {
  * @param props.onClose - Closes the dialog.
  */
 export function AllSubscriptionsModal({ onClose, ...listProps }: AllSubscriptionsModalProps) {
-  // The empty state has its own "add first" button, so the toolbar button only shows once there is a list.
+  // The empty state has its own "add first" button, so the header button only shows once there is a list.
   const showAdd = listProps.items.length > 0;
 
   return (
-    <Modal title="所有扣款" onClose={onClose} widthClass="max-w-3xl">
-      {showAdd && (
-        <div className="mb-5 flex justify-end">
+    <Modal
+      title="所有扣款"
+      onClose={onClose}
+      widthClass="max-w-3xl"
+      actions={
+        showAdd && (
           <button type="button" className="btn btn-primary" onClick={listProps.onAdd}>
             <PlusIcon />
             新增扣款
           </button>
-        </div>
-      )}
+        )
+      }
+    >
       <SubscriptionList {...listProps} />
     </Modal>
   );
