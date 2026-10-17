@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "@/lib/apiClient";
+import { todayKey } from "@/lib/dateKey";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import { flushPromises } from "@/test/async";
 import { makeCategory, makePaymentMethod, makeSubscription } from "@/test/fixtures";
@@ -25,6 +26,8 @@ const filledInput: SubscriptionInput = {
   paymentMethodId: "3",
   currency: "USD",
   amount: "10.99",
+  startDate: todayKey(),
+  amountPeriods: [],
   note: "",
   schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
 };
@@ -61,6 +64,8 @@ describe("SubscriptionFormModal", () => {
         paymentMethodId: "3",
         currency: "TWD",
         amount: "390",
+        startDate: "2026-01-01",
+        amountPeriods: [],
         note: "家庭方案",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
       },

@@ -16,6 +16,7 @@ const validBody = {
   categoryId: 1,
   paymentMethodId: 2,
   amount: 390,
+  startDate: "2026-01-01",
   schedules: [{ cycle: "MONTHLY", dayOfMonth: 1 }],
 };
 

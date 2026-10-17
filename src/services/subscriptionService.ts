@@ -1,3 +1,4 @@
+import { dateKeyToUtcDate } from "@/lib/dateKey";
 import { prisma } from "@/lib/db";
 import { NotFoundError } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
@@ -15,6 +16,9 @@ const writeErrorMessages = (id?: number): PrismaErrorMessages => ({
   foreignKey: "選擇的類型或扣款方式不存在",
 });
 
+/** Formats a validated amount for a DECIMAL(12, 2) column. */
+const toDecimalColumn = (amount: number) => amount.toFixed(2);
+
 /** Maps validated input to the scalar columns of a subscription. */
 function toSubscriptionColumns(data: SubscriptionData) {
   return {
@@ -22,10 +26,25 @@ function toSubscriptionColumns(data: SubscriptionData) {
     categoryId: data.categoryId,
     paymentMethodId: data.paymentMethodId,
     currency: data.currency,
-    amount: data.amount.toFixed(2),
+    amount: toDecimalColumn(data.amount),
+    startDate: dateKeyToUtcDate(data.startDate),
     note: data.note,
   };
 }
+
+/** Maps validated past amounts to rows of the amount period table. */
+function toAmountPeriodRows(data: SubscriptionData) {
+  return data.amountPeriods.map((period) => ({
+    amount: toDecimalColumn(period.amount),
+    endDate: dateKeyToUtcDate(period.endDate),
+  }));
+}
+
+/** Child row counts included in write log entries. */
+const childCounts = (data: SubscriptionData) => ({
+  schedules: data.schedules.length,
+  amountPeriods: data.amountPeriods.length,
+});
 
 /**
  * Lists all subscriptions, newest first.
@@ -55,7 +74,7 @@ export async function getSubscription(id: number): Promise<SubscriptionDto> {
 }
 
 /**
- * Creates a subscription together with its billing schedules.
+ * Creates a subscription together with its billing schedules and past amounts.
  *
  * @param data - Validated subscription data.
  * @returns The created subscription.
@@ -64,10 +83,14 @@ export async function getSubscription(id: number): Promise<SubscriptionDto> {
 export async function createSubscription(data: SubscriptionData): Promise<SubscriptionDto> {
   try {
     const record = await prisma.subscription.create({
-      data: { ...toSubscriptionColumns(data), schedules: { create: data.schedules } },
+      data: {
+        ...toSubscriptionColumns(data),
+        schedules: { create: data.schedules },
+        amountPeriods: { create: toAmountPeriodRows(data) },
+      },
       include: subscriptionInclude,
     });
-    logger.info("Subscription created", { id: record.id, schedules: data.schedules.length });
+    logger.info("Subscription created", { id: record.id, ...childCounts(data) });
     return toSubscriptionDto(record);
   } catch (error) {
     rethrowPrismaError(error, writeErrorMessages());
@@ -75,8 +98,8 @@ export async function createSubscription(data: SubscriptionData): Promise<Subscr
 }
 
 /**
- * Replaces a subscription's fields and its whole schedule list. The nested
- * deleteMany + create runs in one statement batch, so it is atomic.
+ * Replaces a subscription's fields, its whole schedule list and all past amounts. The
+ * nested deleteMany + create runs in one statement batch, so it is atomic.
  *
  * @param id - Subscription id.
  * @param data - Validated subscription data.
@@ -88,10 +111,14 @@ export async function updateSubscription(id: number, data: SubscriptionData): Pr
   try {
     const record = await prisma.subscription.update({
       where: { id },
-      data: { ...toSubscriptionColumns(data), schedules: { deleteMany: {}, create: data.schedules } },
+      data: {
+        ...toSubscriptionColumns(data),
+        schedules: { deleteMany: {}, create: data.schedules },
+        amountPeriods: { deleteMany: {}, create: toAmountPeriodRows(data) },
+      },
       include: subscriptionInclude,
     });
-    logger.info("Subscription updated", { id, schedules: data.schedules.length });
+    logger.info("Subscription updated", { id, ...childCounts(data) });
     return toSubscriptionDto(record);
   } catch (error) {
     rethrowPrismaError(error, writeErrorMessages(id));

@@ -16,6 +16,7 @@ const validBody = {
   categoryId: 1,
   paymentMethodId: 2,
   amount: 390,
+  startDate: "2026-01-01",
   schedules: [{ cycle: "MONTHLY", dayOfMonth: 1 }],
 };
 
@@ -61,6 +62,13 @@ describe("POST /api/subscriptions", () => {
       status: 201,
       serviceCalled: true,
     },
+    {
+      name: "missing start date → 400",
+      body: { ...validBody, startDate: undefined },
+      status: 400,
+      code: "VALIDATION_ERROR",
+      serviceCalled: false,
+    },
     { name: "invalid JSON → 400", body: "{oops", status: 400, code: "VALIDATION_ERROR", serviceCalled: false },
     {
       name: "schema violation → 400",
@@ -91,7 +99,13 @@ describe("POST /api/subscriptions", () => {
       else {
         expect(json).toEqual({ data: { id: 1 } });
         expect(serviceMock.createSubscription).toHaveBeenCalledWith(
-          expect.objectContaining({ name: "Netflix", currency: "TWD", amount: 390 }),
+          expect.objectContaining({
+            name: "Netflix",
+            currency: "TWD",
+            amount: 390,
+            startDate: "2026-01-01",
+            amountPeriods: [],
+          }),
         );
       }
     });

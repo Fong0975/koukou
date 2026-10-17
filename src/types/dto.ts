@@ -25,12 +25,25 @@ export interface BillingScheduleDto {
   month: number | null;
 }
 
-/** Subscription with its relations, serialized for JSON (amount as a fixed 2-decimal string). */
+/** Past amount that applied up to and including `endDate` ("YYYY-MM-DD"). */
+export interface AmountPeriodDto {
+  id: number;
+  amount: string;
+  endDate: string;
+}
+
+/**
+ * Subscription with its relations, serialized for JSON (amounts as fixed 2-decimal strings,
+ * dates as "YYYY-MM-DD"). `amount` is the current amount; `amountPeriods` hold the past ones,
+ * ordered by end date.
+ */
 export interface SubscriptionDto {
   id: number;
   name: string;
   currency: Currency;
   amount: string;
+  startDate: string;
+  amountPeriods: AmountPeriodDto[];
   note: string | null;
   category: CategoryDto;
   paymentMethod: PaymentMethodDto;

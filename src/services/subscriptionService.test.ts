@@ -36,6 +36,7 @@ const record: SubscriptionRecord = {
   name: "Netflix",
   currency: "TWD",
   amount: { toFixed: (d: number) => (390).toFixed(d) },
+  startDate: new Date("2026-01-01T00:00:00.000Z"),
   note: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -45,6 +46,9 @@ const record: SubscriptionRecord = {
     { id: 10, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null },
     { id: 11, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 15, month: null },
   ],
+  amountPeriods: [
+    { id: 20, amount: { toFixed: (d: number) => (330).toFixed(d) }, endDate: new Date("2026-03-31T00:00:00.000Z") },
+  ],
 };
 
 const data: SubscriptionData = {
@@ -53,6 +57,8 @@ const data: SubscriptionData = {
   paymentMethodId: 3,
   currency: "TWD",
   amount: 390,
+  startDate: "2026-01-01",
+  amountPeriods: [{ amount: 330, endDate: "2026-03-31" }],
   note: null,
   schedules: [
     { cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null },
@@ -66,8 +72,11 @@ const columns = {
   paymentMethodId: 3,
   currency: "TWD",
   amount: "390.00",
+  startDate: new Date("2026-01-01T00:00:00.000Z"),
   note: null,
 };
+
+const amountPeriodRows = [{ amount: "330.00", endDate: new Date("2026-03-31T00:00:00.000Z") }];
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -127,10 +136,21 @@ describe("createSubscription", () => {
         expect(loggerMock.info).not.toHaveBeenCalled();
         return;
       }
-      await expect(promise).resolves.toMatchObject({ id: 1, amount: "390.00" });
-      expect(loggerMock.info).toHaveBeenCalledWith("Subscription created", { id: 1, schedules: 2 });
+      await expect(promise).resolves.toMatchObject({
+        id: 1,
+        amount: "390.00",
+        startDate: "2026-01-01",
+        amountPeriods: [{ id: 20, amount: "330.00", endDate: "2026-03-31" }],
+      });
+      expect(loggerMock.info).toHaveBeenCalledWith("Subscription created", { id: 1, schedules: 2, amountPeriods: 1 });
       expect(prismaMock.subscription.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: { ...columns, schedules: { create: data.schedules } } }),
+        expect.objectContaining({
+          data: {
+            ...columns,
+            schedules: { create: data.schedules },
+            amountPeriods: { create: amountPeriodRows },
+          },
+        }),
       );
     });
   }
@@ -138,7 +158,7 @@ describe("createSubscription", () => {
 
 describe("updateSubscription", () => {
   const tests: { name: string; result: () => Promise<unknown>; error?: ErrorCtor }[] = [
-    { name: "replaces fields and all schedules", result: () => Promise.resolve(record) },
+    { name: "replaces fields, all schedules and all past amounts", result: () => Promise.resolve(record) },
     {
       name: "missing subscription → NotFoundError",
       result: () => Promise.reject(prismaError("P2025")),
@@ -161,11 +181,15 @@ describe("updateSubscription", () => {
         return;
       }
       await expect(promise).resolves.toMatchObject({ id: 1 });
-      expect(loggerMock.info).toHaveBeenCalledWith("Subscription updated", { id: 1, schedules: 2 });
+      expect(loggerMock.info).toHaveBeenCalledWith("Subscription updated", { id: 1, schedules: 2, amountPeriods: 1 });
       expect(prismaMock.subscription.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 1 },
-          data: { ...columns, schedules: { deleteMany: {}, create: data.schedules } },
+          data: {
+            ...columns,
+            schedules: { deleteMany: {}, create: data.schedules },
+            amountPeriods: { deleteMany: {}, create: amountPeriodRows },
+          },
         }),
       );
     });

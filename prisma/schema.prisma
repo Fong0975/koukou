@@ -50,24 +50,41 @@ model PaymentMethod {
   @@map("payment_methods")
 }
 
-/// A recurring payment item.
+/// A recurring payment item. `amount` is the current amount, applying from the day after
+/// the latest `amountPeriods` end date (or from `startDate` when there are none).
 model Subscription {
-  id              Int               @id @default(autoincrement())
-  name            String            @db.VarChar(100)
-  categoryId      Int               @map("category_id")
-  paymentMethodId Int               @map("payment_method_id")
-  currency        Currency          @default(TWD)
-  amount          Decimal           @db.Decimal(12, 2)
-  note            String?           @db.VarChar(255)
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  category        Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  paymentMethod   PaymentMethod     @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  id              Int                        @id @default(autoincrement())
+  name            String                     @db.VarChar(100)
+  categoryId      Int                        @map("category_id")
+  paymentMethodId Int                        @map("payment_method_id")
+  /// First day the subscription charges; nothing is charged before it.
+  startDate       DateTime                   @map("start_date") @db.Date
+  currency        Currency                   @default(TWD)
+  amount          Decimal                    @db.Decimal(12, 2)
+  note           String?                    @db.VarChar(255)
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  updatedAt       DateTime                   @updatedAt @map("updated_at")
+  category        Category                   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  paymentMethod   PaymentMethod              @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
   schedules       BillingSchedule[]
+  amountPeriods   SubscriptionAmountPeriod[]
 
   @@index([categoryId])
   @@index([paymentMethodId])
   @@map("subscriptions")
+}
+
+/// A past amount of a subscription. It applies up to and including `endDate`, starting the
+/// day after the previous period's end date (or the subscription's `startDate` for the first).
+model SubscriptionAmountPeriod {
+  id             Int          @id @default(autoincrement())
+  subscriptionId Int          @map("subscription_id")
+  amount         Decimal      @db.Decimal(12, 2)
+  endDate        DateTime     @map("end_date") @db.Date
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, endDate])
+  @@map("subscription_amount_periods")
 }
 
 /// One billing rule of a subscription. Which day fields are used depends on `cycle`:

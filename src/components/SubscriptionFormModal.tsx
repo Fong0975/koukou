@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import type { Currency } from "@/generated/prisma/enums";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { todayKey } from "@/lib/dateKey";
 import { CURRENCY_LABELS, CURRENCY_PREFIX, PAYMENT_TYPE_LABELS } from "@/lib/labels";
 import {
   draftFromDto,
@@ -41,7 +42,9 @@ const CURRENCIES = Object.keys(CURRENCY_LABELS) as Currency[];
  */
 export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
   const { initial, categories, paymentMethods, onAddCategory, onAddPaymentMethod, onSubmit, onClose } = props;
-  const [draft, setDraft] = useState<SubscriptionDraft>(() => (initial ? draftFromDto(initial) : emptyDraft()));
+  const [draft, setDraft] = useState<SubscriptionDraft>(() =>
+    initial ? draftFromDto(initial) : emptyDraft(todayKey()),
+  );
   const [errors, setErrors] = useState<FieldErrors>({});
   const submission = useAsyncAction(async (input: SubscriptionInput) => {
     await onSubmit(input);
