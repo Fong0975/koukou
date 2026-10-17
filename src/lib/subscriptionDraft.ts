@@ -1,4 +1,6 @@
 import type { BillingCycle, Currency } from "@/generated/prisma/enums";
+import { amountPeriodRanges } from "@/lib/amountPeriods";
+import { isDateKey } from "@/lib/dateKey";
 import type { ScheduleInput } from "@/lib/validation/scheduleSchema";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import type { SubscriptionDto } from "@/types/dto";
@@ -72,6 +74,24 @@ export function newScheduleDraft(values: Partial<Omit<ScheduleDraft, "key">> = {
  */
 export function newAmountPeriodDraft(values: Omit<AmountPeriodDraft, "key">): AmountPeriodDraft {
   return { key: nextDraftKey("amount-period"), ...values };
+}
+
+/**
+ * Creates the past amount row added by the "新增金額紀錄" button. It copies the current amount
+ * and ends today, or on the day the current amount starts when that is later (a future start
+ * date, or an existing row already ending today or later), so the new row stays valid.
+ *
+ * @param draft - The form state the row is added to.
+ * @param today - Today's date key.
+ * @returns The new row; the caller appends it.
+ */
+export function nextAmountPeriodDraft(
+  draft: Pick<SubscriptionDraft, "amount" | "startDate" | "amountPeriods">,
+  today: string,
+): AmountPeriodDraft {
+  const { currentStart } = amountPeriodRanges(draft.startDate, draft.amountPeriods);
+  const endDate = isDateKey(currentStart) && currentStart > today ? currentStart : today;
+  return newAmountPeriodDraft({ amount: draft.amount, endDate });
 }
 
 /**

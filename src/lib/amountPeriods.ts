@@ -1,5 +1,5 @@
 import type { SubscriptionDto } from "@/types/dto";
-import { addDays } from "./dateKey";
+import { addDays, isDateKey } from "./dateKey";
 
 /** The parts of a subscription that decide how much it charges on a given day. */
 export type AmountHistory = Pick<SubscriptionDto, "amount" | "amountPeriods">;
@@ -34,6 +34,9 @@ export function amountOn(subscription: AmountHistory, dateKey: string): string {
  * Works out when each past amount starts: the first one on the subscription's start date,
  * each later one the day after the previous end date.
  *
+ * A period whose end date is blank or invalid (a row still being typed) does not move the
+ * next period's start.
+ *
  * @param startDate - The subscription's start date ("YYYY-MM-DD").
  * @param periods - Past amounts in any order, e.g. form rows still being edited.
  * @returns The periods ordered by end date with their start days, and when the current amount starts.
@@ -46,7 +49,7 @@ export function amountPeriodRanges<T extends { endDate: string }>(
   let start = startDate;
   const ranges = ordered.map((period) => {
     const range = { period, start };
-    start = addDays(period.endDate, 1);
+    if (isDateKey(period.endDate)) start = addDays(period.endDate, 1);
     return range;
   });
   return { ranges, currentStart: start };

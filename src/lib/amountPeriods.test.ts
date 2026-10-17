@@ -52,6 +52,18 @@ describe("amountPeriodRanges", () => {
       expectedCurrentStart: "2026-07-01",
     },
     {
+      name: "a blank end date does not move later starts",
+      periods: [
+        { key: "a", endDate: "2026-03-20" },
+        { key: "blank", endDate: "" },
+      ],
+      expectedRanges: [
+        { key: "blank", start: "2026-01-15" },
+        { key: "a", start: "2026-01-15" },
+      ],
+      expectedCurrentStart: "2026-03-21",
+    },
+    {
       name: "rolls over month and year ends",
       periods: [{ key: "a", endDate: "2026-12-31" }],
       expectedRanges: [{ key: "a", start: "2026-01-15" }],

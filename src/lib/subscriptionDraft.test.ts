@@ -7,6 +7,7 @@ import {
   emptyDraft,
   newAmountPeriodDraft,
   newScheduleDraft,
+  nextAmountPeriodDraft,
   toFieldErrors,
   type SubscriptionDraft,
 } from "./subscriptionDraft";
@@ -58,6 +59,56 @@ describe("newAmountPeriodDraft", () => {
       const second = newAmountPeriodDraft(tt.values);
       expect(first).toMatchObject(tt.values);
       expect(first.key).not.toBe(second.key);
+    });
+  }
+});
+
+describe("nextAmountPeriodDraft", () => {
+  const today = "2026-10-17";
+  const period = (endDate: string) => newAmountPeriodDraft({ amount: "100", endDate });
+
+  const tests = [
+    {
+      name: "copies the current amount and ends today",
+      draft: { amount: "390", startDate: "2026-01-01", amountPeriods: [] },
+      expected: { amount: "390", endDate: "2026-10-17" },
+    },
+    {
+      name: "ends today when earlier rows ended before today",
+      draft: { amount: "390", startDate: "2026-01-01", amountPeriods: [period("2026-05-31")] },
+      expected: { amount: "390", endDate: "2026-10-17" },
+    },
+    {
+      name: "ends the day after a row that already ends today",
+      draft: { amount: "390", startDate: "2026-01-01", amountPeriods: [period("2026-10-17")] },
+      expected: { amount: "390", endDate: "2026-10-18" },
+    },
+    {
+      name: "ends after the latest future row, whatever the row order",
+      draft: {
+        amount: "390",
+        startDate: "2026-01-01",
+        amountPeriods: [period("2026-12-31"), period("2026-11-30")],
+      },
+      expected: { amount: "390", endDate: "2027-01-01" },
+    },
+    {
+      name: "ends on a future start date",
+      draft: { amount: "390", startDate: "2026-12-01", amountPeriods: [] },
+      expected: { amount: "390", endDate: "2026-12-01" },
+    },
+    {
+      name: "falls back to today when the start date is blank",
+      draft: { amount: "", startDate: "", amountPeriods: [] },
+      expected: { amount: "", endDate: "2026-10-17" },
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const row = nextAmountPeriodDraft(tt.draft, today);
+      expect(row).toMatchObject(tt.expected);
+      expect(row.key).toMatch(/^amount-period-/);
     });
   }
 });
