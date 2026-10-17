@@ -1,14 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Occurrence } from "@/lib/billingOccurrences";
-import { makeCategory, makeSubscription } from "@/test/fixtures";
+import { makeCategory, makeOccurrence, makeSubscription } from "@/test/fixtures";
 import { CalendarDayCell } from "./CalendarDayCell";
 
-const charge = (id: number, name: string, icon: string | null = "🎬"): Occurrence => ({
-  day: 15,
-  subscription: makeSubscription({ id, name, category: makeCategory({ icon }) }),
-  scheduleId: id * 10,
-});
+const charge = (id: number, name: string, icon: string | null = "🎬"): Occurrence =>
+  makeOccurrence(15, makeSubscription({ id, name, category: makeCategory({ icon }) }));
 
 describe("CalendarDayCell", () => {
   const tests: {

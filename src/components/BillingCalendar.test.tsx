@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import type { CalendarDate } from "@/lib/calendarMonth";
-import { makeSubscription } from "@/test/fixtures";
+import { makeOccurrence, makeSubscription } from "@/test/fixtures";
 import { BillingCalendar } from "./BillingCalendar";
 
 const april = { year: 2026, month: 4 };
@@ -21,9 +21,9 @@ describe("BillingCalendar", () => {
       name: "marks charges on their days",
       today: { year: 2026, month: 3, day: 1 },
       occurrences: [
-        { day: 1, subscription: netflix, scheduleId: 10 },
-        { day: 1, subscription: spotify, scheduleId: 20 },
-        { day: 30, subscription: netflix, scheduleId: 11 },
+        makeOccurrence(1, netflix, { scheduleId: 10 }),
+        makeOccurrence(1, spotify, { scheduleId: 20 }),
+        makeOccurrence(30, netflix, { scheduleId: 11 }),
       ],
       expectedCells: ["1 日：Netflix、Spotify", "2 日", "30 日：Netflix"],
       expectedMissing: ["31 日"],

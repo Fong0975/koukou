@@ -8,6 +8,7 @@ const valid = {
   paymentMethodId: "2",
   currency: "USD",
   amount: "15.49",
+  startDate: "2026-01-15",
   note: "",
   schedules: [{ cycle: "MONTHLY", dayOfMonth: 1 }],
 };
@@ -22,7 +23,50 @@ describe("subscriptionInputSchema", () => {
     {
       name: "normalizes a valid payload",
       input: valid,
-      expected: { name: "Netflix", categoryId: 1, paymentMethodId: 2, currency: "USD", amount: 15.49, note: null },
+      expected: {
+        name: "Netflix",
+        categoryId: 1,
+        paymentMethodId: 2,
+        currency: "USD",
+        amount: 15.49,
+        startDate: "2026-01-15",
+        amountPeriods: [],
+        note: null,
+      },
+    },
+    {
+      name: "accepts past amounts ending on or after the start date",
+      input: {
+        ...valid,
+        amountPeriods: [
+          { amount: "12.99", endDate: "2026-01-15" },
+          { amount: "13.99", endDate: "2026-06-30" },
+        ],
+      },
+      expected: {
+        amountPeriods: [
+          { amount: 12.99, endDate: "2026-01-15" },
+          { amount: 13.99, endDate: "2026-06-30" },
+        ],
+      },
+    },
+    { name: "rejects missing start date", input: { ...valid, startDate: undefined }, errorPath: "startDate" },
+    { name: "rejects invalid start date", input: { ...valid, startDate: "2026-13-01" }, errorPath: "startDate" },
+    {
+      name: "rejects a past amount ending before the start date",
+      input: { ...valid, amountPeriods: [{ amount: 10, endDate: "2026-01-14" }] },
+      errorPath: "amountPeriods.0.endDate",
+    },
+    {
+      name: "rejects duplicate past amount end dates",
+      input: {
+        ...valid,
+        amountPeriods: [
+          { amount: 10, endDate: "2026-03-01" },
+          { amount: 11, endDate: "2026-03-01" },
+        ],
+      },
+      errorPath: "amountPeriods.1.endDate",
     },
     { name: "defaults currency to TWD", input: { ...valid, currency: undefined }, expected: { currency: "TWD" } },
     { name: "keeps a trimmed note", input: { ...valid, note: " 家庭方案 " }, expected: { note: "家庭方案" } },

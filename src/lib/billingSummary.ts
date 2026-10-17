@@ -14,6 +14,8 @@ export interface SubscriptionCharges {
   /** Number of charges; can exceed `days.length` when two schedules hit the same day. */
   count: number;
   totalCents: number;
+  /** Amount of every charge in whole cents, or null when the charges differ (the amount changed mid-month). */
+  unitCents: number | null;
 }
 
 /** A labelled subtotal, e.g. one category or one payment method. */
@@ -65,8 +67,8 @@ export function currencyEntries(totals: CurrencyTotals): [Currency, number][] {
  */
 export function sumByCurrency(occurrences: Occurrence[]): CurrencyTotals {
   const totals: CurrencyTotals = {};
-  for (const { subscription } of occurrences) {
-    totals[subscription.currency] = (totals[subscription.currency] ?? 0) + toCents(subscription.amount);
+  for (const { subscription, amount } of occurrences) {
+    totals[subscription.currency] = (totals[subscription.currency] ?? 0) + toCents(amount);
   }
   return totals;
 }
@@ -79,11 +81,13 @@ export function sumByCurrency(occurrences: Occurrence[]): CurrencyTotals {
  */
 export function chargesBySubscription(occurrences: Occurrence[]): SubscriptionCharges[] {
   const byId = new Map<number, SubscriptionCharges>();
-  for (const { day, subscription } of occurrences) {
-    const entry = byId.get(subscription.id) ?? { subscription, days: [], count: 0, totalCents: 0 };
+  for (const { day, subscription, amount } of occurrences) {
+    const cents = toCents(amount);
+    const entry = byId.get(subscription.id) ?? { subscription, days: [], count: 0, totalCents: 0, unitCents: cents };
     if (!entry.days.includes(day)) entry.days.push(day);
     entry.count += 1;
-    entry.totalCents += toCents(subscription.amount);
+    entry.totalCents += cents;
+    if (entry.unitCents !== cents) entry.unitCents = null;
     byId.set(subscription.id, entry);
   }
 

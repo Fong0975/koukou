@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { Currency } from "@/generated/prisma/enums";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
-import { CURRENCY_LABELS, CURRENCY_PREFIX, PAYMENT_TYPE_LABELS } from "@/lib/labels";
+import { todayKey } from "@/lib/dateKey";
+import { PAYMENT_TYPE_LABELS } from "@/lib/labels";
 import {
   draftFromDto,
   draftToInput,
@@ -16,6 +16,7 @@ import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import { subscriptionInputSchema, type SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import type { CategoryDto, PaymentMethodDto, SubscriptionDto } from "@/types/dto";
+import { AmountSection } from "./AmountSection";
 import { CategoryQuickAdd } from "./CategoryQuickAdd";
 import { Modal } from "./Modal";
 import { PaymentMethodQuickAdd } from "./PaymentMethodQuickAdd";
@@ -33,21 +34,22 @@ interface SubscriptionFormModalProps {
   onClose: () => void;
 }
 
-const CURRENCIES = Object.keys(CURRENCY_LABELS) as Currency[];
-
 /**
  * Add/edit form for a subscription. Validates with the same zod schema as the API,
  * then maps any server-side field errors back onto the inputs.
  */
 export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
   const { initial, categories, paymentMethods, onAddCategory, onAddPaymentMethod, onSubmit, onClose } = props;
-  const [draft, setDraft] = useState<SubscriptionDraft>(() => (initial ? draftFromDto(initial) : emptyDraft()));
+  const [draft, setDraft] = useState<SubscriptionDraft>(() =>
+    initial ? draftFromDto(initial) : emptyDraft(todayKey()),
+  );
   const [errors, setErrors] = useState<FieldErrors>({});
   const submission = useAsyncAction(async (input: SubscriptionInput) => {
     await onSubmit(input);
     onClose();
   });
 
+  const patch = (values: Partial<SubscriptionDraft>) => setDraft((prev) => ({ ...prev, ...values }));
   const set = <K extends keyof SubscriptionDraft>(key: K, value: SubscriptionDraft[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
 
@@ -64,7 +66,7 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
   };
 
   const serverErrors = toFieldErrors(submission.apiError?.details ?? []);
-  const fieldError = (path: string) => errors[path] ?? serverErrors[path];
+  const fieldErrors: FieldErrors = { ...serverErrors, ...errors };
   const showFormError = submission.error && Object.keys(serverErrors).length === 0;
 
   return (
@@ -82,9 +84,9 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
             maxLength={100}
             autoFocus
             onChange={(event) => set("name", event.target.value)}
-            aria-invalid={Boolean(fieldError("name"))}
+            aria-invalid={Boolean(fieldErrors.name)}
           />
-          {fieldError("name") && <p className="field-error">{fieldError("name")}</p>}
+          {fieldErrors.name && <p className="field-error">{fieldErrors.name}</p>}
         </div>
 
         <SelectWithQuickAdd
@@ -97,58 +99,39 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
             value: String(category.id),
             label: category.icon ? `${category.icon} ${category.name}` : category.name,
           }))}
-          error={fieldError("categoryId")}
+          error={fieldErrors.categoryId}
           addLabel="新增類型"
           renderAddForm={(done) => <CategoryQuickAdd onCreate={onAddCategory} onDone={done} />}
         />
 
         <div>
-          <span className="field-label" id="sub-amount-label">
-            金額
-          </span>
-          <div className="flex gap-2">
-            <div
-              role="radiogroup"
-              aria-labelledby="sub-amount-label"
-              className="flex shrink-0 rounded-[0.875rem] bg-leaf-100/70 p-1"
-            >
-              {CURRENCIES.map((currency) => (
-                <button
-                  key={currency}
-                  type="button"
-                  role="radio"
-                  aria-checked={draft.currency === currency}
-                  onClick={() => set("currency", currency)}
-                  className={`rounded-[0.625rem] px-3 text-sm ${
-                    draft.currency === currency ? "bg-white text-leaf-800 shadow-sm" : "text-ink-soft"
-                  }`}
-                >
-                  {CURRENCY_LABELS[currency]}
-                </button>
-              ))}
-            </div>
-            <div className="relative flex-1">
-              <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 font-num text-sm text-ink-soft">
-                {CURRENCY_PREFIX[draft.currency]}
-              </span>
-              <input
-                className="field pl-12 font-num tabular-nums"
-                inputMode="decimal"
-                placeholder="0"
-                aria-label="金額"
-                value={draft.amount}
-                onChange={(event) => set("amount", event.target.value)}
-                aria-invalid={Boolean(fieldError("amount"))}
-              />
-            </div>
-          </div>
-          {fieldError("amount") && <p className="field-error">{fieldError("amount")}</p>}
+          <label htmlFor="sub-start-date" className="field-label">
+            起始日
+          </label>
+          <input
+            id="sub-start-date"
+            type="date"
+            className="field font-num"
+            value={draft.startDate}
+            onChange={(event) => set("startDate", event.target.value)}
+            aria-invalid={Boolean(fieldErrors.startDate)}
+          />
+          {fieldErrors.startDate && <p className="field-error">{fieldErrors.startDate}</p>}
         </div>
+
+        <AmountSection
+          currency={draft.currency}
+          amount={draft.amount}
+          amountPeriods={draft.amountPeriods}
+          startDate={draft.startDate}
+          onChange={patch}
+          errors={fieldErrors}
+        />
 
         <ScheduleEditor
           schedules={draft.schedules}
           onChange={(schedules) => set("schedules", schedules)}
-          errors={{ ...serverErrors, ...errors }}
+          errors={fieldErrors}
         />
 
         <SelectWithQuickAdd
@@ -161,7 +144,7 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
             value: String(method.id),
             label: `${PAYMENT_TYPE_LABELS[method.type]}｜${method.name}`,
           }))}
-          error={fieldError("paymentMethodId")}
+          error={fieldErrors.paymentMethodId}
           addLabel="新增扣款方式"
           renderAddForm={(done) => <PaymentMethodQuickAdd onCreate={onAddPaymentMethod} onDone={done} />}
         />

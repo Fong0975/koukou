@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Occurrence } from "@/lib/billingOccurrences";
-import { makeCategory, makeSubscription } from "@/test/fixtures";
+import { makeCategory, makeOccurrence, makeSubscription } from "@/test/fixtures";
 import { MonthChargeList } from "./MonthChargeList";
 
 const netflix = makeSubscription({ id: 1, name: "Netflix", currency: "TWD", amount: "390.00" });
@@ -19,11 +19,19 @@ describe("MonthChargeList", () => {
     {
       name: "one row per subscription with days, unit price and subtotal",
       occurrences: [
-        { day: 1, subscription: netflix, scheduleId: 10 },
-        { day: 3, subscription: spotify, scheduleId: 20 },
-        { day: 15, subscription: netflix, scheduleId: 11 },
+        makeOccurrence(1, netflix, { scheduleId: 10 }),
+        makeOccurrence(3, spotify, { scheduleId: 20 }),
+        makeOccurrence(15, netflix, { scheduleId: 11 }),
       ],
       expectedRows: ["Netflix🎬 影音串流・1、15 日NT$ 780NT$ 390 × 2", "Spotify音樂・3 日US$ 15.49"],
+    },
+    {
+      name: "an amount change mid-month shows the charge count instead of a unit price",
+      occurrences: [
+        makeOccurrence(1, netflix, { scheduleId: 10, amount: "330.00" }),
+        makeOccurrence(15, netflix, { scheduleId: 11 }),
+      ],
+      expectedRows: ["Netflix🎬 影音串流・1、15 日NT$ 720共 2 次"],
     },
   ];
 

@@ -1,4 +1,6 @@
 import type { BillingCycle, Currency } from "@/generated/prisma/enums";
+import { amountPeriodRanges } from "@/lib/amountPeriods";
+import { isDateKey } from "@/lib/dateKey";
 import type { ScheduleInput } from "@/lib/validation/scheduleSchema";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import type { SubscriptionDto } from "@/types/dto";
@@ -13,13 +15,24 @@ export interface ScheduleDraft {
   month: string;
 }
 
+/** Editable past amount; `endDate` is "YYYY-MM-DD" as produced by a date input. */
+export interface AmountPeriodDraft {
+  /** Stable React key; not sent to the server. */
+  key: string;
+  amount: string;
+  endDate: string;
+}
+
 /** Editable subscription form state. */
 export interface SubscriptionDraft {
   name: string;
   categoryId: string;
   paymentMethodId: string;
   currency: Currency;
+  /** Current amount, applying after the latest past amount ends. */
   amount: string;
+  startDate: string;
+  amountPeriods: AmountPeriodDraft[];
   note: string;
   schedules: ScheduleDraft[];
 }
@@ -27,7 +40,16 @@ export interface SubscriptionDraft {
 /** Error messages keyed by dotted field path, e.g. "schedules.0.dayOfMonth". */
 export type FieldErrors = Record<string, string>;
 
-let scheduleKeySeq = 0;
+let draftKeySeq = 0;
+
+/** Returns a key unique within the page, used to keep list rows stable in React. */
+function nextDraftKey(prefix: string): string {
+  draftKeySeq += 1;
+  return `${prefix}-${draftKeySeq}`;
+}
+
+/** Shows a "390.00"-style API amount as typed by a person, e.g. "390" or "15.5". */
+const amountText = (amount: string) => String(Number(amount));
 
 /**
  * Creates a new schedule row.
@@ -35,9 +57,8 @@ let scheduleKeySeq = 0;
  * @param values - Initial values; defaults to "每月 1 日".
  */
 export function newScheduleDraft(values: Partial<Omit<ScheduleDraft, "key">> = {}): ScheduleDraft {
-  scheduleKeySeq += 1;
   return {
-    key: `schedule-${scheduleKeySeq}`,
+    key: nextDraftKey("schedule"),
     cycle: "MONTHLY",
     dayOfWeek: "1",
     dayOfMonth: "1",
@@ -46,14 +67,47 @@ export function newScheduleDraft(values: Partial<Omit<ScheduleDraft, "key">> = {
   };
 }
 
-/** Initial state of the "add subscription" form. */
-export function emptyDraft(): SubscriptionDraft {
+/**
+ * Creates a past amount row.
+ *
+ * @param values - Its amount and end date.
+ */
+export function newAmountPeriodDraft(values: Omit<AmountPeriodDraft, "key">): AmountPeriodDraft {
+  return { key: nextDraftKey("amount-period"), ...values };
+}
+
+/**
+ * Creates the past amount row added by the "新增金額紀錄" button. It copies the current amount
+ * and ends today, or on the day the current amount starts when that is later (a future start
+ * date, or an existing row already ending today or later), so the new row stays valid.
+ *
+ * @param draft - The form state the row is added to.
+ * @param today - Today's date key.
+ * @returns The new row; the caller appends it.
+ */
+export function nextAmountPeriodDraft(
+  draft: Pick<SubscriptionDraft, "amount" | "startDate" | "amountPeriods">,
+  today: string,
+): AmountPeriodDraft {
+  const { currentStart } = amountPeriodRanges(draft.startDate, draft.amountPeriods);
+  const endDate = isDateKey(currentStart) && currentStart > today ? currentStart : today;
+  return newAmountPeriodDraft({ amount: draft.amount, endDate });
+}
+
+/**
+ * Initial state of the "add subscription" form.
+ *
+ * @param startDate - Default start date ("YYYY-MM-DD"), normally today.
+ */
+export function emptyDraft(startDate: string): SubscriptionDraft {
   return {
     name: "",
     categoryId: "",
     paymentMethodId: "",
     currency: "TWD",
     amount: "",
+    startDate,
+    amountPeriods: [],
     note: "",
     schedules: [newScheduleDraft()],
   };
@@ -71,7 +125,11 @@ export function draftFromDto(dto: SubscriptionDto): SubscriptionDraft {
     categoryId: String(dto.category.id),
     paymentMethodId: String(dto.paymentMethod.id),
     currency: dto.currency,
-    amount: String(Number(dto.amount)),
+    amount: amountText(dto.amount),
+    startDate: dto.startDate,
+    amountPeriods: dto.amountPeriods.map((period) =>
+      newAmountPeriodDraft({ amount: amountText(period.amount), endDate: period.endDate }),
+    ),
     note: dto.note ?? "",
     schedules: dto.schedules.map((schedule) =>
       newScheduleDraft({
@@ -111,6 +169,8 @@ export function draftToInput(draft: SubscriptionDraft): SubscriptionInput {
     paymentMethodId: draft.paymentMethodId,
     currency: draft.currency,
     amount: draft.amount,
+    startDate: draft.startDate,
+    amountPeriods: draft.amountPeriods.map(({ amount, endDate }) => ({ amount, endDate })),
     note: draft.note,
     schedules: draft.schedules.map(scheduleToInput),
   };

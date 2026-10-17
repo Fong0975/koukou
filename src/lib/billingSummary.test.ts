@@ -1,8 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { makeCategory, makePaymentMethod, makeSubscription } from "@/test/fixtures";
+import { makeCategory, makeOccurrence, makePaymentMethod, makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
-import type { Occurrence } from "./billingOccurrences";
 import {
   chargesBySubscription,
   currencyEntries,
@@ -24,11 +23,8 @@ const spotify = makeSubscription({
 });
 const gym = makeSubscription({ id: 3, name: "健身房", currency: "TWD", amount: "999.50" });
 
-const occ = (day: number, subscription: SubscriptionDto, scheduleId = subscription.id * 10): Occurrence => ({
-  day,
-  subscription,
-  scheduleId,
-});
+const occ = (day: number, subscription: SubscriptionDto, scheduleId = subscription.id * 10, amount?: string) =>
+  makeOccurrence(day, subscription, { scheduleId, amount: amount ?? subscription.amount });
 
 describe("toCents", () => {
   const tests = [
@@ -78,6 +74,11 @@ describe("sumByCurrency", () => {
       occurrences: [occ(1, netflix), occ(1, spotify), occ(5, gym)],
       expected: { TWD: 138950, USD: 1549 },
     },
+    {
+      name: "uses each charge's own amount",
+      occurrences: [occ(1, netflix, 10, "330.00"), occ(15, netflix, 11)],
+      expected: { TWD: 72000 },
+    },
   ];
 
   for (const tt of tests) {
@@ -94,33 +95,41 @@ describe("chargesBySubscription", () => {
       name: "one row per subscription; same first day sorts by name",
       occurrences: [occ(1, spotify), occ(1, netflix, 10), occ(15, netflix, 11)],
       expected: [
-        { name: "Netflix", days: [1, 15], count: 2, totalCents: 78000 },
-        { name: "Spotify", days: [1], count: 1, totalCents: 1549 },
+        { name: "Netflix", days: [1, 15], count: 2, totalCents: 78000, unitCents: 39000 },
+        { name: "Spotify", days: [1], count: 1, totalCents: 1549, unitCents: 1549 },
       ],
     },
     {
       name: "orders by first charge day",
       occurrences: [occ(20, netflix), occ(3, gym)],
       expected: [
-        { name: "健身房", days: [3], count: 1, totalCents: 99950 },
-        { name: "Netflix", days: [20], count: 1, totalCents: 39000 },
+        { name: "健身房", days: [3], count: 1, totalCents: 99950, unitCents: 99950 },
+        { name: "Netflix", days: [20], count: 1, totalCents: 39000, unitCents: 39000 },
       ],
     },
     {
       name: "two schedules on the same day count twice but list the day once",
       occurrences: [occ(1, netflix, 10), occ(1, netflix, 11), occ(2, netflix, 10)],
-      expected: [{ name: "Netflix", days: [1, 2], count: 3, totalCents: 117000 }],
+      expected: [{ name: "Netflix", days: [1, 2], count: 3, totalCents: 117000, unitCents: 39000 }],
+    },
+    {
+      name: "an amount change mid-month leaves no single unit amount",
+      occurrences: [occ(1, netflix, 10, "330.00"), occ(15, netflix, 11)],
+      expected: [{ name: "Netflix", days: [1, 15], count: 2, totalCents: 72000, unitCents: null }],
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      const result = chargesBySubscription(tt.occurrences).map(({ subscription, days, count, totalCents }) => ({
-        name: subscription.name,
-        days,
-        count,
-        totalCents,
-      }));
+      const result = chargesBySubscription(tt.occurrences).map(
+        ({ subscription, days, count, totalCents, unitCents }) => ({
+          name: subscription.name,
+          days,
+          count,
+          totalCents,
+          unitCents,
+        }),
+      );
 
       expect(result).toEqual(tt.expected);
     });
@@ -165,6 +174,11 @@ describe("yearTotals", () => {
     amount: "10.00",
     schedules: [{ id: 40, cycle: "YEARLY", dayOfWeek: null, dayOfMonth: 29, month: 2 }],
   });
+  const repricedNetflix = makeSubscription({
+    ...netflix,
+    startDate: "2026-03-15",
+    amountPeriods: [{ id: 1, amount: "330.00", endDate: "2026-06-30" }],
+  });
 
   const tests = [
     { name: "no subscriptions", items: [], year: 2026, expected: {} },
@@ -174,6 +188,13 @@ describe("yearTotals", () => {
       items: [netflix, leapDayDomain],
       year: 2026,
       expected: { TWD: 468000, USD: 1000 },
+    },
+    {
+      // March 1st is before the start date; April–June charge 330, July–December 390.
+      name: "follows the start date and past amounts",
+      items: [repricedNetflix],
+      year: 2026,
+      expected: { TWD: 3 * 33000 + 6 * 39000 },
     },
   ];
 

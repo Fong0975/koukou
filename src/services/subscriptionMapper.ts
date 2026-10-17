@@ -1,12 +1,19 @@
 import type { BillingCycle, Currency, PaymentType } from "@/generated/prisma/enums";
+import { utcDateToDateKey } from "@/lib/dateKey";
 import type { SubscriptionDto } from "@/types/dto";
+
+/** Structural shape of a Prisma Decimal, enough to serialize it. */
+interface DecimalLike {
+  toFixed(digits: number): string;
+}
 
 /** Structural shape of a subscription row loaded with `subscriptionInclude`. */
 export interface SubscriptionRecord {
   id: number;
   name: string;
   currency: Currency;
-  amount: { toFixed(digits: number): string };
+  amount: DecimalLike;
+  startDate: Date;
   note: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -19,6 +26,7 @@ export interface SubscriptionRecord {
     dayOfMonth: number | null;
     month: number | null;
   }[];
+  amountPeriods: { id: number; amount: DecimalLike; endDate: Date }[];
 }
 
 /** Prisma `include` that loads everything {@link toSubscriptionDto} needs. */
@@ -29,10 +37,18 @@ export const subscriptionInclude = {
     select: { id: true, cycle: true, dayOfWeek: true, dayOfMonth: true, month: true },
     orderBy: { id: "asc" },
   },
+  amountPeriods: {
+    select: { id: true, amount: true, endDate: true },
+    orderBy: { endDate: "asc" },
+  },
 } as const;
 
+/** Serializes a DECIMAL(12, 2) value as a fixed 2-decimal string. */
+const toAmountString = (amount: DecimalLike) => amount.toFixed(2);
+
 /**
- * Converts a DB record into a JSON-safe DTO (Decimal → string, Date → ISO string).
+ * Converts a DB record into a JSON-safe DTO (Decimal → string, Date → ISO string,
+ * DATE column → "YYYY-MM-DD").
  *
  * @param record - Subscription loaded with {@link subscriptionInclude}.
  * @returns The serialized subscription.
@@ -42,7 +58,13 @@ export function toSubscriptionDto(record: SubscriptionRecord): SubscriptionDto {
     id: record.id,
     name: record.name,
     currency: record.currency,
-    amount: record.amount.toFixed(2),
+    amount: toAmountString(record.amount),
+    startDate: utcDateToDateKey(record.startDate),
+    amountPeriods: record.amountPeriods.map((period) => ({
+      id: period.id,
+      amount: toAmountString(period.amount),
+      endDate: utcDateToDateKey(period.endDate),
+    })),
     note: record.note,
     category: record.category,
     paymentMethod: record.paymentMethod,

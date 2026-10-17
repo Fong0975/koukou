@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "@/lib/apiClient";
+import { todayKey } from "@/lib/dateKey";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import { flushPromises } from "@/test/async";
 import { makeCategory, makePaymentMethod, makeSubscription } from "@/test/fixtures";
@@ -25,6 +26,8 @@ const filledInput: SubscriptionInput = {
   paymentMethodId: "3",
   currency: "USD",
   amount: "10.99",
+  startDate: todayKey(),
+  amountPeriods: [],
   note: "",
   schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
 };
@@ -35,11 +38,15 @@ describe("SubscriptionFormModal", () => {
     initial?: SubscriptionDto;
     onSubmit?: () => Promise<unknown>;
     fill?: boolean;
+    /** Extra interaction after filling and before clicking. */
+    act?: () => void;
     click: string;
     expectedTitle: string;
     expectedInput?: SubscriptionInput;
     expectedCloses: number;
     expectedFieldError?: string;
+    /** Accessible name of the input expected to be marked invalid; defaults to "名稱". */
+    expectedInvalidField?: string;
     expectedAlert?: string;
   }[] = [
     {
@@ -61,10 +68,73 @@ describe("SubscriptionFormModal", () => {
         paymentMethodId: "3",
         currency: "TWD",
         amount: "390",
+        startDate: "2026-01-01",
+        amountPeriods: [],
         note: "家庭方案",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
       },
       expectedCloses: 1,
+    },
+    {
+      name: "editing keeps the start date and past amounts",
+      initial: makeSubscription({
+        startDate: "2026-01-15",
+        amountPeriods: [{ id: 1, amount: "330.00", endDate: "2026-03-31" }],
+      }),
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedInput: {
+        name: "Netflix",
+        categoryId: "2",
+        paymentMethodId: "3",
+        currency: "TWD",
+        amount: "390",
+        startDate: "2026-01-15",
+        amountPeriods: [{ amount: "330", endDate: "2026-03-31" }],
+        note: "",
+        schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
+      },
+      expectedCloses: 1,
+    },
+    {
+      name: "a new amount record keeps the old amount and the current one can change",
+      fill: true,
+      act: () => {
+        fireEvent.change(screen.getByLabelText("起始日"), { target: { value: "2026-01-01" } });
+        fireEvent.click(screen.getByRole("button", { name: "新增金額紀錄" }));
+        fireEvent.change(screen.getByRole("textbox", { name: "金額" }), { target: { value: "12.99" } });
+      },
+      click: "新增扣款",
+      expectedTitle: "新增扣款",
+      expectedInput: {
+        ...filledInput,
+        amount: "12.99",
+        startDate: "2026-01-01",
+        amountPeriods: [{ amount: "10.99", endDate: todayKey() }],
+      },
+      expectedCloses: 1,
+    },
+    {
+      name: "a past amount ending before the start date is caught before submitting",
+      initial: makeSubscription({
+        startDate: "2026-05-01",
+        amountPeriods: [{ id: 1, amount: "330.00", endDate: "2026-03-31" }],
+      }),
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedCloses: 0,
+      expectedFieldError: "到期日不可早於起始日",
+      expectedInvalidField: "第 1 筆歷史金額的到期日",
+    },
+    {
+      name: "a cleared start date is caught before submitting",
+      initial: makeSubscription(),
+      act: () => fireEvent.change(screen.getByLabelText("起始日"), { target: { value: "" } }),
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedCloses: 0,
+      expectedFieldError: "請輸入起始日",
+      expectedInvalidField: "起始日",
     },
     {
       name: "invalid input is caught before submitting",
@@ -123,6 +193,7 @@ describe("SubscriptionFormModal", () => {
       expect(screen.getByRole("dialog", { name: tt.expectedTitle })).toBeInTheDocument();
 
       if (tt.fill) fillForm();
+      tt.act?.();
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: tt.click }));
         await flushPromises();
@@ -133,7 +204,7 @@ describe("SubscriptionFormModal", () => {
       expect(onClose).toHaveBeenCalledTimes(tt.expectedCloses);
       if (tt.expectedFieldError) {
         expect(screen.getByText(tt.expectedFieldError)).toBeInTheDocument();
-        expect(screen.getByLabelText("名稱")).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(tt.expectedInvalidField ?? "名稱")).toHaveAttribute("aria-invalid", "true");
       }
       if (tt.expectedAlert) expect(screen.getByRole("alert")).toHaveTextContent(tt.expectedAlert);
       else expect(screen.queryByRole("alert")).not.toBeInTheDocument();

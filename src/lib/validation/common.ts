@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isDateKey } from "@/lib/dateKey";
 
 /**
  * Trimmed, required text with a maximum length.
@@ -41,3 +42,15 @@ export const requiredId = (label: string) =>
     .int(`請選擇${label}`)
     .positive(`請選擇${label}`)
     .max(MAX_INT_ID, `${label}不存在`);
+
+/**
+ * Required calendar date written as "YYYY-MM-DD" (the value of an `<input type="date">`).
+ *
+ * @param label - Field name used in error messages.
+ */
+export const requiredDate = (label: string) =>
+  z
+    .string({ error: `請輸入${label}` })
+    .trim()
+    .min(1, `請輸入${label}`)
+    .refine(isDateKey, `${label}不是有效的日期`);
