@@ -1,7 +1,6 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { SubscriptionDto } from "@/types/dto";
 import type { Occurrence } from "./billingOccurrences";
-import { sortCharges } from "./chargeOrder";
 import { CURRENCY_PREFIX, PAYMENT_TYPE_LABELS } from "./labels";
 import { paymentTypeRank } from "./paymentMethodOrder";
 
@@ -32,8 +31,8 @@ export interface GroupTotal {
   occurrences: Occurrence[];
 }
 
-/** How a subscription is assigned to a group, and where that group sorts. */
-interface GroupOf {
+/** How a charge is assigned to a group, and where that group sorts. */
+export interface GroupOf {
   key: number;
   label: string;
   icon: string | null;
@@ -118,21 +117,22 @@ export function chargesBySubscription(occurrences: Occurrence[]): SubscriptionCh
     byId.set(subscription.id, entry);
   }
 
-  const entries = [...byId.values()].map((entry) => ({ ...entry, days: [...entry.days].sort((a, b) => a - b) }));
-  return sortCharges(entries, "date");
+  return [...byId.values()]
+    .map((entry) => ({ ...entry, days: [...entry.days].sort((a, b) => a - b) }))
+    .sort((a, b) => a.days[0] - b.days[0] || a.subscription.name.localeCompare(b.subscription.name));
 }
 
 /**
  * Adds charges up per group, keeping each group's currencies apart.
  *
  * @param occurrences - The charges.
- * @param groupOf - Assigns a subscription to its group.
- * @returns One subtotal per group, ordered by the group's `order`, then label.
+ * @param groupOf - Assigns a charge to its group.
+ * @returns One subtotal per group that has charges, ordered by the group's `order`, then label.
  */
-function groupTotals(occurrences: Occurrence[], groupOf: (subscription: SubscriptionDto) => GroupOf): GroupTotal[] {
+export function groupTotals(occurrences: Occurrence[], groupOf: (occurrence: Occurrence) => GroupOf): GroupTotal[] {
   const groups = new Map<number, GroupOf & { occurrences: Occurrence[] }>();
   for (const occurrence of occurrences) {
-    const group = groupOf(occurrence.subscription);
+    const group = groupOf(occurrence);
     const entry = groups.get(group.key) ?? { ...group, occurrences: [] };
     entry.occurrences.push(occurrence);
     groups.set(group.key, entry);
@@ -155,7 +155,7 @@ function groupTotals(occurrences: Occurrence[], groupOf: (subscription: Subscrip
  * @param occurrences - The charges.
  */
 export function totalsByCategory(occurrences: Occurrence[]): GroupTotal[] {
-  return groupTotals(occurrences, ({ category }) => ({
+  return groupTotals(occurrences, ({ subscription: { category } }) => ({
     key: category.id,
     label: category.name,
     icon: category.icon,
@@ -169,7 +169,7 @@ export function totalsByCategory(occurrences: Occurrence[]): GroupTotal[] {
  * @param occurrences - The charges.
  */
 export function totalsByPaymentMethod(occurrences: Occurrence[]): GroupTotal[] {
-  return groupTotals(occurrences, ({ paymentMethod }) => ({
+  return groupTotals(occurrences, ({ subscription: { paymentMethod } }) => ({
     key: paymentMethod.id,
     label: `${PAYMENT_TYPE_LABELS[paymentMethod.type]}・${paymentMethod.name}`,
     icon: null,

@@ -5,6 +5,7 @@ import {
   formatAmount,
   formatApproxTwd,
   formatCents,
+  formatChargeDate,
   formatConvertedTotal,
   formatDays,
   formatReserve,
@@ -78,6 +79,20 @@ describe("formatCents", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatCents(tt.currency, tt.cents)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatChargeDate", () => {
+  const tests = [
+    { name: "single-digit month and day", date: "2026-01-01", expected: "1/1（四）" },
+    { name: "two-digit month and day", date: "2026-10-17", expected: "10/17（六）" },
+    { name: "Sunday", date: "2026-03-01", expected: "3/1（日）" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatChargeDate(tt.date)).toBe(tt.expected);
     });
   }
 });

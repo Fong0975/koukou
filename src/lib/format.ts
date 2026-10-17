@@ -2,6 +2,7 @@ import type { Currency } from "@/generated/prisma/enums";
 import type { BillingScheduleDto } from "@/types/dto";
 import { currencyEntries, type CurrencyTotals } from "./billingSummary";
 import type { CalendarDate } from "./calendarMonth";
+import { dateKeyToUtcDate } from "./dateKey";
 import { CURRENCY_PREFIX, CYCLE_LABELS, WEEKDAY_LABELS } from "./labels";
 
 /** Amount split into a currency prefix and a grouped number, for separate styling. */
@@ -69,6 +70,16 @@ export function formatCents(currency: Currency, cents: number): string {
  */
 export function formatDays(days: number[]): string {
   return `${days.join("、")} 日`;
+}
+
+/**
+ * Formats a charge date with its weekday, e.g. "10/1（四）".
+ *
+ * @param date - A "YYYY-MM-DD" key.
+ */
+export function formatChargeDate(date: string): string {
+  const utc = dateKeyToUtcDate(date);
+  return `${utc.getUTCMonth() + 1}/${utc.getUTCDate()}（${WEEKDAY_LABELS[utc.getUTCDay()]}）`;
 }
 
 /** A monthly reserve split into its rounded-up amount and the exact average, for separate styling. */
