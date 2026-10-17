@@ -27,6 +27,7 @@ function toSubscriptionColumns(data: SubscriptionData) {
     paymentMethodId: data.paymentMethodId,
     currency: data.currency,
     amount: toDecimalColumn(data.amount),
+    amortize: data.amortize,
     startDate: dateKeyToUtcDate(data.startDate),
     note: data.note,
   };

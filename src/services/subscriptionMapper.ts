@@ -13,6 +13,7 @@ export interface SubscriptionRecord {
   name: string;
   currency: Currency;
   amount: DecimalLike;
+  amortize: boolean;
   startDate: Date;
   note: string | null;
   createdAt: Date;
@@ -59,6 +60,7 @@ export function toSubscriptionDto(record: SubscriptionRecord): SubscriptionDto {
     name: record.name,
     currency: record.currency,
     amount: toAmountString(record.amount),
+    amortize: record.amortize,
     startDate: utcDateToDateKey(record.startDate),
     amountPeriods: record.amountPeriods.map((period) => ({
       id: period.id,

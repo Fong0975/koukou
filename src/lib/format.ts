@@ -1,5 +1,6 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { BillingScheduleDto } from "@/types/dto";
+import type { CalendarDate } from "./calendarMonth";
 import { CURRENCY_PREFIX, CYCLE_LABELS, WEEKDAY_LABELS } from "./labels";
 
 /** Amount split into a currency prefix and a grouped number, for separate styling. */
@@ -67,4 +68,30 @@ export function formatCents(currency: Currency, cents: number): string {
  */
 export function formatDays(days: number[]): string {
   return `${days.join("、")} 日`;
+}
+
+/**
+ * Formats a monthly reserve as its rounded-up whole amount, followed by the exact average
+ * to one decimal place when that average is not whole, e.g. "NT$ 84 (83.3)" or "NT$ 100".
+ *
+ * @param currency - The currency.
+ * @param reserveCents - The rounded-up reserve in cents; always a whole currency unit.
+ * @param averageCents - The exact monthly share in cents; may be fractional.
+ * @returns The formatted reserve.
+ */
+export function formatReserve(currency: Currency, reserveCents: number, averageCents: number): string {
+  const amount = `${CURRENCY_PREFIX[currency]} ${(reserveCents / 100).toLocaleString("en-US")}`;
+  if (averageCents === reserveCents) return amount;
+  const average = (averageCents / 100).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return `${amount} (${average})`;
+}
+
+/**
+ * Names the yearly charge a reserve saves up for, e.g. "2026 年期（10/11 扣款）".
+ *
+ * @param chargeDate - The date of that charge.
+ * @returns The term year and charge day.
+ */
+export function formatReserveTerm({ year, month, day }: CalendarDate): string {
+  return `${year} 年期（${month}/${day} 扣款）`;
 }

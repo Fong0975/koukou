@@ -60,17 +60,29 @@ export function currencyEntries(totals: CurrencyTotals): [Currency, number][] {
 }
 
 /**
+ * Adds whole-cent amounts up per currency.
+ *
+ * @param entries - `[currency, cents]` pairs.
+ * @returns Whole-cent totals per currency.
+ */
+export function totalByCurrency(entries: Iterable<readonly [Currency, number]>): CurrencyTotals {
+  const totals: CurrencyTotals = {};
+  for (const [currency, cents] of entries) {
+    totals[currency] = (totals[currency] ?? 0) + cents;
+  }
+  return totals;
+}
+
+/**
  * Adds charges up per currency.
  *
  * @param occurrences - The charges.
  * @returns Whole-cent totals per currency.
  */
 export function sumByCurrency(occurrences: Occurrence[]): CurrencyTotals {
-  const totals: CurrencyTotals = {};
-  for (const { subscription, amount } of occurrences) {
-    totals[subscription.currency] = (totals[subscription.currency] ?? 0) + toCents(amount);
-  }
-  return totals;
+  return totalByCurrency(
+    occurrences.map(({ subscription, amount }) => [subscription.currency, toCents(amount)] as const),
+  );
 }
 
 /**

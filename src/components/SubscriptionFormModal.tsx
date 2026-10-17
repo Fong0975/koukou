@@ -8,6 +8,7 @@ import {
   draftFromDto,
   draftToInput,
   emptyDraft,
+  hasYearlySchedule,
   toFieldErrors,
   type FieldErrors,
   type SubscriptionDraft,
@@ -16,6 +17,7 @@ import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import { subscriptionInputSchema, type SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import type { CategoryDto, PaymentMethodDto, SubscriptionDto } from "@/types/dto";
+import { AmortizeToggle } from "./AmortizeToggle";
 import { AmountSection } from "./AmountSection";
 import { CategoryQuickAdd } from "./CategoryQuickAdd";
 import { Modal } from "./Modal";
@@ -133,6 +135,10 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
           onChange={(schedules) => set("schedules", schedules)}
           errors={fieldErrors}
         />
+
+        {hasYearlySchedule(draft.schedules) && (
+          <AmortizeToggle checked={draft.amortize} onChange={(checked) => set("amortize", checked)} />
+        )}
 
         <SelectWithQuickAdd
           id="sub-payment"

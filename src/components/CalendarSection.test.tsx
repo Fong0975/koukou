@@ -10,6 +10,13 @@ const netflix = makeSubscription({
   name: "Netflix",
   schedules: [{ id: 10, cycle: "YEARLY", dayOfWeek: null, dayOfMonth: 5, month: 11 }],
 });
+const domain = makeSubscription({
+  id: 2,
+  name: "網域",
+  amount: "1000.00",
+  amortize: true,
+  schedules: [{ id: 20, cycle: "YEARLY", dayOfWeek: null, dayOfMonth: 11, month: 10 }],
+});
 
 describe("CalendarSection", () => {
   beforeEach(() => {
@@ -55,6 +62,29 @@ describe("CalendarSection", () => {
         expect(screen.getByRole("cell", { name: "5 日" })).toBeInTheDocument();
         expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
         expect(screen.getByText("共 0 次扣款，來自 0 個項目")).toBeInTheDocument();
+        expect(screen.queryByRole("list", { name: "預扣款項" })).not.toBeInTheDocument();
+      },
+    },
+    {
+      name: "an amortized yearly charge saves for next year from its charge month",
+      status: "ready",
+      items: [domain],
+      expectDom: () => {
+        expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("NT$ 1,000");
+        expect(screen.getByRole("list", { name: "預扣款項" })).toHaveTextContent(
+          "網域2027 年期（10/11 扣款）NT$ 84 (83.3)",
+        );
+        expect(screen.getByText("預留小計").nextElementSibling).toHaveTextContent("NT$ 84");
+      },
+    },
+    {
+      name: "the month before an amortized charge saves for it",
+      status: "ready",
+      items: [domain],
+      act: () => fireEvent.click(screen.getByRole("button", { name: "上個月" })),
+      expectDom: () => {
+        expect(screen.getByRole("heading", { name: "2026 年 9 月" })).toBeInTheDocument();
+        expect(screen.getByRole("list", { name: "預扣款項" })).toHaveTextContent("2026 年期（10/11 扣款）");
       },
     },
     {

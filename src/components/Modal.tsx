@@ -14,6 +14,8 @@ interface ModalProps {
 /**
  * Glass dialog built on the native <dialog>, which provides focus trapping,
  * Esc-to-close and inert background for free. Mount it to open; unmount to close.
+ * Only the panel scrolls: the browser's default `max-height` and `overflow: auto` on
+ * <dialog> are lifted so a tall form does not get a second scrollbar.
  */
 export function Modal({ title, onClose, children, widthClass = "max-w-lg" }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -36,7 +38,7 @@ export function Modal({ title, onClose, children, widthClass = "max-w-lg" }: Mod
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      className={`m-auto w-[calc(100%-2rem)] ${widthClass} bg-transparent p-0 text-ink`}
+      className={`m-auto max-h-none w-[calc(100%-2rem)] ${widthClass} overflow-visible bg-transparent p-0 text-ink`}
     >
       <div className="dialog-panel glass max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[1.75rem] bg-white/80 p-6 sm:p-7">
         <div className="mb-5 flex items-center justify-between gap-4">

@@ -2,7 +2,7 @@ import { useId } from "react";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import { chargesBySubscription } from "@/lib/billingSummary";
 import { formatCents, formatDays } from "@/lib/format";
-import { CoinMark } from "./CoinMark";
+import { CoinListItem } from "./CoinListItem";
 
 /**
  * The month's charges, one row per subscription with its charge days and subtotal.
@@ -23,26 +23,26 @@ export function MonthChargeList({ occurrences }: { occurrences: Occurrence[] }) 
       ) : (
         <ul aria-label="本月扣款" className="flex flex-col divide-y divide-leaf-500/15">
           {charges.map(({ subscription, days, count, totalCents, unitCents }) => (
-            <li key={subscription.id} className="flex items-center gap-3 py-3">
-              <CoinMark currency={subscription.currency} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate">{subscription.name}</p>
-                <p className="truncate text-sm text-ink-soft">
+            <CoinListItem
+              key={subscription.id}
+              currency={subscription.currency}
+              title={subscription.name}
+              subtitle={
+                <>
                   {subscription.category.icon && <span aria-hidden="true">{subscription.category.icon} </span>}
                   {subscription.category.name}・{formatDays(days)}
+                </>
+              }
+            >
+              <p className="font-semibold">{formatCents(subscription.currency, totalCents)}</p>
+              {count > 1 && (
+                <p className="text-xs text-ink-soft">
+                  {unitCents === null
+                    ? `共 ${count} 次`
+                    : `${formatCents(subscription.currency, unitCents)} × ${count}`}
                 </p>
-              </div>
-              <div className="shrink-0 text-right font-num tabular-nums">
-                <p className="font-semibold">{formatCents(subscription.currency, totalCents)}</p>
-                {count > 1 && (
-                  <p className="text-xs text-ink-soft">
-                    {unitCents === null
-                      ? `共 ${count} 次`
-                      : `${formatCents(subscription.currency, unitCents)} × ${count}`}
-                  </p>
-                )}
-              </div>
-            </li>
+              )}
+            </CoinListItem>
           ))}
         </ul>
       )}

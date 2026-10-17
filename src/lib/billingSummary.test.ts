@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import type { Currency } from "@/generated/prisma/enums";
 import { makeCategory, makeOccurrence, makePaymentMethod, makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
 import {
@@ -7,9 +8,11 @@ import {
   currencyEntries,
   sumByCurrency,
   toCents,
+  totalByCurrency,
   totalsByCategory,
   totalsByPaymentMethod,
   yearTotals,
+  type CurrencyTotals,
 } from "./billingSummary";
 
 const netflix = makeSubscription({ id: 1, name: "Netflix", currency: "TWD", amount: "390.00" });
@@ -57,6 +60,34 @@ describe("currencyEntries", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(currencyEntries(tt.totals)).toEqual(tt.expected);
+    });
+  }
+});
+
+describe("totalByCurrency", () => {
+  const tests: { name: string; entries: [Currency, number][]; expected: CurrencyTotals }[] = [
+    { name: "no entries", entries: [], expected: {} },
+    {
+      name: "adds the same currency",
+      entries: [
+        ["TWD", 8400],
+        ["TWD", 10000],
+      ],
+      expected: { TWD: 18400 },
+    },
+    {
+      name: "keeps currencies apart",
+      entries: [
+        ["TWD", 8400],
+        ["USD", 900],
+      ],
+      expected: { TWD: 8400, USD: 900 },
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(totalByCurrency(tt.entries)).toEqual(tt.expected);
     });
   }
 });
