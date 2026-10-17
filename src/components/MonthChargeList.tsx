@@ -1,6 +1,6 @@
 import { useId } from "react";
 import type { Occurrence } from "@/lib/billingOccurrences";
-import { chargesBySubscription, toCents } from "@/lib/billingSummary";
+import { chargesBySubscription } from "@/lib/billingSummary";
 import { formatCents, formatDays } from "@/lib/format";
 import { CoinMark } from "./CoinMark";
 
@@ -22,7 +22,7 @@ export function MonthChargeList({ occurrences }: { occurrences: Occurrence[] }) 
         <p className="py-3 text-ink-soft">這個月沒有扣款。</p>
       ) : (
         <ul aria-label="本月扣款" className="flex flex-col divide-y divide-leaf-500/15">
-          {charges.map(({ subscription, days, count, totalCents }) => (
+          {charges.map(({ subscription, days, count, totalCents, unitCents }) => (
             <li key={subscription.id} className="flex items-center gap-3 py-3">
               <CoinMark currency={subscription.currency} />
               <div className="min-w-0 flex-1">
@@ -36,7 +36,9 @@ export function MonthChargeList({ occurrences }: { occurrences: Occurrence[] }) 
                 <p className="font-semibold">{formatCents(subscription.currency, totalCents)}</p>
                 {count > 1 && (
                   <p className="text-xs text-ink-soft">
-                    {formatCents(subscription.currency, toCents(subscription.amount))} × {count}
+                    {unitCents === null
+                      ? `共 ${count} 次`
+                      : `${formatCents(subscription.currency, unitCents)} × ${count}`}
                   </p>
                 )}
               </div>

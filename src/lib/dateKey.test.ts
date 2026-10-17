@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { dateKeyToUtcDate, isDateKey, toDateKey, todayKey, utcDateToDateKey } from "./dateKey";
+import { addDays, dateKeyToUtcDate, isDateKey, toDateKey, todayKey, utcDateToDateKey } from "./dateKey";
 
 describe("isDateKey", () => {
   const tests = [
@@ -46,6 +46,23 @@ describe("todayKey", () => {
     it(tt.name, () => {
       vi.useFakeTimers({ now: tt.now });
       expect(todayKey()).toBe(tt.expected);
+    });
+  }
+});
+
+describe("addDays", () => {
+  const tests = [
+    { name: "next day", key: "2026-10-17", days: 1, expected: "2026-10-18" },
+    { name: "rolls over a month end", key: "2026-04-30", days: 1, expected: "2026-05-01" },
+    { name: "rolls over a year end", key: "2026-12-31", days: 1, expected: "2027-01-01" },
+    { name: "reaches a leap day", key: "2028-02-28", days: 1, expected: "2028-02-29" },
+    { name: "goes back", key: "2026-03-01", days: -1, expected: "2026-02-28" },
+    { name: "zero keeps the date", key: "2026-10-17", days: 0, expected: "2026-10-17" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(addDays(tt.key, tt.days)).toBe(tt.expected);
     });
   }
 });

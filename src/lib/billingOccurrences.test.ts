@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeSubscription } from "@/test/fixtures";
+import { makeOccurrence, makeSubscription } from "@/test/fixtures";
 import type { BillingScheduleDto } from "@/types/dto";
 import { monthOccurrences, occurrencesByDay, scheduleDaysInMonth } from "./billingOccurrences";
 
@@ -107,36 +107,75 @@ describe("monthOccurrences", () => {
   const domain = makeSubscription({
     id: 2,
     name: "Domain",
+    amount: "500.00",
     schedules: [rule({ id: 20, cycle: "YEARLY", month: 3, dayOfMonth: 1 })],
   });
+  const gym = makeSubscription({
+    id: 3,
+    name: "Gym",
+    amount: "150.00",
+    startDate: "2026-05-10",
+    amountPeriods: [{ id: 1, amount: "100.00", endDate: "2026-06-20" }],
+    schedules: [rule({ id: 30, cycle: "WEEKLY", dayOfWeek: 6 })],
+  });
 
+  // Saturdays: May 9/16/23/30 and June 6/13/20/27, 2026.
   const tests = [
     {
       name: "expands every schedule and orders by day, keeping input order on ties",
+      items: [netflix, domain],
       month: { year: 2026, month: 3 },
       expected: [
-        { day: 1, name: "Netflix", scheduleId: 11 },
-        { day: 1, name: "Domain", scheduleId: 20 },
-        { day: 15, name: "Netflix", scheduleId: 10 },
+        { day: 1, name: "Netflix", scheduleId: 11, amount: "390.00" },
+        { day: 1, name: "Domain", scheduleId: 20, amount: "500.00" },
+        { day: 15, name: "Netflix", scheduleId: 10, amount: "390.00" },
       ],
     },
     {
       name: "skips subscriptions that do not charge that month",
+      items: [netflix, domain],
       month: { year: 2026, month: 4 },
       expected: [
-        { day: 1, name: "Netflix", scheduleId: 11 },
-        { day: 15, name: "Netflix", scheduleId: 10 },
+        { day: 1, name: "Netflix", scheduleId: 11, amount: "390.00" },
+        { day: 15, name: "Netflix", scheduleId: 10, amount: "390.00" },
       ],
+    },
+    {
+      name: "skips days before the start date",
+      items: [gym],
+      month: { year: 2026, month: 5 },
+      expected: [
+        { day: 16, name: "Gym", scheduleId: 30, amount: "100.00" },
+        { day: 23, name: "Gym", scheduleId: 30, amount: "100.00" },
+        { day: 30, name: "Gym", scheduleId: 30, amount: "100.00" },
+      ],
+    },
+    {
+      name: "prices each day with the amount period covering it",
+      items: [gym],
+      month: { year: 2026, month: 6 },
+      expected: [
+        { day: 6, name: "Gym", scheduleId: 30, amount: "100.00" },
+        { day: 13, name: "Gym", scheduleId: 30, amount: "100.00" },
+        { day: 20, name: "Gym", scheduleId: 30, amount: "100.00" },
+        { day: 27, name: "Gym", scheduleId: 30, amount: "150.00" },
+      ],
+    },
+    {
+      name: "a month before the start date has no charges",
+      items: [gym],
+      month: { year: 2026, month: 4 },
+      expected: [],
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      const result = monthOccurrences([netflix, domain], tt.month);
+      const result = monthOccurrences(tt.items, tt.month);
 
-      expect(result.map((o) => ({ day: o.day, name: o.subscription.name, scheduleId: o.scheduleId }))).toEqual(
-        tt.expected,
-      );
+      expect(
+        result.map((o) => ({ day: o.day, name: o.subscription.name, scheduleId: o.scheduleId, amount: o.amount })),
+      ).toEqual(tt.expected);
     });
   }
 });
@@ -150,9 +189,9 @@ describe("occurrencesByDay", () => {
     {
       name: "groups by day in input order",
       occurrences: [
-        { day: 1, subscription: a, scheduleId: 10 },
-        { day: 5, subscription: b, scheduleId: 20 },
-        { day: 1, subscription: b, scheduleId: 21 },
+        makeOccurrence(1, a, { scheduleId: 10 }),
+        makeOccurrence(5, b, { scheduleId: 20 }),
+        makeOccurrence(1, b, { scheduleId: 21 }),
       ],
       expected: [
         [1, ["A", "B"]],

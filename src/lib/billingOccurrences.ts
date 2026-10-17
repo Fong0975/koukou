@@ -1,11 +1,15 @@
 import type { BillingScheduleDto, SubscriptionDto } from "@/types/dto";
+import { amountOn } from "./amountPeriods";
 import { daysInMonth, type YearMonth } from "./calendarMonth";
+import { toDateKey } from "./dateKey";
 
 /** One charge of a subscription on a specific day of a month. */
 export interface Occurrence {
   day: number;
   subscription: SubscriptionDto;
   scheduleId: number;
+  /** Amount charged that day, taken from the amount period covering it. */
+  amount: string;
 }
 
 type ScheduleRule = Pick<BillingScheduleDto, "cycle" | "dayOfWeek" | "dayOfMonth" | "month">;
@@ -42,6 +46,24 @@ export function scheduleDaysInMonth(schedule: ScheduleRule, target: YearMonth): 
 }
 
 /**
+ * Lists one subscription's charges in a month, skipping days before its start date and
+ * pricing each charge with the amount that applied on that day.
+ *
+ * @param subscription - The subscription.
+ * @param target - The month.
+ * @returns The charges in schedule order, each schedule's days ascending.
+ */
+function subscriptionOccurrences(subscription: SubscriptionDto, target: YearMonth): Occurrence[] {
+  return subscription.schedules.flatMap((schedule) =>
+    scheduleDaysInMonth(schedule, target).flatMap((day) => {
+      const dateKey = toDateKey({ ...target, day });
+      if (dateKey < subscription.startDate) return [];
+      return [{ day, subscription, scheduleId: schedule.id, amount: amountOn(subscription, dateKey) }];
+    }),
+  );
+}
+
+/**
  * Expands subscriptions into every charge they make in a month; each schedule charges separately.
  *
  * @param items - The subscriptions.
@@ -49,13 +71,7 @@ export function scheduleDaysInMonth(schedule: ScheduleRule, target: YearMonth): 
  * @returns The charges, ordered by day (ties keep the input order).
  */
 export function monthOccurrences(items: SubscriptionDto[], target: YearMonth): Occurrence[] {
-  return items
-    .flatMap((subscription) =>
-      subscription.schedules.flatMap((schedule) =>
-        scheduleDaysInMonth(schedule, target).map((day) => ({ day, subscription, scheduleId: schedule.id })),
-      ),
-    )
-    .sort((a, b) => a.day - b.day);
+  return items.flatMap((subscription) => subscriptionOccurrences(subscription, target)).sort((a, b) => a.day - b.day);
 }
 
 /**

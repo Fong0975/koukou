@@ -34,6 +34,18 @@ export function todayKey(): string {
 }
 
 /**
+ * Moves a date key by whole days, rolling over months and years.
+ *
+ * @param key - A "YYYY-MM-DD" key.
+ * @param days - Days to move; negative goes back.
+ */
+export function addDays(key: string, days: number): string {
+  const date = dateKeyToUtcDate(key);
+  date.setUTCDate(date.getUTCDate() + days);
+  return utcDateToDateKey(date);
+}
+
+/**
  * Converts a date key to the UTC-midnight Date that Prisma stores in a DATE column.
  *
  * @param key - A "YYYY-MM-DD" key.

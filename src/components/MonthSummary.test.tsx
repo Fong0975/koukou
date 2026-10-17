@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import type { CurrencyTotals } from "@/lib/billingSummary";
-import { makeSubscription } from "@/test/fixtures";
+import { makeOccurrence, makeSubscription } from "@/test/fixtures";
 import { MonthSummary } from "./MonthSummary";
 
 const netflix = makeSubscription({ id: 1, name: "Netflix", currency: "TWD", amount: "390.00" });
@@ -28,9 +28,9 @@ describe("MonthSummary", () => {
     {
       name: "totals per currency, counts, breakdowns and the year total",
       occurrences: [
-        { day: 1, subscription: netflix, scheduleId: 10 },
-        { day: 1, subscription: spotify, scheduleId: 20 },
-        { day: 15, subscription: netflix, scheduleId: 11 },
+        makeOccurrence(1, netflix, { scheduleId: 10 }),
+        makeOccurrence(1, spotify, { scheduleId: 20 }),
+        makeOccurrence(15, netflix, { scheduleId: 11 }),
       ],
       yearTotal: { TWD: 936000, USD: 18588 },
       expectedHeadline: ["NT$ 780", "US$ 15.49"],
