@@ -63,3 +63,14 @@ export function sumTwdCents(occurrences: Occurrence[], rates: ExchangeRateDto[])
 export function needsExchangeRate(occurrences: Occurrence[]): boolean {
   return occurrences.some(({ subscription }) => subscription.currency !== "TWD");
 }
+
+/**
+ * Adds charges up in TWD when rates are available.
+ *
+ * @param occurrences - The charges.
+ * @param rates - Rates ordered by date, or null when they are not loaded.
+ * @returns The TWD total in whole cents, or null without rates.
+ */
+export function convertedTwdCents(occurrences: Occurrence[], rates: ExchangeRateDto[] | null): number | null {
+  return rates === null ? null : sumTwdCents(occurrences, rates);
+}

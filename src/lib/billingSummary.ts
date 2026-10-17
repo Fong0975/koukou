@@ -1,6 +1,6 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { SubscriptionDto } from "@/types/dto";
-import { yearOccurrences, type Occurrence } from "./billingOccurrences";
+import type { Occurrence } from "./billingOccurrences";
 import { CURRENCY_PREFIX, PAYMENT_TYPE_LABELS } from "./labels";
 
 /** Totals in whole cents per currency; currencies without charges are absent. */
@@ -174,15 +174,4 @@ export function totalsByPaymentMethod(occurrences: Occurrence[]): GroupTotal[] {
     icon: null,
     order: paymentMethod.id,
   }));
-}
-
-/**
- * Adds up every charge of a calendar year, per currency.
- *
- * @param items - The subscriptions.
- * @param year - The year.
- * @returns Whole-cent totals per currency.
- */
-export function yearTotals(items: SubscriptionDto[], year: number): CurrencyTotals {
-  return sumByCurrency(yearOccurrences(items, year));
 }

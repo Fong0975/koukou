@@ -3,9 +3,11 @@
 import { useId, useMemo } from "react";
 import { useMonthCursor } from "@/hooks/useMonthCursor";
 import type { LoadStatus } from "@/hooks/useSubscriptions";
+import { useYearRates } from "@/hooks/useYearRates";
 import { monthReserves } from "@/lib/amortization";
-import { monthOccurrences } from "@/lib/billingOccurrences";
-import { yearTotals } from "@/lib/billingSummary";
+import { monthOccurrences, yearOccurrences } from "@/lib/billingOccurrences";
+import { sumByCurrency } from "@/lib/billingSummary";
+import { convertedTwdCents, needsExchangeRate } from "@/lib/currencyConversion";
 import type { SubscriptionDto } from "@/types/dto";
 import { BillingCalendar } from "./BillingCalendar";
 import { LoadErrorNotice } from "./LoadErrorNotice";
@@ -23,7 +25,8 @@ interface CalendarSectionProps {
 
 /**
  * Home screen calendar: month navigation, the month's charges on a calendar, a list of them, the reserves for
- * amortized yearly charges and their totals, with loading and error states.
+ * amortized yearly charges and their totals, with loading and error states. When the shown year has foreign
+ * charges, its exchange rates are fetched so the totals can be converted to TWD.
  */
 export function CalendarSection({ items, status, loadError, onRetry }: CalendarSectionProps) {
   const { today, cursor, setCursor } = useMonthCursor();
@@ -31,7 +34,11 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
   const occurrences = useMemo(() => (cursor ? monthOccurrences(items, cursor) : []), [items, cursor]);
   const reserves = useMemo(() => (cursor ? monthReserves(items, cursor) : []), [items, cursor]);
   const year = cursor?.year;
-  const yearTotal = useMemo(() => (year === undefined ? {} : yearTotals(items, year)), [items, year]);
+  const yearCharges = useMemo(() => (year === undefined ? [] : yearOccurrences(items, year)), [items, year]);
+  const yearTotal = useMemo(() => sumByCurrency(yearCharges), [yearCharges]);
+  const needsRates = useMemo(() => needsExchangeRate(yearCharges), [yearCharges]);
+  const rates = useYearRates(year, needsRates);
+  const yearTwdCents = useMemo(() => convertedTwdCents(yearCharges, rates), [yearCharges, rates]);
 
   if (status === "error") return <LoadErrorNotice message={loadError} onRetry={onRetry} />;
 
@@ -60,9 +67,15 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
       <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
         <div className="flex flex-col gap-6">
           <MonthReserveList reserves={reserves} />
-          <MonthChargeList occurrences={occurrences} />
+          <MonthChargeList occurrences={occurrences} rates={rates} />
         </div>
-        <MonthSummary occurrences={occurrences} year={cursor.year} yearTotal={yearTotal} />
+        <MonthSummary
+          occurrences={occurrences}
+          year={cursor.year}
+          yearTotal={yearTotal}
+          yearTwdCents={yearTwdCents}
+          rates={rates}
+        />
       </div>
     </div>
   );

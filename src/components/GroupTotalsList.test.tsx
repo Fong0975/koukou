@@ -1,24 +1,45 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { GroupTotal } from "@/lib/billingSummary";
+import { makeOccurrence, makeSubscription } from "@/test/fixtures";
+import type { ExchangeRateDto } from "@/types/dto";
 import { GroupTotalsList } from "./GroupTotalsList";
 
+const netflix = makeSubscription({ id: 1, name: "Netflix", currency: "TWD", amount: "390.00" });
+const spotify = makeSubscription({ id: 2, name: "Spotify", currency: "USD", amount: "15.49" });
+
+const groups: GroupTotal[] = [
+  { key: 1, label: "音樂", icon: "🎵", totals: { USD: 1549 }, occurrences: [makeOccurrence(1, spotify)] },
+  {
+    key: 2,
+    label: "影音串流",
+    icon: null,
+    totals: { TWD: 39000 },
+    occurrences: [makeOccurrence(1, netflix)],
+  },
+];
+
 describe("GroupTotalsList", () => {
-  const tests: { name: string; groups: GroupTotal[]; expected: string[] }[] = [
+  const tests: { name: string; groups: GroupTotal[]; rates: ExchangeRateDto[] | null; expected: string[] }[] = [
     {
-      name: "lists each group with its icon and per-currency totals",
-      groups: [
-        { key: 1, label: "音樂", icon: "🎵", totals: { USD: 1549 }, occurrences: [] },
-        { key: 2, label: "影音串流", icon: null, totals: { TWD: 39000, USD: 500 }, occurrences: [] },
-      ],
-      expected: ["🎵 音樂US$ 15.49", "影音串流NT$ 390US$ 5.00"],
+      name: "without rates lists each group with its icon and per-currency totals",
+      groups,
+      rates: null,
+      expected: ["🎵 音樂US$ 15.49", "影音串流NT$ 390"],
     },
-    { name: "an empty list", groups: [], expected: [] },
+    {
+      // 15.49 × 32 = 495.68 → 496.
+      name: "with rates shows each subtotal in TWD and what it was converted from",
+      groups,
+      rates: [{ date: "2026-01-01", rate: 32 }],
+      expected: ["🎵 音樂NT$ 496(US$ 15.49)", "影音串流NT$ 390"],
+    },
+    { name: "an empty list", groups: [], rates: null, expected: [] },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      render(<GroupTotalsList title="依類別" groups={tt.groups} />);
+      render(<GroupTotalsList title="依類別" groups={tt.groups} rates={tt.rates} />);
 
       expect(screen.getByRole("heading", { name: "依類別" })).toBeInTheDocument();
       const list = screen.getByRole("list", { name: "依類別" });

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { makeOccurrence, makeSubscription } from "@/test/fixtures";
 import type { ExchangeRateDto } from "@/types/dto";
 import type { Occurrence } from "./billingOccurrences";
-import { needsExchangeRate, occurrenceTwdCents, rateOn, sumTwdCents } from "./currencyConversion";
+import { convertedTwdCents, needsExchangeRate, occurrenceTwdCents, rateOn, sumTwdCents } from "./currencyConversion";
 
 const rates: ExchangeRateDto[] = [
   { date: "2026-05-14", rate: 31.492 },
@@ -71,6 +71,21 @@ describe("sumTwdCents", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(sumTwdCents(tt.occurrences, rates)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("convertedTwdCents", () => {
+  const occurrences = [charge(netflix, "2026-05-14"), charge(spotify, "2026-05-15")];
+
+  const tests = [
+    { name: "converts with rates", rates, expected: 39000 + 48800 },
+    { name: "null without rates", rates: null, expected: null },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(convertedTwdCents(occurrences, tt.rates)).toBe(tt.expected);
     });
   }
 });

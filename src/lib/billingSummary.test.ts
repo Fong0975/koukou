@@ -11,7 +11,6 @@ import {
   totalByCurrency,
   totalsByCategory,
   totalsByPaymentMethod,
-  yearTotals,
   type CurrencyTotals,
 } from "./billingSummary";
 
@@ -202,45 +201,6 @@ describe("totalsByCategory / totalsByPaymentMethod", () => {
         .map(({ occurrences: grouped, ...group }) => ({ ...group, days: grouped.map((o) => o.day) }));
 
       expect(result).toEqual(tt.expected);
-    });
-  }
-});
-
-describe("yearTotals", () => {
-  const leapDayDomain = makeSubscription({
-    id: 4,
-    name: "Domain",
-    currency: "USD",
-    amount: "10.00",
-    schedules: [{ id: 40, cycle: "YEARLY", dayOfWeek: null, dayOfMonth: 29, month: 2 }],
-  });
-  const repricedNetflix = makeSubscription({
-    ...netflix,
-    startDate: "2026-03-15",
-    amountPeriods: [{ id: 1, amount: "330.00", endDate: "2026-06-30" }],
-  });
-
-  const tests = [
-    { name: "no subscriptions", items: [], year: 2026, expected: {} },
-    { name: "monthly charges twelve times", items: [netflix], year: 2026, expected: { TWD: 468000 } },
-    {
-      name: "Feb 29 still charges once in a common year",
-      items: [netflix, leapDayDomain],
-      year: 2026,
-      expected: { TWD: 468000, USD: 1000 },
-    },
-    {
-      // March 1st is before the start date; April–June charge 330, July–December 390.
-      name: "follows the start date and past amounts",
-      items: [repricedNetflix],
-      year: 2026,
-      expected: { TWD: 3 * 33000 + 6 * 39000 },
-    },
-  ];
-
-  for (const tt of tests) {
-    it(tt.name, () => {
-      expect(yearTotals(tt.items, tt.year)).toEqual(tt.expected);
     });
   }
 });

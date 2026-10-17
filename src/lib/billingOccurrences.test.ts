@@ -186,39 +186,64 @@ describe("yearOccurrences", () => {
   const domain = makeSubscription({
     id: 2,
     name: "Domain",
+    amount: "500.00",
     startDate: "2026-02-01",
     schedules: [rule({ id: 20, cycle: "YEARLY", month: 3, dayOfMonth: 1 })],
   });
   const gym = makeSubscription({
     id: 3,
     name: "Gym",
+    amount: "100.00",
     startDate: "2026-02-01",
     schedules: [
       rule({ id: 30, cycle: "YEARLY", month: 1, dayOfMonth: 5 }),
       rule({ id: 31, cycle: "MONTHLY", dayOfMonth: 20 }),
     ],
   });
+  const leapDay = makeSubscription({
+    id: 4,
+    name: "Leap",
+    schedules: [rule({ id: 40, cycle: "YEARLY", month: 2, dayOfMonth: 29 })],
+  });
+  const repriced = makeSubscription({
+    id: 5,
+    name: "Repriced",
+    startDate: "2026-03-15",
+    amountPeriods: [{ id: 1, amount: "330.00", endDate: "2026-06-30" }],
+    schedules: [rule({ id: 50, dayOfMonth: 1 })],
+  });
+  /** One charge per month from `from` through December. */
+  const laterMonths = (from: number, day: string, amount: string) =>
+    Array.from({ length: 13 - from }, (_, index) => `2026-${String(from + index).padStart(2, "0")}-${day} ${amount}`);
 
   const tests = [
     { name: "no subscriptions", items: [], year: 2026, expected: [] },
-    { name: "a yearly charge appears once", items: [domain], year: 2026, expected: ["2026-03-01"] },
+    { name: "a yearly charge appears once", items: [domain], year: 2026, expected: ["2026-03-01 500.00"] },
     {
       name: "covers every month in date order and skips days before the start date",
       items: [gym, domain],
       year: 2026,
-      expected: [
-        "2026-02-20",
-        "2026-03-01",
-        "2026-03-20",
-        ...["04", "05", "06", "07", "08", "09", "10", "11", "12"].map((month) => `2026-${month}-20`),
-      ],
+      expected: ["2026-02-20 100.00", "2026-03-01 500.00", "2026-03-20 100.00", ...laterMonths(4, "20", "100.00")],
+    },
+    {
+      name: "Feb 29 still charges once in a common year",
+      items: [leapDay],
+      year: 2026,
+      expected: ["2026-02-28 390.00"],
+    },
+    {
+      // March 1st is before the start date; April–June charge 330, July–December 390.
+      name: "follows the start date and past amounts",
+      items: [repriced],
+      year: 2026,
+      expected: ["2026-04-01 330.00", "2026-05-01 330.00", "2026-06-01 330.00", ...laterMonths(7, "01", "390.00")],
     },
     { name: "a year before the start date has no charges", items: [domain], year: 2025, expected: [] },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(yearOccurrences(tt.items, tt.year).map((o) => o.date)).toEqual(tt.expected);
+      expect(yearOccurrences(tt.items, tt.year).map((o) => `${o.date} ${o.amount}`)).toEqual(tt.expected);
     });
   }
 });

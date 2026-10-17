@@ -2,7 +2,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LoadStatus } from "@/hooks/useSubscriptions";
 import { makeSubscription } from "@/test/fixtures";
-import type { SubscriptionDto } from "@/types/dto";
+import type { ExchangeRateDto, SubscriptionDto } from "@/types/dto";
+
+const { useYearRates } = vi.hoisted(() => ({ useYearRates: vi.fn() }));
+vi.mock("@/hooks/useYearRates", () => ({ useYearRates }));
+
 import { CalendarSection } from "./CalendarSection";
 
 const netflix = makeSubscription({
@@ -17,11 +21,20 @@ const domain = makeSubscription({
   amortize: true,
   schedules: [{ id: 20, cycle: "YEARLY", dayOfWeek: null, dayOfMonth: 11, month: 10 }],
 });
+const spotify = makeSubscription({
+  id: 3,
+  name: "Spotify",
+  currency: "USD",
+  amount: "10.00",
+  schedules: [{ id: 30, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
+});
+const rates: ExchangeRateDto[] = [{ date: "2026-01-01", rate: 32 }];
 
 describe("CalendarSection", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 16, 9, 0));
+    useYearRates.mockReset();
   });
 
   afterEach(() => {
@@ -32,9 +45,11 @@ describe("CalendarSection", () => {
     name: string;
     status: LoadStatus;
     items: SubscriptionDto[];
+    rates?: ExchangeRateDto[];
     act?: () => void;
     expectDom: () => void;
     expectedRetries?: number;
+    expectedRateRequest?: [number | undefined, boolean];
   }[] = [
     {
       name: "first load shows a placeholder",
@@ -64,6 +79,31 @@ describe("CalendarSection", () => {
         expect(screen.getByText("共 0 次扣款，來自 0 個項目")).toBeInTheDocument();
         expect(screen.queryByRole("list", { name: "預扣款項" })).not.toBeInTheDocument();
       },
+      expectedRateRequest: [2026, false],
+    },
+    {
+      name: "a year with foreign charges asks for rates and converts the totals",
+      status: "ready",
+      items: [netflix, spotify],
+      rates,
+      expectDom: () => {
+        expect(screen.getByRole("list", { name: "本月扣款" })).toHaveTextContent("US$ 10.00≈ NT$ 320");
+        expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("NT$ 320(US$ 10.00)");
+        expect(screen.getByText("2026 年度總計").nextElementSibling).toHaveTextContent(
+          "NT$ 4,230(NT$ 390, US$ 120.00)",
+        );
+      },
+      expectedRateRequest: [2026, true],
+    },
+    {
+      name: "foreign charges stay per currency until rates arrive",
+      status: "ready",
+      items: [spotify],
+      expectDom: () => {
+        expect(screen.getByRole("list", { name: "本月扣款" })).not.toHaveTextContent("≈");
+        expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("US$ 10.00");
+      },
+      expectedRateRequest: [2026, true],
     },
     {
       name: "an amortized yearly charge saves for next year from its charge month",
@@ -125,12 +165,14 @@ describe("CalendarSection", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       const onRetry = vi.fn();
+      useYearRates.mockReturnValue(tt.rates ?? null);
       render(<CalendarSection items={tt.items} status={tt.status} loadError="連不上伺服器" onRetry={onRetry} />);
 
       tt.act?.();
 
       tt.expectDom();
       expect(onRetry).toHaveBeenCalledTimes(tt.expectedRetries ?? 0);
+      if (tt.expectedRateRequest) expect(useYearRates).toHaveBeenLastCalledWith(...tt.expectedRateRequest);
     });
   }
 });
