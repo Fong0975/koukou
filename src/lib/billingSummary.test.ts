@@ -191,6 +191,20 @@ describe("totalsByCategory / totalsByPaymentMethod", () => {
         { key: 4, label: "帳戶扣款・台新 Richart", icon: null, totals: { USD: 3098 }, days: [1, 8] },
       ],
     },
+    {
+      name: "payment methods sort by type, then name, regardless of creation order",
+      group: totalsByPaymentMethod,
+      occurrences: [
+        occ(1, makeSubscription({ id: 5, paymentMethod: makePaymentMethod({ id: 1, type: "OTHER", name: "Cash" }) })),
+        occ(2, makeSubscription({ id: 6, paymentMethod: makePaymentMethod({ id: 2, name: "CUBE" }) })),
+        occ(3, makeSubscription({ id: 7, paymentMethod: makePaymentMethod({ id: 3, name: "Amex" }) })),
+      ],
+      expected: [
+        { key: 3, label: "信用卡・Amex", icon: null, totals: { TWD: 39000 }, days: [3] },
+        { key: 2, label: "信用卡・CUBE", icon: null, totals: { TWD: 39000 }, days: [2] },
+        { key: 1, label: "其他・Cash", icon: null, totals: { TWD: 39000 }, days: [1] },
+      ],
+    },
     { name: "no charges gives no groups", group: totalsByCategory, occurrences: [], expected: [] },
   ];
 

@@ -3,6 +3,7 @@ import type { SubscriptionDto } from "@/types/dto";
 import type { Occurrence } from "./billingOccurrences";
 import { sortCharges } from "./chargeOrder";
 import { CURRENCY_PREFIX, PAYMENT_TYPE_LABELS } from "./labels";
+import { paymentTypeRank } from "./paymentMethodOrder";
 
 /** Totals in whole cents per currency; currencies without charges are absent. */
 export type CurrencyTotals = Partial<Record<Currency, number>>;
@@ -163,7 +164,7 @@ export function totalsByCategory(occurrences: Occurrence[]): GroupTotal[] {
 }
 
 /**
- * Subtotals per payment method (card or account), in creation order.
+ * Subtotals per payment method (card or account), ordered by payment type, then name.
  *
  * @param occurrences - The charges.
  */
@@ -172,6 +173,6 @@ export function totalsByPaymentMethod(occurrences: Occurrence[]): GroupTotal[] {
     key: paymentMethod.id,
     label: `${PAYMENT_TYPE_LABELS[paymentMethod.type]}・${paymentMethod.name}`,
     icon: null,
-    order: paymentMethod.id,
+    order: paymentTypeRank(paymentMethod.type),
   }));
 }
