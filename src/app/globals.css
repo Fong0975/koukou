@@ -21,6 +21,13 @@
 
 html {
   color-scheme: light;
+  /* Reserves the scrollbar's space so locking the page under a dialog does not shift it. */
+  scrollbar-gutter: stable;
+}
+
+/* A modal <dialog> does not stop the page behind it from scrolling, so lock it while one is open. */
+html:has(dialog[open]) {
+  overflow: hidden;
 }
 
 body {
@@ -37,6 +44,35 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-leaf-600);
   outline-offset: 2px;
+}
+
+/*
+ * Thin, leaf-tinted scrollbars on every scrolling area. Chromium and Safari use the
+ * ::-webkit-scrollbar parts, which also allow a track margin (see .dialog-panel); setting
+ * scrollbar-width/scrollbar-color there would disable them, so those apply only to Firefox.
+ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: padding-box rgb(78 154 74 / 0.35);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(78 154 74 / 0.55);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(78 154 74 / 0.45) transparent;
+  }
 }
 
 @layer components {
@@ -161,6 +197,12 @@ dialog::backdrop {
 
 dialog[open] > .dialog-panel {
   animation: dialog-in 180ms ease-out;
+  overscroll-behavior: contain;
+}
+
+/* Keeps the panel's scrollbar inside its rounded corners (radius 1.75rem). */
+.dialog-panel::-webkit-scrollbar-track {
+  margin-block: 1.75rem;
 }
 
 @keyframes dialog-in {
