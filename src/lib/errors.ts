@@ -22,3 +22,8 @@ export class ConflictError extends AppError {
 export class ValidationError extends AppError {
   readonly code = "VALIDATION_ERROR";
 }
+
+/** An external service the request depends on failed or answered unexpectedly. */
+export class UpstreamError extends AppError {
+  readonly code = "UPSTREAM_ERROR";
+}

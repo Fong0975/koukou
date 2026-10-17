@@ -1,5 +1,5 @@
 import { ZodError } from "zod";
-import { AppError, ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import { AppError, ConflictError, NotFoundError, UpstreamError, ValidationError } from "@/lib/errors";
 import { logRequest } from "./requestLog";
 
 /** A single field-level validation problem. */
@@ -44,6 +44,7 @@ const STATUS_BY_ERROR = new Map<abstract new (...args: never[]) => AppError, num
   [ValidationError, 400],
   [NotFoundError, 404],
   [ConflictError, 409],
+  [UpstreamError, 502],
 ]);
 
 /** How a thrown value is reported to the client. */

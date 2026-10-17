@@ -52,3 +52,10 @@ export interface SubscriptionDto {
   createdAt: string;
   updatedAt: string;
 }
+
+/** USD→TWD rate published for one day, as TWD per 1 USD. */
+export interface ExchangeRateDto {
+  /** "YYYY-MM-DD". */
+  date: string;
+  rate: number;
+}
