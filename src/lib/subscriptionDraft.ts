@@ -34,6 +34,8 @@ export interface SubscriptionDraft {
   /** Spread yearly charges into monthly reserves; only takes effect with a YEARLY schedule. */
   amortize: boolean;
   startDate: string;
+  /** Last day of the contract as "YYYY-MM-DD", or "" without one. */
+  contractEndDate: string;
   amountPeriods: AmountPeriodDraft[];
   note: string;
   schedules: ScheduleDraft[];
@@ -119,6 +121,7 @@ export function emptyDraft(startDate: string): SubscriptionDraft {
     amount: "",
     amortize: false,
     startDate,
+    contractEndDate: "",
     amountPeriods: [],
     note: "",
     schedules: [newScheduleDraft()],
@@ -140,6 +143,7 @@ export function draftFromDto(dto: SubscriptionDto): SubscriptionDraft {
     amount: amountText(dto.amount),
     amortize: dto.amortize,
     startDate: dto.startDate,
+    contractEndDate: dto.contractEndDate ?? "",
     amountPeriods: dto.amountPeriods.map((period) =>
       newAmountPeriodDraft({ amount: amountText(period.amount), endDate: period.endDate }),
     ),
@@ -185,6 +189,7 @@ export function draftToInput(draft: SubscriptionDraft): SubscriptionInput {
     amount: draft.amount,
     amortize: draft.amortize && hasYearlySchedule(draft.schedules),
     startDate: draft.startDate,
+    contractEndDate: draft.contractEndDate,
     amountPeriods: draft.amountPeriods.map(({ amount, endDate }) => ({ amount, endDate })),
     note: draft.note,
     schedules: draft.schedules.map(scheduleToInput),

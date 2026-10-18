@@ -38,6 +38,7 @@ const record: SubscriptionRecord = {
   amount: { toFixed: (d: number) => (390).toFixed(d) },
   amortize: true,
   startDate: new Date("2026-01-01T00:00:00.000Z"),
+  contractEndDate: new Date("2027-03-31T00:00:00.000Z"),
   note: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -60,6 +61,7 @@ const data: SubscriptionData = {
   amount: 390,
   amortize: true,
   startDate: "2026-01-01",
+  contractEndDate: "2027-03-31",
   amountPeriods: [{ amount: 330, endDate: "2026-03-31" }],
   note: null,
   schedules: [
@@ -76,6 +78,7 @@ const columns = {
   amount: "390.00",
   amortize: true,
   startDate: new Date("2026-01-01T00:00:00.000Z"),
+  contractEndDate: new Date("2027-03-31T00:00:00.000Z"),
   note: null,
 };
 
@@ -120,8 +123,20 @@ describe("getSubscription", () => {
 });
 
 describe("createSubscription", () => {
-  const tests: { name: string; result: () => Promise<unknown>; error?: ErrorCtor }[] = [
+  const tests: {
+    name: string;
+    result: () => Promise<unknown>;
+    input?: SubscriptionData;
+    expectedColumns?: Record<string, unknown>;
+    error?: ErrorCtor;
+  }[] = [
     { name: "creates with nested schedules", result: () => Promise.resolve(record) },
+    {
+      name: "stores a missing contract end date as null",
+      result: () => Promise.resolve(record),
+      input: { ...data, contractEndDate: null },
+      expectedColumns: { ...columns, contractEndDate: null },
+    },
     {
       name: "missing category/payment method → ValidationError",
       result: () => Promise.reject(prismaError("P2003")),
@@ -133,7 +148,7 @@ describe("createSubscription", () => {
   for (const tt of tests) {
     it(tt.name, async () => {
       prismaMock.subscription.create.mockImplementation(tt.result);
-      const promise = createSubscription(data);
+      const promise = createSubscription(tt.input ?? data);
       if (tt.error) {
         await expect(promise).rejects.toBeInstanceOf(tt.error);
         expect(loggerMock.info).not.toHaveBeenCalled();
@@ -144,13 +159,14 @@ describe("createSubscription", () => {
         amount: "390.00",
         amortize: true,
         startDate: "2026-01-01",
+        contractEndDate: "2027-03-31",
         amountPeriods: [{ id: 20, amount: "330.00", endDate: "2026-03-31" }],
       });
       expect(loggerMock.info).toHaveBeenCalledWith("Subscription created", { id: 1, schedules: 2, amountPeriods: 1 });
       expect(prismaMock.subscription.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: {
-            ...columns,
+            ...(tt.expectedColumns ?? columns),
             schedules: { create: data.schedules },
             amountPeriods: { create: amountPeriodRows },
           },

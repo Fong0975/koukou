@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMonthGrid, daysInMonth, shiftMonth, toCalendarDate } from "./calendarMonth";
+import { buildMonthGrid, daysInMonth, groupByDay, shiftMonth, toCalendarDate } from "./calendarMonth";
 
 describe("daysInMonth", () => {
   const tests = [
@@ -97,6 +97,32 @@ describe("buildMonthGrid", () => {
       expect(grid[0]).toEqual(tt.firstWeek);
       expect(grid.at(-1)).toEqual(tt.lastWeek);
       expect(grid.flat().filter((day) => day !== null)).toEqual(range(1, daysInMonth(tt.month)));
+    });
+  }
+});
+
+describe("groupByDay", () => {
+  const tests = [
+    { name: "empty input gives an empty map", entries: [], expected: [] },
+    {
+      name: "groups by day in input order",
+      entries: [
+        { day: 1, name: "A" },
+        { day: 5, name: "B" },
+        { day: 1, name: "C" },
+      ],
+      expected: [
+        [1, ["A", "C"]],
+        [5, ["B"]],
+      ],
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const result = [...groupByDay(tt.entries)].map(([day, list]) => [day, list.map((entry) => entry.name)]);
+
+      expect(result).toEqual(tt.expected);
     });
   }
 });

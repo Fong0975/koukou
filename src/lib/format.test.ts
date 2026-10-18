@@ -6,8 +6,10 @@ import {
   formatApproxTwd,
   formatCents,
   formatChargeDate,
+  formatContractRemaining,
   formatConvertedTotal,
   formatDays,
+  formatFullDate,
   formatReserve,
   formatReserveTerm,
   formatSchedule,
@@ -106,6 +108,34 @@ describe("formatDays", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatDays(tt.days)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatFullDate", () => {
+  const tests = [
+    { name: "keeps zero padding", date: "2027-03-01", expected: "2027/03/01" },
+    { name: "two-digit month and day", date: "2026-12-31", expected: "2026/12/31" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatFullDate(tt.date)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatContractRemaining", () => {
+  const tests = [
+    { name: "days left", days: 12, expected: "剩 12 天" },
+    { name: "one day left", days: 1, expected: "剩 1 天" },
+    { name: "ends today", days: 0, expected: "今天到期" },
+    { name: "already ended", days: -3, expected: "已到期 3 天" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatContractRemaining(tt.days)).toBe(tt.expected);
     });
   }
 });

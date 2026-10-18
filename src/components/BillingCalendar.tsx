@@ -1,5 +1,6 @@
-import { occurrencesByDay, type Occurrence } from "@/lib/billingOccurrences";
-import { buildMonthGrid, type CalendarDate, type YearMonth } from "@/lib/calendarMonth";
+import type { Occurrence } from "@/lib/billingOccurrences";
+import { buildMonthGrid, groupByDay, type CalendarDate, type YearMonth } from "@/lib/calendarMonth";
+import type { ContractExpiry } from "@/lib/contractExpiries";
 import { WEEKDAY_LABELS } from "@/lib/labels";
 import { CalendarDayCell } from "./CalendarDayCell";
 import type { PopupAlign } from "./HoverTapPopup";
@@ -8,6 +9,7 @@ interface BillingCalendarProps {
   month: YearMonth;
   today: CalendarDate;
   occurrences: Occurrence[];
+  expiries: ContractExpiry[];
 }
 
 /**
@@ -21,14 +23,16 @@ function popupAlign(column: number): PopupAlign {
 }
 
 /**
- * Sunday-first month table marking each day's charges, like a wall calendar.
+ * Sunday-first month table marking each day's charges and contract expiries, like a wall calendar.
  *
  * @param props.month - The month to show.
  * @param props.today - Today's date, highlighted when it falls in this month.
  * @param props.occurrences - The month's charges.
+ * @param props.expiries - The month's contract expiries.
  */
-export function BillingCalendar({ month, today, occurrences }: BillingCalendarProps) {
-  const byDay = occurrencesByDay(occurrences);
+export function BillingCalendar({ month, today, occurrences, expiries }: BillingCalendarProps) {
+  const byDay = groupByDay(occurrences);
+  const expiriesOnDay = groupByDay(expiries);
   const todayDay = today.year === month.year && today.month === month.month ? today.day : null;
 
   return (
@@ -57,6 +61,7 @@ export function BillingCalendar({ month, today, occurrences }: BillingCalendarPr
                   day={day}
                   isToday={day === todayDay}
                   occurrences={byDay.get(day) ?? []}
+                  expiries={expiriesOnDay.get(day) ?? []}
                   popupAlign={popupAlign(column)}
                 />
               ),

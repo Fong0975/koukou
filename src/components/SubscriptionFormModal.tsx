@@ -20,6 +20,7 @@ import type { CategoryDto, PaymentMethodDto, SubscriptionDto } from "@/types/dto
 import { AmortizeToggle } from "./AmortizeToggle";
 import { AmountSection } from "./AmountSection";
 import { CategoryQuickAdd } from "./CategoryQuickAdd";
+import { DateField } from "./DateField";
 import { Modal } from "./Modal";
 import { PaymentMethodQuickAdd } from "./PaymentMethodQuickAdd";
 import { ScheduleEditor } from "./ScheduleEditor";
@@ -106,20 +107,21 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
           renderAddForm={(done) => <CategoryQuickAdd onCreate={onAddCategory} onDone={done} />}
         />
 
-        <div>
-          <label htmlFor="sub-start-date" className="field-label">
-            起始日
-          </label>
-          <input
-            id="sub-start-date"
-            type="date"
-            className="field font-num"
-            value={draft.startDate}
-            onChange={(event) => set("startDate", event.target.value)}
-            aria-invalid={Boolean(fieldErrors.startDate)}
-          />
-          {fieldErrors.startDate && <p className="field-error">{fieldErrors.startDate}</p>}
-        </div>
+        <DateField
+          id="sub-start-date"
+          label="起始日"
+          value={draft.startDate}
+          onChange={(value) => set("startDate", value)}
+          error={fieldErrors.startDate}
+        />
+
+        <DateField
+          id="sub-contract-end-date"
+          label="合約到期日（選填）"
+          value={draft.contractEndDate}
+          onChange={(value) => set("contractEndDate", value)}
+          error={fieldErrors.contractEndDate}
+        />
 
         <AmountSection
           currency={draft.currency}

@@ -60,6 +60,8 @@ model Subscription {
   paymentMethodId Int                        @map("payment_method_id")
   /// First day the subscription charges; nothing is charged before it.
   startDate       DateTime                   @map("start_date") @db.Date
+  /// Last day of the contract, if any. It still charges on this day; nothing is charged after it.
+  contractEndDate DateTime?                  @map("contract_end_date") @db.Date
   currency        Currency                   @default(TWD)
   amount          Decimal                    @db.Decimal(12, 2)
   amortize        Boolean                    @default(false)

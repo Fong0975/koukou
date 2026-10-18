@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { makeOccurrence, makeSubscription } from "@/test/fixtures";
+import { makeSubscription } from "@/test/fixtures";
 import type { BillingScheduleDto } from "@/types/dto";
-import { monthOccurrences, occurrencesByDay, scheduleDaysInMonth, yearOccurrences } from "./billingOccurrences";
+import { isActiveOn, monthOccurrences, scheduleDaysInMonth, yearOccurrences } from "./billingOccurrences";
 import { toDateKey } from "./dateKey";
 
 const rule = (overrides: Partial<BillingScheduleDto>): BillingScheduleDto => ({
@@ -168,6 +168,21 @@ describe("monthOccurrences", () => {
       month: { year: 2026, month: 4 },
       expected: [],
     },
+    {
+      name: "still charges on the contract end date and stops after it",
+      items: [{ ...gym, contractEndDate: "2026-06-13" }],
+      month: { year: 2026, month: 6 },
+      expected: [
+        { day: 6, name: "Gym", scheduleId: 30, amount: "100.00" },
+        { day: 13, name: "Gym", scheduleId: 30, amount: "100.00" },
+      ],
+    },
+    {
+      name: "a month after the contract end date has no charges",
+      items: [{ ...gym, contractEndDate: "2026-06-13" }],
+      month: { year: 2026, month: 7 },
+      expected: [],
+    },
   ];
 
   for (const tt of tests) {
@@ -239,6 +254,18 @@ describe("yearOccurrences", () => {
       expected: ["2026-04-01 330.00", "2026-05-01 330.00", "2026-06-01 330.00", ...laterMonths(7, "01", "390.00")],
     },
     { name: "a year before the start date has no charges", items: [domain], year: 2025, expected: [] },
+    {
+      name: "stops after the contract end date",
+      items: [{ ...repriced, contractEndDate: "2026-08-01" }],
+      year: 2026,
+      expected: [
+        "2026-04-01 330.00",
+        "2026-05-01 330.00",
+        "2026-06-01 330.00",
+        "2026-07-01 390.00",
+        "2026-08-01 390.00",
+      ],
+    },
   ];
 
   for (const tt of tests) {
@@ -248,34 +275,19 @@ describe("yearOccurrences", () => {
   }
 });
 
-describe("occurrencesByDay", () => {
-  const a = makeSubscription({ id: 1, name: "A" });
-  const b = makeSubscription({ id: 2, name: "B" });
-
+describe("isActiveOn", () => {
   const tests = [
-    { name: "empty input gives an empty map", occurrences: [], expected: [] },
-    {
-      name: "groups by day in input order",
-      occurrences: [
-        makeOccurrence(1, a, { scheduleId: 10 }),
-        makeOccurrence(5, b, { scheduleId: 20 }),
-        makeOccurrence(1, b, { scheduleId: 21 }),
-      ],
-      expected: [
-        [1, ["A", "B"]],
-        [5, ["B"]],
-      ],
-    },
+    { name: "before the start date", contractEndDate: null, date: "2025-12-31", expected: false },
+    { name: "on the start date", contractEndDate: null, date: "2026-01-01", expected: true },
+    { name: "far ahead without a contract end date", contractEndDate: null, date: "2099-01-01", expected: true },
+    { name: "on the contract end date", contractEndDate: "2026-06-30", date: "2026-06-30", expected: true },
+    { name: "the day after the contract end date", contractEndDate: "2026-06-30", date: "2026-07-01", expected: false },
+    { name: "a contract ending on the start date", contractEndDate: "2026-01-01", date: "2026-01-01", expected: true },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      const result = [...occurrencesByDay(tt.occurrences)].map(([day, list]) => [
-        day,
-        list.map((o) => o.subscription.name),
-      ]);
-
-      expect(result).toEqual(tt.expected);
+      expect(isActiveOn({ startDate: "2026-01-01", contractEndDate: tt.contractEndDate }, tt.date)).toBe(tt.expected);
     });
   }
 });

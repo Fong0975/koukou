@@ -29,6 +29,7 @@ function toSubscriptionColumns(data: SubscriptionData) {
     amount: toDecimalColumn(data.amount),
     amortize: data.amortize,
     startDate: dateKeyToUtcDate(data.startDate),
+    contractEndDate: data.contractEndDate === null ? null : dateKeyToUtcDate(data.contractEndDate),
     note: data.note,
   };
 }

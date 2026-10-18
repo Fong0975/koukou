@@ -2,6 +2,7 @@ import { formatAmount, formatSchedule } from "@/lib/format";
 import { PAYMENT_TYPE_LABELS } from "@/lib/labels";
 import type { SubscriptionDto } from "@/types/dto";
 import { CoinMark } from "./CoinMark";
+import { ContractEndNote } from "./ContractEndNote";
 import { CardIcon, PencilIcon, TrashIcon } from "./Icons";
 
 interface SubscriptionCardProps {
@@ -11,8 +12,8 @@ interface SubscriptionCardProps {
 }
 
 /**
- * Wide glass card for one recurring payment: name, billing days, payment method and note on the left,
- * amount and edit/delete actions on the right. Stacks vertically on narrow screens.
+ * Wide glass card for one recurring payment: name, billing days, payment method, contract end date and note on
+ * the left, amount and edit/delete actions on the right. Stacks vertically on narrow screens.
  * The category is not shown, since cards are listed under their category heading.
  */
 export function SubscriptionCard({ item, onEdit, onDelete }: SubscriptionCardProps) {
@@ -39,6 +40,7 @@ export function SubscriptionCard({ item, onEdit, onDelete }: SubscriptionCardPro
           <span>{PAYMENT_TYPE_LABELS[item.paymentMethod.type]}</span>
           <span className="min-w-0 break-words text-ink">{item.paymentMethod.name}</span>
         </p>
+        {item.contractEndDate && <ContractEndNote date={item.contractEndDate} />}
         {item.note && <p className="mt-1 line-clamp-2 text-sm text-ink-soft">{item.note}</p>}
       </div>
 
