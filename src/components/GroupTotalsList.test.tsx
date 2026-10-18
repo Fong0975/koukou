@@ -29,10 +29,10 @@ describe("GroupTotalsList", () => {
     },
     {
       // 15.49 × 32 = 495.68 → 496.
-      name: "with rates shows each subtotal in TWD and what it was converted from",
+      name: "with rates shows each subtotal in TWD, keeping what it was converted from in a popup",
       groups,
       rates: [{ date: "2026-01-01", rate: 32 }],
-      expected: ["🎵 音樂NT$ 496(US$ 15.49)", "影音串流NT$ 390"],
+      expected: ["🎵 音樂NT$ 496", "影音串流NT$ 390"],
     },
     { name: "an empty list", groups: [], rates: null, expected: [] },
   ];

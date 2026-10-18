@@ -1,10 +1,11 @@
 import { useId } from "react";
 import type { Occurrence } from "@/lib/billingOccurrences";
-import { sumByCurrency, totalsByCategory, totalsByPaymentMethod, type CurrencyTotals } from "@/lib/billingSummary";
+import { sumByCurrency, totalsByCategory, totalsByPaymentType, type CurrencyTotals } from "@/lib/billingSummary";
 import { convertedTwdCents } from "@/lib/currencyConversion";
 import type { ExchangeRateDto } from "@/types/dto";
 import { ConvertedAmounts } from "./ConvertedAmounts";
 import { GroupTotalsList } from "./GroupTotalsList";
+import { PaymentTypeTotalsList } from "./PaymentTypeTotalsList";
 
 interface MonthSummaryProps {
   occurrences: Occurrence[];
@@ -18,8 +19,9 @@ interface MonthSummaryProps {
 }
 
 /**
- * Month totals, charge counts, subtotals per category and payment method, and the year's total. With exchange
- * rates, each total is shown in TWD followed by the per-currency amounts it was converted from.
+ * Month totals, charge counts, subtotals per category and per payment method (sectioned by payment type), and the
+ * year's total. With exchange rates, each total is shown in TWD, with the per-currency amounts it was converted
+ * from in a popup behind an info icon.
  *
  * @param props.occurrences - The month's charges.
  * @param props.year - The year the month belongs to.
@@ -42,7 +44,8 @@ export function MonthSummary({ occurrences, year, yearTotal, yearTwdCents, rates
         <ConvertedAmounts
           totals={sumByCurrency(occurrences)}
           twdCents={convertedTwdCents(occurrences, rates)}
-          layout="stacked"
+          layout="popup"
+          popupAlign="start"
           className="items-start text-3xl font-semibold"
         />
         <p className="mt-1 text-sm text-ink-soft">
@@ -53,13 +56,18 @@ export function MonthSummary({ occurrences, year, yearTotal, yearTwdCents, rates
       {occurrences.length > 0 && (
         <>
           <GroupTotalsList title="依類別" groups={totalsByCategory(occurrences)} rates={rates} />
-          <GroupTotalsList title="依付款方式" groups={totalsByPaymentMethod(occurrences)} rates={rates} />
+          <PaymentTypeTotalsList title="依付款方式" sections={totalsByPaymentType(occurrences)} rates={rates} />
         </>
       )}
 
       <div className="flex items-start justify-between gap-3 border-t border-leaf-500/15 pt-4">
         <span className="shrink-0 text-sm text-ink-soft">{year} 年度總計</span>
-        <ConvertedAmounts totals={yearTotal} twdCents={yearTwdCents} className="items-end font-semibold" />
+        <ConvertedAmounts
+          totals={yearTotal}
+          twdCents={yearTwdCents}
+          layout="popup"
+          className="items-end font-semibold"
+        />
       </div>
     </section>
   );

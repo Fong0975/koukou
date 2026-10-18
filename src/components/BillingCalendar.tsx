@@ -2,11 +2,22 @@ import { occurrencesByDay, type Occurrence } from "@/lib/billingOccurrences";
 import { buildMonthGrid, type CalendarDate, type YearMonth } from "@/lib/calendarMonth";
 import { WEEKDAY_LABELS } from "@/lib/labels";
 import { CalendarDayCell } from "./CalendarDayCell";
+import type { PopupAlign } from "./HoverTapPopup";
 
 interface BillingCalendarProps {
   month: YearMonth;
   today: CalendarDate;
   occurrences: Occurrence[];
+}
+
+/**
+ * Lines a day's popup up with the cell edge nearest the calendar's side, so it does not run off screen.
+ *
+ * @param column - Weekday column, 0 (Sunday) to 6 (Saturday).
+ */
+function popupAlign(column: number): PopupAlign {
+  if (column < 2) return "start";
+  return column > 4 ? "end" : "center";
 }
 
 /**
@@ -41,7 +52,13 @@ export function BillingCalendar({ month, today, occurrences }: BillingCalendarPr
               day === null ? (
                 <td key={column} />
               ) : (
-                <CalendarDayCell key={column} day={day} isToday={day === todayDay} occurrences={byDay.get(day) ?? []} />
+                <CalendarDayCell
+                  key={column}
+                  day={day}
+                  isToday={day === todayDay}
+                  occurrences={byDay.get(day) ?? []}
+                  popupAlign={popupAlign(column)}
+                />
               ),
             )}
           </tr>

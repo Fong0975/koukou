@@ -117,17 +117,27 @@ export function formatReserveTerm({ year, month, day }: CalendarDate): string {
   return `${year} 年期（${month}/${day} 扣款）`;
 }
 
+/** One currency's part of a converted total. */
+export interface ConvertedPart {
+  /** The original amount, e.g. "US$ 31.00". */
+  amount: string;
+  /** What a foreign amount came to in TWD, e.g. "NT$ 1,000"; null for the TWD part. */
+  twd: string | null;
+}
+
 /** A total converted to TWD, with the original amounts per currency when any of them was converted. */
 export interface ConvertedTotal {
   /** E.g. "NT$ 1,500". */
   total: string;
-  /** E.g. "NT$ 500, US$ 31.00", or null when everything was already in TWD. */
-  breakdown: string | null;
+  /** The original amounts in display order; empty when everything was already in TWD. */
+  breakdown: ConvertedPart[];
 }
 
 /**
- * Formats a total converted to TWD together with what it is made of, read as
- * "NT$ 1,500 (NT$ 500, US$ 31.00)" or "NT$ 1,000 (US$ 31.00)"; a TWD-only total has no breakdown.
+ * Formats a total converted to TWD together with the per-currency amounts it was converted from, e.g.
+ * "NT$ 1,500" made of "NT$ 500" and "US$ 31.00" (which came to "NT$ 1,000"); a TWD-only total has no breakdown.
+ * The foreign part's TWD is what is left of the converted total after its TWD part, so it adds up to the total
+ * exactly instead of being converted again at a single rate; this relies on USD being the only foreign currency.
  *
  * @param twdCents - The converted total in whole cents.
  * @param totals - The original whole-cent totals per currency.
@@ -135,10 +145,15 @@ export interface ConvertedTotal {
  */
 export function formatConvertedTotal(twdCents: number, totals: CurrencyTotals): ConvertedTotal {
   const entries = currencyEntries(totals);
-  const converted = entries.some(([currency]) => currency !== "TWD");
+  const foreignTwd = formatCents("TWD", twdCents - (totals.TWD ?? 0));
   return {
     total: formatCents("TWD", twdCents),
-    breakdown: converted ? entries.map(([currency, cents]) => formatCents(currency, cents)).join(", ") : null,
+    breakdown: entries.some(([currency]) => currency !== "TWD")
+      ? entries.map(([currency, cents]) => ({
+          amount: formatCents(currency, cents),
+          twd: currency === "TWD" ? null : foreignTwd,
+        }))
+      : [],
   };
 }
 

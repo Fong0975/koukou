@@ -50,7 +50,8 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-labelledby={titleId} className="glass rounded-[1.75rem] p-3 sm:p-6">
+      {/* Raised so a day's charge popup near the bottom overlaps the cards below instead of hiding behind them. */}
+      <section aria-labelledby={titleId} className="glass relative z-10 rounded-[1.75rem] p-3 sm:p-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
           <div className="flex items-center gap-3">
             <h2 id={titleId} className="font-num text-2xl">
@@ -64,7 +65,7 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
         </div>
         <BillingCalendar month={cursor} today={today} occurrences={occurrences} />
       </section>
-      <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-6">
           <MonthReserveList reserves={reserves} />
           <MonthChargeList occurrences={occurrences} rates={rates} />

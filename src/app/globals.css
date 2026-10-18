@@ -146,6 +146,26 @@ body {
     background: #a63a30;
   }
 
+  /* Floating panel opened from a trigger, e.g. a calendar day's charges or an amount's breakdown. */
+  .popup {
+    position: absolute;
+    top: 100%;
+    z-index: 20;
+    margin-top: 0.25rem;
+    width: max-content;
+    max-width: 11rem;
+    padding: 0.5rem;
+    border: 1px solid rgb(78 154 74 / 0.2);
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 0.95);
+    box-shadow: 0 12px 28px -14px rgb(42 90 44 / 0.45);
+    color: var(--color-ink);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 400;
+    text-align: left;
+  }
+
   .icon-btn {
     display: inline-grid;
     place-items: center;
