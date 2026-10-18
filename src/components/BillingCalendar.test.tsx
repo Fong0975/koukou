@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import type { CalendarDate } from "@/lib/calendarMonth";
+import type { ContractExpiry } from "@/lib/contractExpiries";
 import { makeOccurrence, makeSubscription } from "@/test/fixtures";
 import { BillingCalendar } from "./BillingCalendar";
 
@@ -14,6 +15,7 @@ describe("BillingCalendar", () => {
     name: string;
     today: CalendarDate;
     occurrences: Occurrence[];
+    expiries?: ContractExpiry[];
     expectedCells: string[];
     expectedMissing?: string[];
   }[] = [
@@ -27,6 +29,16 @@ describe("BillingCalendar", () => {
       ],
       expectedCells: ["1 日：Netflix、Spotify", "2 日", "30 日：Netflix"],
       expectedMissing: ["31 日"],
+    },
+    {
+      name: "marks contract expiries on their days",
+      today: { year: 2026, month: 3, day: 1 },
+      occurrences: [makeOccurrence(1, netflix, { scheduleId: 10 })],
+      expiries: [
+        { day: 1, date: "2026-04-01", subscription: spotify },
+        { day: 20, date: "2026-04-20", subscription: netflix },
+      ],
+      expectedCells: ["1 日：Netflix；合約到期：Spotify", "20 日：合約到期：Netflix"],
     },
     {
       name: "highlights today inside the shown month",
@@ -45,7 +57,9 @@ describe("BillingCalendar", () => {
 
   for (const tt of tests) {
     it(tt.name, () => {
-      render(<BillingCalendar month={april} today={tt.today} occurrences={tt.occurrences} />);
+      render(
+        <BillingCalendar month={april} today={tt.today} occurrences={tt.occurrences} expiries={tt.expiries ?? []} />,
+      );
 
       expect(screen.getByRole("table", { name: "2026 年 4 月扣款行事曆" })).toBeInTheDocument();
       expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual([

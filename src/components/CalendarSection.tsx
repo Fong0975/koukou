@@ -7,6 +7,7 @@ import { useYearRates } from "@/hooks/useYearRates";
 import { monthReserves } from "@/lib/amortization";
 import { monthOccurrences, yearOccurrences } from "@/lib/billingOccurrences";
 import { sumByCurrency } from "@/lib/billingSummary";
+import { monthContractExpiries } from "@/lib/contractExpiries";
 import { convertedTwdCents, needsExchangeRate } from "@/lib/currencyConversion";
 import type { SubscriptionDto } from "@/types/dto";
 import { BillingCalendar } from "./BillingCalendar";
@@ -33,6 +34,7 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
   const titleId = useId();
   const occurrences = useMemo(() => (cursor ? monthOccurrences(items, cursor) : []), [items, cursor]);
   const reserves = useMemo(() => (cursor ? monthReserves(items, cursor) : []), [items, cursor]);
+  const expiries = useMemo(() => (cursor ? monthContractExpiries(items, cursor) : []), [items, cursor]);
   const year = cursor?.year;
   const yearCharges = useMemo(() => (year === undefined ? [] : yearOccurrences(items, year)), [items, year]);
   const yearTotal = useMemo(() => sumByCurrency(yearCharges), [yearCharges]);
@@ -63,7 +65,7 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
           </div>
           <MonthPicker value={cursor} current={today} onChange={setCursor} />
         </div>
-        <BillingCalendar month={cursor} today={today} occurrences={occurrences} />
+        <BillingCalendar month={cursor} today={today} occurrences={occurrences} expiries={expiries} />
       </section>
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-6">
