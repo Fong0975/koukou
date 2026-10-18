@@ -24,7 +24,7 @@ export function GroupTotalItems({ label, groups, rates }: GroupTotalItemsProps) 
     <ul aria-label={label} className="flex flex-col gap-1.5">
       {groups.map((group) => (
         <li key={group.key} className="flex items-start justify-between gap-3 text-sm">
-          <span className="min-w-0 truncate">
+          <span className="min-w-0 break-words">
             <IconLabel icon={group.icon} label={group.label} />
           </span>
           <ConvertedAmounts totals={group.totals} twdCents={convertedTwdCents(group.occurrences, rates)} />

@@ -37,7 +37,7 @@ export function SubscriptionCard({ item, onEdit, onDelete }: SubscriptionCardPro
         <p className="mt-2 flex items-center gap-2 text-sm text-ink-soft">
           <CardIcon className="shrink-0" />
           <span>{PAYMENT_TYPE_LABELS[item.paymentMethod.type]}</span>
-          <span className="truncate text-ink">{item.paymentMethod.name}</span>
+          <span className="min-w-0 break-words text-ink">{item.paymentMethod.name}</span>
         </p>
         {item.note && <p className="mt-1 line-clamp-2 text-sm text-ink-soft">{item.note}</p>}
       </div>

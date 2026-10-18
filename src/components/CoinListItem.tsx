@@ -24,10 +24,10 @@ export function CoinListItem({ currency, title, subtitle, children }: CoinListIt
     <li className="flex items-center gap-3 py-3">
       <CoinMark currency={currency} />
       <div className="min-w-0 flex-1">
-        <p className="truncate">{title}</p>
-        <p className="truncate text-sm text-ink-soft">{subtitle}</p>
+        <p className="break-words">{title}</p>
+        <p className="text-sm break-words text-ink-soft">{subtitle}</p>
       </div>
-      <div className="shrink-0 text-right font-num tabular-nums">{children}</div>
+      <div className="shrink-0 self-start text-right font-num tabular-nums">{children}</div>
     </li>
   );
 }

@@ -21,7 +21,9 @@ const sections: PaymentTypeTotals[] = [
   {
     type: "OTHER",
     label: "其他",
-    groups: [{ key: 3, label: "無自動扣款", icon: null, totals: { TWD: 59900 }, occurrences: [makeOccurrence(5, gym)] }],
+    groups: [
+      { key: 3, label: "無自動扣款", icon: null, totals: { TWD: 59900 }, occurrences: [makeOccurrence(5, gym)] },
+    ],
   },
 ];
 
