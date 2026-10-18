@@ -30,11 +30,7 @@ describe("MonthExpiryList", () => {
           amountPeriods: [{ id: 1, amount: "9.99", endDate: "2026-12-31" }],
         }),
       ],
-      expectedRows: [
-        "健身房10/5（一）NT$ 1,200",
-        "中華電信10/18（日）NT$ 599",
-        "雲端空間10/31（六）US$ 9.99",
-      ],
+      expectedRows: ["健身房10/5（一）NT$ 1,200", "中華電信10/18（日）NT$ 599", "雲端空間10/31（六）US$ 9.99"],
     },
   ];
 
