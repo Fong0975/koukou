@@ -1,5 +1,5 @@
-import { occurrencesByDay, type Occurrence } from "@/lib/billingOccurrences";
-import { buildMonthGrid, type CalendarDate, type YearMonth } from "@/lib/calendarMonth";
+import type { Occurrence } from "@/lib/billingOccurrences";
+import { buildMonthGrid, groupByDay, type CalendarDate, type YearMonth } from "@/lib/calendarMonth";
 import { WEEKDAY_LABELS } from "@/lib/labels";
 import { CalendarDayCell } from "./CalendarDayCell";
 import type { PopupAlign } from "./HoverTapPopup";
@@ -28,7 +28,7 @@ function popupAlign(column: number): PopupAlign {
  * @param props.occurrences - The month's charges.
  */
 export function BillingCalendar({ month, today, occurrences }: BillingCalendarProps) {
-  const byDay = occurrencesByDay(occurrences);
+  const byDay = groupByDay(occurrences);
   const todayDay = today.year === month.year && today.month === month.month ? today.day : null;
 
   return (

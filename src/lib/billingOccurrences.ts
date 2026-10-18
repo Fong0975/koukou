@@ -48,8 +48,23 @@ export function scheduleDaysInMonth(schedule: ScheduleRule, target: YearMonth): 
 }
 
 /**
- * Lists one subscription's charges in a month, skipping days before its start date and
- * pricing each charge with the amount that applied on that day.
+ * Tells whether a subscription charges on a day: from its start date through its contract end date,
+ * which still charges.
+ *
+ * @param subscription - The subscription.
+ * @param dateKey - The day as "YYYY-MM-DD".
+ */
+export function isActiveOn(
+  subscription: Pick<SubscriptionDto, "startDate" | "contractEndDate">,
+  dateKey: string,
+): boolean {
+  const { startDate, contractEndDate } = subscription;
+  return dateKey >= startDate && (contractEndDate === null || dateKey <= contractEndDate);
+}
+
+/**
+ * Lists one subscription's charges in a month, skipping days outside its start and contract end dates
+ * and pricing each charge with the amount that applied on that day.
  *
  * @param subscription - The subscription.
  * @param target - The month.
@@ -59,7 +74,7 @@ function subscriptionOccurrences(subscription: SubscriptionDto, target: YearMont
   return subscription.schedules.flatMap((schedule) =>
     scheduleDaysInMonth(schedule, target).flatMap((day) => {
       const dateKey = toDateKey({ ...target, day });
-      if (dateKey < subscription.startDate) return [];
+      if (!isActiveOn(subscription, dateKey)) return [];
       return [{ day, date: dateKey, subscription, scheduleId: schedule.id, amount: amountOn(subscription, dateKey) }];
     }),
   );
@@ -86,18 +101,4 @@ export function monthOccurrences(items: SubscriptionDto[], target: YearMonth): O
 export function yearOccurrences(items: SubscriptionDto[], year: number): Occurrence[] {
   const months = Array.from({ length: 12 }, (_, index) => index + 1);
   return months.flatMap((month) => monthOccurrences(items, { year, month }));
-}
-
-/**
- * Groups charges by the day they fall on.
- *
- * @param occurrences - The charges.
- * @returns A map from day of month to that day's charges, in input order.
- */
-export function occurrencesByDay(occurrences: Occurrence[]): Map<number, Occurrence[]> {
-  const byDay = new Map<number, Occurrence[]>();
-  for (const occurrence of occurrences) {
-    byDay.set(occurrence.day, [...(byDay.get(occurrence.day) ?? []), occurrence]);
-  }
-  return byDay;
 }

@@ -93,6 +93,18 @@ describe("monthReserves", () => {
       expected: [domainReserve([2026, 10, 11])],
     },
     {
+      name: "a charge on the contract end date is still saved for",
+      items: [{ ...domain, contractEndDate: "2026-10-11" }],
+      target: { year: 2026, month: 5 },
+      expected: [domainReserve([2026, 10, 11])],
+    },
+    {
+      name: "a charge after the contract end date is skipped",
+      items: [{ ...domain, contractEndDate: "2026-10-11" }],
+      target: { year: 2026, month: 10 },
+      expected: [],
+    },
+    {
       name: "uses the amount that applies on the charge date",
       items: [{ ...domain, amount: "1500.00", amountPeriods: [{ id: 1, amount: "1200.00", endDate: "2026-10-11" }] }],
       target: { year: 2026, month: 5 },

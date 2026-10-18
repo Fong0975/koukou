@@ -6,6 +6,7 @@ import {
   formatApproxTwd,
   formatCents,
   formatChargeDate,
+  formatContractRemaining,
   formatConvertedTotal,
   formatDays,
   formatReserve,
@@ -106,6 +107,21 @@ describe("formatDays", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatDays(tt.days)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatContractRemaining", () => {
+  const tests = [
+    { name: "days left", days: 12, expected: "剩 12 天" },
+    { name: "one day left", days: 1, expected: "剩 1 天" },
+    { name: "ends today", days: 0, expected: "今天到期" },
+    { name: "already ended", days: -3, expected: "已到期 3 天" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatContractRemaining(tt.days)).toBe(tt.expected);
     });
   }
 });

@@ -1,6 +1,6 @@
 import type { BillingScheduleDto, SubscriptionDto } from "@/types/dto";
 import { amountOn } from "./amountPeriods";
-import { scheduleDaysInMonth } from "./billingOccurrences";
+import { isActiveOn, scheduleDaysInMonth } from "./billingOccurrences";
 import { toCents, totalByCurrency, type CurrencyTotals } from "./billingSummary";
 import type { CalendarDate, YearMonth } from "./calendarMonth";
 import { toDateKey } from "./dateKey";
@@ -39,7 +39,7 @@ function upcomingChargeDate(schedule: BillingScheduleDto, target: YearMonth): Ca
 
 /**
  * Builds the reserve of one yearly schedule for a month, or none when that charge falls
- * before the subscription starts.
+ * before the subscription starts or after its contract ends.
  *
  * @param subscription - An amortized subscription.
  * @param schedule - One of its YEARLY billing rules.
@@ -48,7 +48,7 @@ function upcomingChargeDate(schedule: BillingScheduleDto, target: YearMonth): Ca
 function scheduleReserve(subscription: SubscriptionDto, schedule: BillingScheduleDto, target: YearMonth): Reserve[] {
   const chargeDate = upcomingChargeDate(schedule, target);
   const dateKey = toDateKey(chargeDate);
-  if (dateKey < subscription.startDate) return [];
+  if (!isActiveOn(subscription, dateKey)) return [];
 
   const averageCents = toCents(amountOn(subscription, dateKey)) / AMORTIZATION_MONTHS;
   return [

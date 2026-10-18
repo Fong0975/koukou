@@ -82,6 +82,16 @@ export function formatChargeDate(date: string): string {
   return `${utc.getUTCMonth() + 1}/${utc.getUTCDate()}（${WEEKDAY_LABELS[utc.getUTCDay()]}）`;
 }
 
+/**
+ * Describes how far away a contract's end date is, e.g. "剩 12 天", "今天到期" or "已到期 3 天".
+ *
+ * @param days - Days from today to the end date; negative once it has passed.
+ */
+export function formatContractRemaining(days: number): string {
+  if (days > 0) return `剩 ${days} 天`;
+  return days === 0 ? "今天到期" : `已到期 ${-days} 天`;
+}
+
 /** A monthly reserve split into its rounded-up amount and the exact average, for separate styling. */
 export interface FormattedReserve {
   /** The rounded-up whole amount, e.g. "NT$ 84". */

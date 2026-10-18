@@ -42,6 +42,20 @@ export function toCalendarDate(date: Date): CalendarDate {
 }
 
 /**
+ * Groups day-of-month entries, such as charges or contract expiries, by the day they fall on.
+ *
+ * @param entries - The entries.
+ * @returns A map from day of month to that day's entries, in input order.
+ */
+export function groupByDay<T extends { day: number }>(entries: readonly T[]): Map<number, T[]> {
+  const byDay = new Map<number, T[]>();
+  for (const entry of entries) {
+    byDay.set(entry.day, [...(byDay.get(entry.day) ?? []), entry]);
+  }
+  return byDay;
+}
+
+/**
  * Lays a month out as Sunday-first weeks for a calendar table.
  *
  * @param target - The month.
