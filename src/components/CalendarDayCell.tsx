@@ -1,9 +1,13 @@
 import type { Occurrence } from "@/lib/billingOccurrences";
+import { DayChargeCount, type PopupAlign } from "./DayChargeCount";
+import { IconLabel } from "./IconLabel";
 
 interface CalendarDayCellProps {
   day: number;
   isToday: boolean;
   occurrences: Occurrence[];
+  /** Edge the narrow-screen charge popup lines up with. */
+  popupAlign: PopupAlign;
 }
 
 /** Charges listed by name before the rest collapse into "+N". */
@@ -18,14 +22,15 @@ function cellLabel(day: number, isToday: boolean, occurrences: Occurrence[]): st
 }
 
 /**
- * One day of the billing calendar. Wide screens list the charges as chips;
- * narrow screens show a dot with the charge count instead.
+ * One day of the billing calendar. Wide screens list the charges as chips; narrow screens show a dot with
+ * the charge count instead, which pops up the charges' names on hover or tap.
  *
  * @param props.day - Day of the month.
  * @param props.isToday - Highlights the date number.
  * @param props.occurrences - Charges falling on this day.
+ * @param props.popupAlign - Edge the narrow-screen popup lines up with.
  */
-export function CalendarDayCell({ day, isToday, occurrences }: CalendarDayCellProps) {
+export function CalendarDayCell({ day, isToday, occurrences, popupAlign }: CalendarDayCellProps) {
   const hidden = occurrences.length - MAX_CHIPS;
 
   return (
@@ -49,16 +54,12 @@ export function CalendarDayCell({ day, isToday, occurrences }: CalendarDayCellPr
                 title={subscription.name}
                 className="truncate rounded-md bg-coin-100/90 px-1.5 py-0.5 text-xs text-coin-600"
               >
-                {subscription.category.icon && <span aria-hidden="true">{subscription.category.icon} </span>}
-                {subscription.name}
+                <IconLabel icon={subscription.category.icon} label={subscription.name} />
               </li>
             ))}
             {hidden > 0 && <li className="px-1.5 text-xs text-ink-soft">+{hidden}</li>}
           </ul>
-          <p aria-hidden="true" className="mt-1 flex items-center gap-1 px-1 font-num text-xs text-coin-600 sm:hidden">
-            <span className="size-1.5 rounded-full bg-coin-400" />
-            {occurrences.length}
-          </p>
+          <DayChargeCount day={day} occurrences={occurrences} align={popupAlign} />
         </>
       )}
     </td>

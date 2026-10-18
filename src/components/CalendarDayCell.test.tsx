@@ -48,7 +48,7 @@ describe("CalendarDayCell", () => {
         <table>
           <tbody>
             <tr>
-              <CalendarDayCell day={15} isToday={tt.isToday ?? false} occurrences={tt.occurrences} />
+              <CalendarDayCell day={15} isToday={tt.isToday ?? false} occurrences={tt.occurrences} popupAlign="start" />
             </tr>
           </tbody>
         </table>,
@@ -59,7 +59,7 @@ describe("CalendarDayCell", () => {
         .queryAllByRole("listitem")
         .map((li) => li.textContent);
       expect(chips).toEqual(tt.expectedChips);
-      const count = cell.querySelector('p[aria-hidden="true"]');
+      const count = within(cell).queryByRole("button", { name: /^15 日扣款項目/ });
       expect(count?.textContent ?? null).toBe(tt.expectedCount);
     });
   }
