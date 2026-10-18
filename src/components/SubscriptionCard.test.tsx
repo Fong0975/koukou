@@ -40,6 +40,19 @@ describe("SubscriptionCard", () => {
       schedules: ["每年 3 月 1 日"],
     },
     {
+      name: "renders the contract end date",
+      item: { ...item, contractEndDate: "2099-12-31" },
+      texts: ["合約到期", "2099/12/31"],
+      schedules: ["每月 1 日", "每月 15 日"],
+    },
+    {
+      name: "leaves out the contract note without an end date",
+      item,
+      texts: ["Netflix"],
+      absentTexts: ["合約到期"],
+      schedules: ["每月 1 日", "每月 15 日"],
+    },
+    {
       // The category is shown by the list's group heading instead.
       name: "leaves out the category",
       item,

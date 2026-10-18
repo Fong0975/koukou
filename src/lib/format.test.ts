@@ -9,6 +9,7 @@ import {
   formatContractRemaining,
   formatConvertedTotal,
   formatDays,
+  formatFullDate,
   formatReserve,
   formatReserveTerm,
   formatSchedule,
@@ -107,6 +108,19 @@ describe("formatDays", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatDays(tt.days)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatFullDate", () => {
+  const tests = [
+    { name: "keeps zero padding", date: "2027-03-01", expected: "2027/03/01" },
+    { name: "two-digit month and day", date: "2026-12-31", expected: "2026/12/31" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatFullDate(tt.date)).toBe(tt.expected);
     });
   }
 });

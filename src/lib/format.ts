@@ -92,6 +92,15 @@ export function formatContractRemaining(days: number): string {
   return days === 0 ? "今天到期" : `已到期 ${-days} 天`;
 }
 
+/**
+ * Formats a date key with its year, e.g. "2027/03/31".
+ *
+ * @param date - A "YYYY-MM-DD" key.
+ */
+export function formatFullDate(date: string): string {
+  return date.replaceAll("-", "/");
+}
+
 /** A monthly reserve split into its rounded-up amount and the exact average, for separate styling. */
 export interface FormattedReserve {
   /** The rounded-up whole amount, e.g. "NT$ 84". */
