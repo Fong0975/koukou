@@ -1,10 +1,11 @@
 import { useId } from "react";
 import type { Occurrence } from "@/lib/billingOccurrences";
-import { sumByCurrency, totalsByCategory, totalsByPaymentMethod, type CurrencyTotals } from "@/lib/billingSummary";
+import { sumByCurrency, totalsByCategory, totalsByPaymentType, type CurrencyTotals } from "@/lib/billingSummary";
 import { convertedTwdCents } from "@/lib/currencyConversion";
 import type { ExchangeRateDto } from "@/types/dto";
 import { ConvertedAmounts } from "./ConvertedAmounts";
 import { GroupTotalsList } from "./GroupTotalsList";
+import { PaymentTypeTotalsList } from "./PaymentTypeTotalsList";
 
 interface MonthSummaryProps {
   occurrences: Occurrence[];
@@ -18,8 +19,9 @@ interface MonthSummaryProps {
 }
 
 /**
- * Month totals, charge counts, subtotals per category and payment method, and the year's total. With exchange
- * rates, each total is shown in TWD followed by the per-currency amounts it was converted from.
+ * Month totals, charge counts, subtotals per category and per payment method (sectioned by payment type), and the
+ * year's total. With exchange rates, each total is shown in TWD followed by the per-currency amounts it was
+ * converted from.
  *
  * @param props.occurrences - The month's charges.
  * @param props.year - The year the month belongs to.
@@ -53,7 +55,7 @@ export function MonthSummary({ occurrences, year, yearTotal, yearTwdCents, rates
       {occurrences.length > 0 && (
         <>
           <GroupTotalsList title="依類別" groups={totalsByCategory(occurrences)} rates={rates} />
-          <GroupTotalsList title="依付款方式" groups={totalsByPaymentMethod(occurrences)} rates={rates} />
+          <PaymentTypeTotalsList title="依付款方式" sections={totalsByPaymentType(occurrences)} rates={rates} />
         </>
       )}
 

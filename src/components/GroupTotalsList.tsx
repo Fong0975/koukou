@@ -1,8 +1,6 @@
 import type { GroupTotal } from "@/lib/billingSummary";
-import { convertedTwdCents } from "@/lib/currencyConversion";
 import type { ExchangeRateDto } from "@/types/dto";
-import { ConvertedAmounts } from "./ConvertedAmounts";
-import { IconLabel } from "./IconLabel";
+import { GroupTotalItems } from "./GroupTotalItems";
 
 interface GroupTotalsListProps {
   title: string;
@@ -12,7 +10,7 @@ interface GroupTotalsListProps {
 }
 
 /**
- * Titled list of subtotals, such as per category or per payment method.
+ * Titled list of subtotals, such as per category.
  *
  * @param props.title - Heading, also used as the list's accessible name.
  * @param props.groups - The subtotals, already in display order.
@@ -22,16 +20,7 @@ export function GroupTotalsList({ title, groups, rates }: GroupTotalsListProps) 
   return (
     <div>
       <h3 className="mb-2 text-sm text-ink-soft">{title}</h3>
-      <ul aria-label={title} className="flex flex-col gap-1.5">
-        {groups.map((group) => (
-          <li key={group.key} className="flex items-start justify-between gap-3 text-sm">
-            <span className="min-w-0 truncate">
-              <IconLabel icon={group.icon} label={group.label} />
-            </span>
-            <ConvertedAmounts totals={group.totals} twdCents={convertedTwdCents(group.occurrences, rates)} />
-          </li>
-        ))}
-      </ul>
+      <GroupTotalItems label={title} groups={groups} rates={rates} />
     </div>
   );
 }

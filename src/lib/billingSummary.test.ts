@@ -11,6 +11,7 @@ import {
   totalByCurrency,
   totalsByCategory,
   totalsByPaymentMethod,
+  totalsByPaymentType,
   type CurrencyTotals,
 } from "./billingSummary";
 
@@ -184,11 +185,11 @@ describe("totalsByCategory / totalsByPaymentMethod", () => {
       ],
     },
     {
-      name: "per payment method, labelled with its type",
+      name: "per payment method, labelled with its name",
       group: totalsByPaymentMethod,
       expected: [
-        { key: 3, label: "信用卡・國泰 CUBE", icon: null, totals: { TWD: 138950 }, days: [1, 5] },
-        { key: 4, label: "帳戶扣款・台新 Richart", icon: null, totals: { USD: 3098 }, days: [1, 8] },
+        { key: 3, label: "國泰 CUBE", icon: null, totals: { TWD: 138950 }, days: [1, 5] },
+        { key: 4, label: "台新 Richart", icon: null, totals: { USD: 3098 }, days: [1, 8] },
       ],
     },
     {
@@ -200,9 +201,9 @@ describe("totalsByCategory / totalsByPaymentMethod", () => {
         occ(3, makeSubscription({ id: 7, paymentMethod: makePaymentMethod({ id: 3, name: "Amex" }) })),
       ],
       expected: [
-        { key: 3, label: "信用卡・Amex", icon: null, totals: { TWD: 39000 }, days: [3] },
-        { key: 2, label: "信用卡・CUBE", icon: null, totals: { TWD: 39000 }, days: [2] },
-        { key: 1, label: "其他・Cash", icon: null, totals: { TWD: 39000 }, days: [1] },
+        { key: 3, label: "Amex", icon: null, totals: { TWD: 39000 }, days: [3] },
+        { key: 2, label: "CUBE", icon: null, totals: { TWD: 39000 }, days: [2] },
+        { key: 1, label: "Cash", icon: null, totals: { TWD: 39000 }, days: [1] },
       ],
     },
     { name: "no charges gives no groups", group: totalsByCategory, occurrences: [], expected: [] },
@@ -213,6 +214,52 @@ describe("totalsByCategory / totalsByPaymentMethod", () => {
       const result = tt
         .group(tt.occurrences ?? occurrences)
         .map(({ occurrences: grouped, ...group }) => ({ ...group, days: grouped.map((o) => o.day) }));
+
+      expect(result).toEqual(tt.expected);
+    });
+  }
+});
+
+describe("totalsByPaymentType", () => {
+  const cash = makePaymentMethod({ id: 1, type: "OTHER", name: "Cash" });
+  const cube = makePaymentMethod({ id: 2, name: "CUBE" });
+  const amex = makePaymentMethod({ id: 3, name: "Amex" });
+
+  const tests = [
+    { name: "no charges gives no sections", occurrences: [], expected: [] },
+    {
+      name: "sections by payment type in display order, each listing its methods by name",
+      occurrences: [
+        occ(1, makeSubscription({ id: 5, paymentMethod: cash })),
+        occ(2, makeSubscription({ id: 6, paymentMethod: cube })),
+        occ(3, makeSubscription({ id: 7, paymentMethod: amex, currency: "USD", amount: "15.49" })),
+        occ(4, makeSubscription({ id: 8, paymentMethod: cube })),
+      ],
+      expected: [
+        {
+          type: "CREDIT_CARD",
+          label: "信用卡",
+          groups: [
+            { key: 3, label: "Amex", totals: { USD: 1549 }, days: [3] },
+            { key: 2, label: "CUBE", totals: { TWD: 78000 }, days: [2, 4] },
+          ],
+        },
+        { type: "OTHER", label: "其他", groups: [{ key: 1, label: "Cash", totals: { TWD: 39000 }, days: [1] }] },
+      ],
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const result = totalsByPaymentType(tt.occurrences).map(({ groups, ...section }) => ({
+        ...section,
+        groups: groups.map(({ key, label, totals, occurrences }) => ({
+          key,
+          label,
+          totals,
+          days: occurrences.map((o) => o.day),
+        })),
+      }));
 
       expect(result).toEqual(tt.expected);
     });

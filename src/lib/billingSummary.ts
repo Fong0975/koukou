@@ -1,4 +1,4 @@
-import type { Currency } from "@/generated/prisma/enums";
+import type { Currency, PaymentType } from "@/generated/prisma/enums";
 import type { SubscriptionDto } from "@/types/dto";
 import type { Occurrence } from "./billingOccurrences";
 import { CURRENCY_PREFIX, PAYMENT_TYPE_LABELS } from "./labels";
@@ -29,6 +29,14 @@ export interface GroupTotal {
   totals: CurrencyTotals;
   /** The group's charges, in input order. */
   occurrences: Occurrence[];
+}
+
+/** Subtotals of one payment type, e.g. every credit card. */
+export interface PaymentTypeTotals {
+  type: PaymentType;
+  label: string;
+  /** One subtotal per payment method of this type. */
+  groups: GroupTotal[];
 }
 
 /** How a charge is assigned to a group, and where that group sorts. */
@@ -164,15 +172,33 @@ export function totalsByCategory(occurrences: Occurrence[]): GroupTotal[] {
 }
 
 /**
- * Subtotals per payment method (card or account), ordered by payment type, then name.
+ * Subtotals per payment method (card or account), labelled with its name and ordered by payment type, then name.
  *
  * @param occurrences - The charges.
  */
 export function totalsByPaymentMethod(occurrences: Occurrence[]): GroupTotal[] {
   return groupTotals(occurrences, ({ subscription: { paymentMethod } }) => ({
     key: paymentMethod.id,
-    label: `${PAYMENT_TYPE_LABELS[paymentMethod.type]}・${paymentMethod.name}`,
+    label: paymentMethod.name,
     icon: null,
     order: paymentTypeRank(paymentMethod.type),
   }));
+}
+
+/**
+ * Subtotals per payment method, sectioned by payment type.
+ *
+ * @param occurrences - The charges.
+ * @returns One section per payment type that has charges, in display order (credit card, bank account, other).
+ */
+export function totalsByPaymentType(occurrences: Occurrence[]): PaymentTypeTotals[] {
+  const byType = new Map<PaymentType, Occurrence[]>();
+  for (const occurrence of occurrences) {
+    const { type } = occurrence.subscription.paymentMethod;
+    byType.set(type, [...(byType.get(type) ?? []), occurrence]);
+  }
+
+  return [...byType.entries()]
+    .sort(([a], [b]) => paymentTypeRank(a) - paymentTypeRank(b))
+    .map(([type, grouped]) => ({ type, label: PAYMENT_TYPE_LABELS[type], groups: totalsByPaymentMethod(grouped) }));
 }

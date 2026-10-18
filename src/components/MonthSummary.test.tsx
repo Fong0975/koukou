@@ -76,10 +76,10 @@ describe("MonthSummary", () => {
       expect([...(headline?.children ?? [])].map((line) => line.textContent)).toEqual(tt.expectedHeadline);
       expect(screen.getByText("2026 年度總計").nextElementSibling).toHaveTextContent(tt.expectedYear);
       for (const text of tt.expectedTexts) expect(screen.getByText(text)).toBeInTheDocument();
-      for (const title of ["依類別", "依付款方式"]) {
-        const list = screen.queryByRole("list", { name: title });
-        if (tt.expectedGroups) expect(list).toBeInTheDocument();
-        else expect(list).not.toBeInTheDocument();
+      for (const name of ["依類別", "依付款方式", "信用卡"]) {
+        const heading = screen.queryByRole("heading", { name });
+        if (tt.expectedGroups) expect(heading).toBeInTheDocument();
+        else expect(heading).not.toBeInTheDocument();
       }
     });
   }
