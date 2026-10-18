@@ -1,24 +1,16 @@
 import { useId } from "react";
 import { amountOn } from "@/lib/amountPeriods";
-import type { CalendarDate } from "@/lib/calendarMonth";
-import { daysUntil, type ContractExpiry } from "@/lib/contractExpiries";
-import { formatAmount, formatChargeDate, formatContractRemaining } from "@/lib/format";
+import type { ContractExpiry } from "@/lib/contractExpiries";
+import { formatAmount, formatChargeDate } from "@/lib/format";
 import { CoinListItem } from "./CoinListItem";
 
-interface MonthExpiryListProps {
-  expiries: ContractExpiry[];
-  today: CalendarDate;
-}
-
 /**
- * Card listing the contracts that end in the shown month, one row per subscription with its end date, how far
- * away that is and the amount it last charges. Days left turn red once the contract ends today or has ended.
- * Without expiries it says so instead of disappearing.
+ * Card listing the contracts that end in the shown month, one row per subscription with its end date and the
+ * amount it last charges. Without expiries it says so instead of disappearing.
  *
  * @param props.expiries - The month's contract expiries, already in display order.
- * @param props.today - Today's date, for counting the days left.
  */
-export function MonthExpiryList({ expiries, today }: MonthExpiryListProps) {
+export function MonthExpiryList({ expiries }: { expiries: ContractExpiry[] }) {
   const titleId = useId();
 
   return (
@@ -31,19 +23,13 @@ export function MonthExpiryList({ expiries, today }: MonthExpiryListProps) {
       ) : (
         <ul aria-label="到期項目" className="mt-2 flex flex-col divide-y divide-leaf-500/15">
           {expiries.map(({ date, subscription }) => {
-            const days = daysUntil(today, date);
             const { prefix, value } = formatAmount(subscription.currency, amountOn(subscription, date));
             return (
               <CoinListItem
                 key={subscription.id}
                 currency={subscription.currency}
                 title={subscription.name}
-                subtitle={
-                  <>
-                    {`${formatChargeDate(date)} · `}
-                    <span className={days <= 0 ? "text-berry" : undefined}>{formatContractRemaining(days)}</span>
-                  </>
-                }
+                subtitle={formatChargeDate(date)}
               >
                 <p className="font-semibold">
                   {prefix} {value}

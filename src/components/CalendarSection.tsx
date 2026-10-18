@@ -57,7 +57,7 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
       </section>
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="flex flex-col gap-6">
-          <MonthExpiryList expiries={expiries} today={today} />
+          <MonthExpiryList expiries={expiries} />
           <MonthReserveList reserves={reserves} />
         </div>
         <div className="flex flex-col gap-6">
