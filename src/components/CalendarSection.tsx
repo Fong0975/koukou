@@ -64,7 +64,7 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
         </div>
         <BillingCalendar month={cursor} today={today} occurrences={occurrences} />
       </section>
-      <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-6">
           <MonthReserveList reserves={reserves} />
           <MonthChargeList occurrences={occurrences} rates={rates} />
