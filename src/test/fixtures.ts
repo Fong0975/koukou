@@ -33,6 +33,7 @@ export function makeSubscription(overrides: Partial<SubscriptionDto> = {}): Subs
     amount: "390.00",
     amortize: false,
     startDate: "2026-01-01",
+    contractEndDate: null,
     amountPeriods: [],
     note: null,
     category: makeCategory(),

@@ -31,9 +31,30 @@ describe("subscriptionInputSchema", () => {
         amount: 15.49,
         amortize: false,
         startDate: "2026-01-15",
+        contractEndDate: null,
         amountPeriods: [],
         note: null,
       },
+    },
+    {
+      name: "keeps a contract end date on or after the start date",
+      input: { ...valid, contractEndDate: " 2026-01-15 " },
+      expected: { contractEndDate: "2026-01-15" },
+    },
+    {
+      name: "normalizes a blank contract end date",
+      input: { ...valid, contractEndDate: "" },
+      expected: { contractEndDate: null },
+    },
+    {
+      name: "rejects a contract end date before the start date",
+      input: { ...valid, contractEndDate: "2026-01-14" },
+      errorPath: "contractEndDate",
+    },
+    {
+      name: "rejects an invalid contract end date",
+      input: { ...valid, contractEndDate: "2026-02-30" },
+      errorPath: "contractEndDate",
     },
     {
       name: "keeps amortize when enabled",
