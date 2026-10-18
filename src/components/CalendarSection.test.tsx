@@ -28,7 +28,21 @@ const spotify = makeSubscription({
   amount: "10.00",
   schedules: [{ id: 30, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
 });
+const phone = makeSubscription({
+  id: 4,
+  name: "中華電信",
+  amount: "599.00",
+  contractEndDate: "2026-10-20",
+  schedules: [{ id: 40, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 25, month: null }],
+});
 const rates: ExchangeRateDto[] = [{ date: "2026-01-01", rate: 32 }];
+
+/** Headings of the cards under the calendar, in document order. */
+const cardHeadings = () =>
+  screen
+    .getAllByRole("heading", { level: 2 })
+    .map((heading) => heading.textContent)
+    .slice(1);
 
 describe("CalendarSection", () => {
   beforeEach(() => {
@@ -78,6 +92,7 @@ describe("CalendarSection", () => {
         expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
         expect(screen.getByText("共 0 次扣款，來自 0 個項目")).toBeInTheDocument();
         expect(screen.queryByRole("list", { name: "預扣款項" })).not.toBeInTheDocument();
+        expect(screen.getByRole("region", { name: "本月到期" })).toHaveTextContent("這個月沒有到期的合約。");
       },
       expectedRateRequest: [2026, false],
     },
@@ -130,6 +145,25 @@ describe("CalendarSection", () => {
       expectDom: () => {
         expect(screen.getByRole("heading", { name: "2026 年 9 月" })).toBeInTheDocument();
         expect(screen.getByRole("list", { name: "預扣款項" })).toHaveTextContent("2026 年期（10/11 扣款）");
+      },
+    },
+    {
+      name: "places expiries and reserves before the charge list and the summary",
+      status: "ready",
+      items: [domain],
+      expectDom: () => expect(cardHeadings()).toEqual(["本月到期", "預扣款項", "本月扣款清單", "本月總結"]),
+    },
+    {
+      name: "a contract ending this month is marked and listed, and stops charging after it",
+      status: "ready",
+      items: [phone],
+      expectDom: () => {
+        expect(screen.getByRole("cell", { name: "20 日：合約到期：中華電信" })).toBeInTheDocument();
+        expect(screen.getByRole("cell", { name: "25 日" })).toBeInTheDocument();
+        expect(screen.getByRole("list", { name: "到期項目" })).toHaveTextContent(
+          "中華電信10/20（二） · 剩 4 天NT$ 599",
+        );
+        expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
       },
     },
     {

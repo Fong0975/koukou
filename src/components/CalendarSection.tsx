@@ -1,18 +1,14 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useId } from "react";
 import { useMonthCursor } from "@/hooks/useMonthCursor";
+import { useMonthData } from "@/hooks/useMonthData";
 import type { LoadStatus } from "@/hooks/useSubscriptions";
-import { useYearRates } from "@/hooks/useYearRates";
-import { monthReserves } from "@/lib/amortization";
-import { monthOccurrences, yearOccurrences } from "@/lib/billingOccurrences";
-import { sumByCurrency } from "@/lib/billingSummary";
-import { monthContractExpiries } from "@/lib/contractExpiries";
-import { convertedTwdCents, needsExchangeRate } from "@/lib/currencyConversion";
 import type { SubscriptionDto } from "@/types/dto";
 import { BillingCalendar } from "./BillingCalendar";
 import { LoadErrorNotice } from "./LoadErrorNotice";
 import { MonthChargeList } from "./MonthChargeList";
+import { MonthExpiryList } from "./MonthExpiryList";
 import { MonthPicker } from "./MonthPicker";
 import { MonthReserveList } from "./MonthReserveList";
 import { MonthSummary } from "./MonthSummary";
@@ -25,22 +21,14 @@ interface CalendarSectionProps {
 }
 
 /**
- * Home screen calendar: month navigation, the month's charges on a calendar, a list of them, the reserves for
- * amortized yearly charges and their totals, with loading and error states. When the shown year has foreign
- * charges, its exchange rates are fetched so the totals can be converted to TWD.
+ * Home screen calendar: month navigation and the month's charges and contract expiries on a calendar, with
+ * the expiring contracts and amortized reserves on the left below it and the charge list and totals on the
+ * right (stacked in that order on narrow screens), plus loading and error states.
  */
 export function CalendarSection({ items, status, loadError, onRetry }: CalendarSectionProps) {
   const { today, cursor, setCursor } = useMonthCursor();
   const titleId = useId();
-  const occurrences = useMemo(() => (cursor ? monthOccurrences(items, cursor) : []), [items, cursor]);
-  const reserves = useMemo(() => (cursor ? monthReserves(items, cursor) : []), [items, cursor]);
-  const expiries = useMemo(() => (cursor ? monthContractExpiries(items, cursor) : []), [items, cursor]);
-  const year = cursor?.year;
-  const yearCharges = useMemo(() => (year === undefined ? [] : yearOccurrences(items, year)), [items, year]);
-  const yearTotal = useMemo(() => sumByCurrency(yearCharges), [yearCharges]);
-  const needsRates = useMemo(() => needsExchangeRate(yearCharges), [yearCharges]);
-  const rates = useYearRates(year, needsRates);
-  const yearTwdCents = useMemo(() => convertedTwdCents(yearCharges, rates), [yearCharges, rates]);
+  const { occurrences, reserves, expiries, yearTotal, yearTwdCents, rates } = useMonthData(items, cursor);
 
   if (status === "error") return <LoadErrorNotice message={loadError} onRetry={onRetry} />;
 
@@ -67,18 +55,21 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
         </div>
         <BillingCalendar month={cursor} today={today} occurrences={occurrences} expiries={expiries} />
       </section>
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="flex flex-col gap-6">
+          <MonthExpiryList expiries={expiries} today={today} />
           <MonthReserveList reserves={reserves} />
-          <MonthChargeList occurrences={occurrences} rates={rates} />
         </div>
-        <MonthSummary
-          occurrences={occurrences}
-          year={cursor.year}
-          yearTotal={yearTotal}
-          yearTwdCents={yearTwdCents}
-          rates={rates}
-        />
+        <div className="flex flex-col gap-6">
+          <MonthChargeList occurrences={occurrences} rates={rates} />
+          <MonthSummary
+            occurrences={occurrences}
+            year={cursor.year}
+            yearTotal={yearTotal}
+            yearTwdCents={yearTwdCents}
+            rates={rates}
+          />
+        </div>
       </div>
     </div>
   );
