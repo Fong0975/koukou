@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { CurrencyTotals } from "@/lib/billingSummary";
 import { ConvertedAmounts } from "./ConvertedAmounts";
@@ -8,9 +8,10 @@ describe("ConvertedAmounts", () => {
     name: string;
     totals: CurrencyTotals;
     twdCents: number | null;
-    layout?: "stacked" | "inline";
+    layout?: "stacked" | "inline" | "popup";
     expectedLines: string[];
     expectedDirection: string;
+    expectedPopup?: boolean;
   }[] = [
     {
       name: "without a conversion shows one line per currency",
@@ -41,6 +42,23 @@ describe("ConvertedAmounts", () => {
       expectedLines: ["NT$ 1,000", "(US$ 31.00)"],
       expectedDirection: "flex-col",
     },
+    {
+      name: "popup layout keeps the breakdown behind an info button",
+      totals: { USD: 3100, TWD: 50000 },
+      twdCents: 150000,
+      layout: "popup",
+      expectedLines: ["NT$ 1,500"],
+      expectedDirection: "relative",
+      expectedPopup: true,
+    },
+    {
+      name: "popup layout of a TWD-only total shows just the total",
+      totals: { TWD: 50000 },
+      twdCents: 50000,
+      layout: "popup",
+      expectedLines: ["NT$ 500"],
+      expectedDirection: "flex-col",
+    },
   ];
 
   for (const tt of tests) {
@@ -50,6 +68,9 @@ describe("ConvertedAmounts", () => {
       const wrapper = container.firstElementChild;
       expect([...(wrapper?.children ?? [])].map((line) => line.textContent)).toEqual(tt.expectedLines);
       expect(wrapper).toHaveClass(tt.expectedDirection);
+      const button = screen.queryByRole("button", { name: /查看換算前金額$/ });
+      if (tt.expectedPopup) expect(button).toBeInTheDocument();
+      else expect(button).not.toBeInTheDocument();
     });
   }
 });

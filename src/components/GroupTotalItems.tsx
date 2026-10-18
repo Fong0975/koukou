@@ -13,7 +13,8 @@ interface GroupTotalItemsProps {
 }
 
 /**
- * List of subtotals, one row per group with its label on the left and its amount on the right.
+ * List of subtotals, one row per group with its label on the left and its amount on the right; a converted
+ * amount keeps what it was converted from in a popup.
  *
  * @param props.label - The list's accessible name.
  * @param props.groups - The subtotals, already in display order.
@@ -27,7 +28,11 @@ export function GroupTotalItems({ label, groups, rates }: GroupTotalItemsProps) 
           <span className="min-w-0 break-words">
             <IconLabel icon={group.icon} label={group.label} />
           </span>
-          <ConvertedAmounts totals={group.totals} twdCents={convertedTwdCents(group.occurrences, rates)} />
+          <ConvertedAmounts
+            totals={group.totals}
+            twdCents={convertedTwdCents(group.occurrences, rates)}
+            layout="popup"
+          />
         </li>
       ))}
     </ul>

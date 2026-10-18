@@ -42,10 +42,10 @@ describe("PaymentTypeTotalsList", () => {
     },
     {
       // 15.49 × 32 = 495.68 → 496.
-      name: "with rates shows each subtotal in TWD and what it was converted from",
+      name: "with rates shows each subtotal in TWD, keeping what it was converted from in a popup",
       sections,
       rates: [{ date: "2026-01-01", rate: 32 }],
-      expected: { 信用卡: ["玉山 南山聯名NT$ 390", "國泰 CUBENT$ 496(US$ 15.49)"], 其他: ["無自動扣款NT$ 599"] },
+      expected: { 信用卡: ["玉山 南山聯名NT$ 390", "國泰 CUBENT$ 496"], 其他: ["無自動扣款NT$ 599"] },
     },
     { name: "no sections", sections: [], rates: null, expected: {} },
   ];

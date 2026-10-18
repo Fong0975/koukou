@@ -20,8 +20,8 @@ interface MonthSummaryProps {
 
 /**
  * Month totals, charge counts, subtotals per category and per payment method (sectioned by payment type), and the
- * year's total. With exchange rates, each total is shown in TWD followed by the per-currency amounts it was
- * converted from.
+ * year's total. With exchange rates, each total is shown in TWD, with the per-currency amounts it was converted
+ * from in a popup behind an info icon.
  *
  * @param props.occurrences - The month's charges.
  * @param props.year - The year the month belongs to.
@@ -44,7 +44,8 @@ export function MonthSummary({ occurrences, year, yearTotal, yearTwdCents, rates
         <ConvertedAmounts
           totals={sumByCurrency(occurrences)}
           twdCents={convertedTwdCents(occurrences, rates)}
-          layout="stacked"
+          layout="popup"
+          popupAlign="start"
           className="items-start text-3xl font-semibold"
         />
         <p className="mt-1 text-sm text-ink-soft">
@@ -61,7 +62,12 @@ export function MonthSummary({ occurrences, year, yearTotal, yearTwdCents, rates
 
       <div className="flex items-start justify-between gap-3 border-t border-leaf-500/15 pt-4">
         <span className="shrink-0 text-sm text-ink-soft">{year} 年度總計</span>
-        <ConvertedAmounts totals={yearTotal} twdCents={yearTwdCents} className="items-end font-semibold" />
+        <ConvertedAmounts
+          totals={yearTotal}
+          twdCents={yearTwdCents}
+          layout="popup"
+          className="items-end font-semibold"
+        />
       </div>
     </section>
   );

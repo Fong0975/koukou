@@ -171,19 +171,25 @@ describe("formatReserveTerm", () => {
 
 describe("formatConvertedTotal", () => {
   const tests: { name: string; twdCents: number; totals: CurrencyTotals; expected: ConvertedTotal }[] = [
-    { name: "no charges", twdCents: 0, totals: {}, expected: { total: "NT$ 0", breakdown: null } },
-    { name: "TWD only", twdCents: 50000, totals: { TWD: 50000 }, expected: { total: "NT$ 500", breakdown: null } },
+    { name: "no charges", twdCents: 0, totals: {}, expected: { total: "NT$ 0", breakdown: [] } },
+    { name: "TWD only", twdCents: 50000, totals: { TWD: 50000 }, expected: { total: "NT$ 500", breakdown: [] } },
     {
       name: "USD only",
       twdCents: 100000,
       totals: { USD: 3100 },
-      expected: { total: "NT$ 1,000", breakdown: "US$ 31.00" },
+      expected: { total: "NT$ 1,000", breakdown: [{ amount: "US$ 31.00", twd: "NT$ 1,000" }] },
     },
     {
       name: "TWD and USD",
       twdCents: 150000,
       totals: { USD: 3100, TWD: 50000 },
-      expected: { total: "NT$ 1,500", breakdown: "NT$ 500, US$ 31.00" },
+      expected: {
+        total: "NT$ 1,500",
+        breakdown: [
+          { amount: "NT$ 500", twd: null },
+          { amount: "US$ 31.00", twd: "NT$ 1,000" },
+        ],
+      },
     },
   ];
 

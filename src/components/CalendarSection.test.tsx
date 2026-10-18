@@ -88,10 +88,15 @@ describe("CalendarSection", () => {
       rates,
       expectDom: () => {
         expect(screen.getByRole("region", { name: "本月扣款清單" })).toHaveTextContent("US$ 10.00≈ NT$ 320");
-        expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("NT$ 320(US$ 10.00)");
-        expect(screen.getByText("2026 年度總計").nextElementSibling).toHaveTextContent(
-          "NT$ 4,230(NT$ 390, US$ 120.00)",
-        );
+        expect(screen.getByText("本月總計").nextElementSibling?.textContent).toBe("NT$ 320");
+        expect(screen.getByText("2026 年度總計").nextElementSibling?.textContent).toBe("NT$ 4,230");
+        // The month's only foreign charge makes the headline, its category and its payment method all NT$ 320.
+        for (const [total, count] of [
+          ["NT$ 320", 3],
+          ["NT$ 4,230", 1],
+        ] as const) {
+          expect(screen.getAllByRole("button", { name: `${total}，查看換算前金額` })).toHaveLength(count);
+        }
       },
       expectedRateRequest: [2026, true],
     },

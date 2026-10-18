@@ -1,5 +1,6 @@
 import type { Occurrence } from "@/lib/billingOccurrences";
-import { DayChargeCount, type PopupAlign } from "./DayChargeCount";
+import { DayChargeCount } from "./DayChargeCount";
+import type { PopupAlign } from "./HoverTapPopup";
 import { IconLabel } from "./IconLabel";
 
 interface CalendarDayCellProps {

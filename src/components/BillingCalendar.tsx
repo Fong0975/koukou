@@ -2,7 +2,7 @@ import { occurrencesByDay, type Occurrence } from "@/lib/billingOccurrences";
 import { buildMonthGrid, type CalendarDate, type YearMonth } from "@/lib/calendarMonth";
 import { WEEKDAY_LABELS } from "@/lib/labels";
 import { CalendarDayCell } from "./CalendarDayCell";
-import type { PopupAlign } from "./DayChargeCount";
+import type { PopupAlign } from "./HoverTapPopup";
 
 interface BillingCalendarProps {
   month: YearMonth;
