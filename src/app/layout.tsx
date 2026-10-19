@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fredoka, Huninn } from "next/font/google";
+import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, THEME_COLOR } from "@/lib/constants/appInfo";
 import "./globals.css";
 
 const huninn = Huninn({
@@ -19,12 +20,21 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
-  title: "KouKou 扣扣帳本",
-  description: "把每一筆定期扣款整理在同一個地方",
+  title: APP_NAME,
+  description: APP_DESCRIPTION,
   icons: {
     icon: "/favicon.ico",
-    apple: "/logo192.png",
+    apple: "/apple-touch-icon.png",
   },
+  appleWebApp: {
+    capable: true,
+    title: APP_SHORT_NAME,
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: THEME_COLOR,
 };
 
 /**
