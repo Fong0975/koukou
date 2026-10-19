@@ -12,7 +12,13 @@ describe("useHomeDialogs", () => {
   const tests: {
     name: string;
     actions: ((dialogs: Dialogs) => void)[];
-    expected: { listOpen: boolean; formOpen: boolean; editing?: SubscriptionDto; deleting: SubscriptionDto | null };
+    expected: {
+      listOpen: boolean;
+      formOpen: boolean;
+      editing?: SubscriptionDto;
+      deleting: SubscriptionDto | null;
+      reportOpen?: boolean;
+    };
   }[] = [
     {
       name: "starts with everything closed",
@@ -54,6 +60,16 @@ describe("useHomeDialogs", () => {
       actions: [(d) => d.openList(), (d) => d.closeList()],
       expected: { listOpen: false, formOpen: false, deleting: null },
     },
+    {
+      name: "opening the report",
+      actions: [(d) => d.openReport()],
+      expected: { listOpen: false, formOpen: false, deleting: null, reportOpen: true },
+    },
+    {
+      name: "closing the report",
+      actions: [(d) => d.openReport(), (d) => d.closeReport()],
+      expected: { listOpen: false, formOpen: false, deleting: null, reportOpen: false },
+    },
   ];
 
   for (const tt of tests) {
@@ -66,6 +82,7 @@ describe("useHomeDialogs", () => {
       expect(result.current.formOpen).toBe(tt.expected.formOpen);
       expect(result.current.editing).toBe(tt.expected.editing);
       expect(result.current.deleting).toBe(tt.expected.deleting);
+      expect(result.current.reportOpen).toBe(tt.expected.reportOpen ?? false);
     });
   }
 });

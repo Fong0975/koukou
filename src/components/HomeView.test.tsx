@@ -7,7 +7,7 @@ import { makeCategory, makePaymentMethod, makeSubscription } from "@/test/fixtur
 import type { SubscriptionDto } from "@/types/dto";
 import type { SubscriptionListProps } from "./SubscriptionList";
 
-const { INPUT, subscriptions, lookups, backup, formProps, calendarProps, listProps } = vi.hoisted(() => ({
+const { INPUT, subscriptions, lookups, backup, formProps, calendarProps, listProps, reportProps } = vi.hoisted(() => ({
   INPUT: { name: "Netflix" } as SubscriptionInput,
   subscriptions: {
     items: [] as SubscriptionDto[],
@@ -29,6 +29,7 @@ const { INPUT, subscriptions, lookups, backup, formProps, calendarProps, listPro
   formProps: vi.fn(),
   calendarProps: vi.fn(),
   listProps: vi.fn(),
+  reportProps: vi.fn(),
 }));
 
 vi.mock("@/hooks/useSubscriptions", () => ({ useSubscriptions: () => subscriptions }));
@@ -97,6 +98,19 @@ vi.mock("./ConfirmDeleteDialog", () => ({
       </button>
     </div>
   ),
+}));
+
+vi.mock("./report/YearReportModal", () => ({
+  YearReportModal: (props: { items: SubscriptionDto[]; initialYear: number; onClose: () => void }) => {
+    reportProps(props);
+    return (
+      <div role="dialog" aria-label="年度報表">
+        <button type="button" onClick={props.onClose}>
+          關閉報表
+        </button>
+      </div>
+    );
+  },
 }));
 
 vi.mock("./ConfirmImportDialog", () => ({
@@ -173,6 +187,13 @@ describe("HomeView", () => {
     },
     { name: "closing the list removes it", clicks: ["所有扣款", "關閉清單"], expectedDialogs: [], expectedCalls: {} },
     {
+      name: "the header button opens the annual report",
+      clicks: ["年度報表"],
+      expectedDialogs: ["年度報表"],
+      expectedCalls: {},
+    },
+    { name: "closing the report removes it", clicks: ["年度報表", "關閉報表"], expectedDialogs: [], expectedCalls: {} },
+    {
       name: "retrying from the list reloads",
       clicks: ["所有扣款", "重新讀取"],
       expectedDialogs: ["所有扣款"],
@@ -200,6 +221,11 @@ describe("HomeView", () => {
       expect(calendarProps).toHaveBeenLastCalledWith({ ...data, onRetry: expect.any(Function) });
       if (listProps.mock.calls.length > 0) {
         expect(listProps).toHaveBeenLastCalledWith(expect.objectContaining(data));
+      }
+      if (reportProps.mock.calls.length > 0) {
+        expect(reportProps).toHaveBeenLastCalledWith(
+          expect.objectContaining({ items: subscriptions.items, initialYear: new Date().getFullYear() }),
+        );
       }
       if (formProps.mock.calls.length > 0) {
         expect(formProps).toHaveBeenLastCalledWith(
