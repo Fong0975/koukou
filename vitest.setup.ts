@@ -9,3 +9,12 @@ if (typeof HTMLDialogElement !== "undefined" && !HTMLDialogElement.prototype.sho
     this.open = false;
   };
 }
+
+// jsdom has no ResizeObserver, which recharts' ResponsiveContainer needs; charts then keep their initial size.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

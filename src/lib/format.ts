@@ -197,3 +197,12 @@ export function formatConvertedTotal(twdCents: number, totals: CurrencyTotals): 
 export function formatApproxTwd(twdCents: number): string {
   return `≈ ${formatCents("TWD", twdCents)}`;
 }
+
+/**
+ * Formats a fraction as a whole percentage, e.g. "42%"; a non-zero fraction under 1% reads as "<1%".
+ *
+ * @param share - A fraction from 0 to 1.
+ */
+export function formatPercent(share: number): string {
+  return share > 0 && share < 0.005 ? "<1%" : `${Math.round(share * 100)}%`;
+}

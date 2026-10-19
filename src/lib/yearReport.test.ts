@@ -5,12 +5,15 @@ import type { ExchangeRateDto, SubscriptionDto } from "@/types/dto";
 import type { Occurrence } from "./billingOccurrences";
 import { totalsByCategory } from "./billingSummary";
 import {
+  foldGroupShares,
   groupShares,
   monthlyTotals,
+  OTHER_GROUP_KEY,
   reportTwdCents,
   shareOf,
   subscriptionRanking,
   yearHighlights,
+  type GroupShare,
   type MonthTotal,
 } from "./yearReport";
 
@@ -223,6 +226,47 @@ describe("groupShares", () => {
       const shares = groupShares(totalsByCategory(tt.occurrences), tt.rates);
 
       expect(shares.map(({ label, twdCents, share }) => ({ label, twdCents, share }))).toEqual(tt.expected);
+    });
+  }
+});
+
+describe("foldGroupShares", () => {
+  const group = (key: number, twdCents: number | null, share: number): GroupShare => ({
+    key,
+    label: `類別 ${key}`,
+    icon: null,
+    totals: { TWD: twdCents ?? 0 },
+    twdCents,
+    share,
+  });
+  const groups = [group(1, 100, 0.1), group(2, 500, 0.5), group(3, 50, 0.05), group(4, 350, 0.35)];
+
+  const tests = [
+    { name: "groups that fit are kept as they are", groups, slots: 4, expected: groups },
+    {
+      name: "the smallest groups merge into 其他, the rest keep their order",
+      groups,
+      slots: 3,
+      expected: [
+        group(2, 500, 0.5),
+        group(4, 350, 0.35),
+        { key: OTHER_GROUP_KEY, label: "其他", icon: null, totals: { TWD: 150 }, twdCents: 150, share: 0.1 + 0.05 },
+      ],
+    },
+    {
+      name: "其他 has no TWD total while a merged group cannot be converted",
+      groups: [group(1, 100, 0), group(2, null, 0), group(3, 50, 0)],
+      slots: 2,
+      expected: [
+        group(1, 100, 0),
+        { key: OTHER_GROUP_KEY, label: "其他", icon: null, totals: { TWD: 50 }, twdCents: null, share: 0 },
+      ],
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(foldGroupShares(tt.groups, tt.slots)).toEqual(tt.expected);
     });
   }
 });

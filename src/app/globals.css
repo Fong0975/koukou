@@ -25,6 +25,22 @@ html {
   scrollbar-gutter: stable;
 }
 
+/*
+ * Categorical chart hues, assigned in this fixed order and never cycled. The order keeps neighbouring slices
+ * apart for color-vision deficiencies; the lighter hues fall below 3:1 on the panel, so charts always pair them
+ * with a labelled legend.
+ */
+:root {
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #3f8540;
+  --chart-7: #6250d6;
+  --chart-8: #e34948;
+}
+
 /* A modal <dialog> does not stop the page behind it from scrolling, so lock it while one is open. */
 html:has(dialog[open]) {
   overflow: hidden;
@@ -85,6 +101,13 @@ body {
       0 18px 40px -22px rgb(42 90 44 / 0.35);
     backdrop-filter: blur(18px) saturate(150%);
     -webkit-backdrop-filter: blur(18px) saturate(150%);
+  }
+
+  /* Lighter panel nested in a dialog, e.g. a section or a figure tile of the annual report. */
+  .report-panel {
+    border: 1px solid rgb(255 255 255 / 0.8);
+    border-radius: 1.25rem;
+    background: rgb(255 255 255 / 0.55);
   }
 
   /* Dashed inner seam, echoing the sewing button ("扣") in the logo. */

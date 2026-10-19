@@ -2,6 +2,7 @@ import type { ExchangeRateDto, SubscriptionDto } from "@/types/dto";
 import type { Occurrence } from "./billingOccurrences";
 import {
   chargesBySubscription,
+  currencyEntries,
   sumByCurrency,
   totalByCurrency,
   type CurrencyTotals,
@@ -151,6 +152,40 @@ export function groupShares(groups: GroupTotal[], rates: ExchangeRateDto[] | nul
     ? converted.reduce((total, group) => total + (group.twdCents ?? 0), 0)
     : null;
   return converted.map((group) => ({ ...group, share: shareOf(group.twdCents, whole) }));
+}
+
+/** Key of the group that {@link foldGroupShares} merges the smallest groups into. */
+export const OTHER_GROUP_KEY = -1;
+
+/**
+ * Keeps a chart within its hues by merging the smallest groups into one "其他" group, appended last.
+ *
+ * @param groups - The groups, in display order.
+ * @param slots - The most groups the chart can show.
+ * @returns The groups unchanged when they fit; otherwise the largest `slots - 1` in their original order, plus
+ *   "其他".
+ */
+export function foldGroupShares(groups: GroupShare[], slots: number): GroupShare[] {
+  if (groups.length <= slots) return groups;
+
+  const kept = new Set(
+    [...groups]
+      .sort((a, b) => (b.twdCents ?? 0) - (a.twdCents ?? 0))
+      .slice(0, slots - 1)
+      .map((group) => group.key),
+  );
+  const rest = groups.filter((group) => !kept.has(group.key));
+  const other: GroupShare = {
+    key: OTHER_GROUP_KEY,
+    label: "其他",
+    icon: null,
+    totals: totalByCurrency(rest.flatMap((group) => currencyEntries(group.totals))),
+    twdCents: rest.every((group) => group.twdCents !== null)
+      ? rest.reduce((total, group) => total + (group.twdCents ?? 0), 0)
+      : null,
+    share: rest.reduce((total, group) => total + group.share, 0),
+  };
+  return [...groups.filter((group) => kept.has(group.key)), other];
 }
 
 /**
