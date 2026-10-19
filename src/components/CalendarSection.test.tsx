@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LoadStatus } from "@/hooks/useSubscriptions";
+import { expandCard } from "@/test/collapsibleCard";
 import { makeSubscription } from "@/test/fixtures";
 import type { ExchangeRateDto, SubscriptionDto } from "@/types/dto";
 
@@ -106,6 +107,7 @@ describe("CalendarSection", () => {
         expect(screen.getByText("本月總計").nextElementSibling?.textContent).toBe("NT$ 320");
         expect(screen.getByText("2026 年度總計").nextElementSibling?.textContent).toBe("NT$ 4,230");
         expect(screen.getByText("扣款小計").nextElementSibling?.textContent).toBe("NT$ 320");
+        expandCard("共 1 次扣款，來自 1 個項目");
         // The month's only foreign charge makes the charge list subtotal, the headline, its category and its
         // payment method all NT$ 320.
         for (const [total, count] of [
@@ -133,6 +135,7 @@ describe("CalendarSection", () => {
       items: [domain],
       expectDom: () => {
         expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("NT$ 1,000");
+        expandCard("預扣款項");
         expect(screen.getByRole("list", { name: "預扣款項" })).toHaveTextContent(
           "網域2027 年期（10/11 扣款）NT$ 84(NT$ 83.3)",
         );
@@ -146,6 +149,7 @@ describe("CalendarSection", () => {
       act: () => fireEvent.click(screen.getByRole("button", { name: "上個月" })),
       expectDom: () => {
         expect(screen.getByRole("heading", { name: "2026 年 9 月" })).toBeInTheDocument();
+        expandCard("預扣款項");
         expect(screen.getByRole("list", { name: "預扣款項" })).toHaveTextContent("2026 年期（10/11 扣款）");
       },
     },
@@ -162,6 +166,7 @@ describe("CalendarSection", () => {
       expectDom: () => {
         expect(screen.getByRole("cell", { name: "20 日：合約到期：中華電信" })).toBeInTheDocument();
         expect(screen.getByRole("cell", { name: "25 日" })).toBeInTheDocument();
+        expandCard("本月到期");
         expect(screen.getByRole("list", { name: "到期項目" }).textContent).toBe("中華電信10/20（二）");
         expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
       },

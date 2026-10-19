@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ContractExpiry } from "@/lib/contractExpiries";
+import { expandCard } from "@/test/collapsibleCard";
 import { makeSubscription } from "@/test/fixtures";
 import { MonthExpiryList } from "./MonthExpiryList";
 
@@ -36,15 +37,15 @@ describe("MonthExpiryList", () => {
       const { container } = render(<MonthExpiryList expiries={tt.expiries} />);
 
       const region = screen.getByRole("region", { name: "本月到期" });
-      const list = within(region).queryByRole("list", { name: "到期項目" });
       expect(container.querySelector("footer")?.textContent ?? null).toBe(tt.expectedFooter);
       if (tt.expectedRows === null) {
-        expect(list).not.toBeInTheDocument();
-        expect(region).toHaveTextContent("這個月沒有到期的合約。");
+        expect(within(region).queryByRole("list", { name: "到期項目" })).not.toBeInTheDocument();
+        expect(screen.getByText("這個月沒有到期的合約。")).toBeVisible();
         return;
       }
+      expandCard("本月到期");
       expect(
-        within(list as HTMLElement)
+        within(within(region).getByRole("list", { name: "到期項目" }))
           .getAllByRole("listitem")
           .map((li) => li.textContent),
       ).toEqual(tt.expectedRows);

@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Reserve } from "@/lib/amortization";
 import { footerAmounts } from "@/test/cardFooter";
+import { expandCard } from "@/test/collapsibleCard";
 import { makeSubscription } from "@/test/fixtures";
 import { MonthReserveList } from "./MonthReserveList";
 
@@ -49,6 +50,7 @@ describe("MonthReserveList", () => {
         return;
       }
       expect(screen.getByRole("region", { name: "預扣款項" })).toBeInTheDocument();
+      expandCard("預扣款項");
       const list = screen.getByRole("list", { name: "預扣款項" });
       expect(
         within(list)
