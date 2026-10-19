@@ -1,13 +1,14 @@
 import { useId } from "react";
 import { sumReserves, type Reserve } from "@/lib/amortization";
 import { formatReserve, formatReserveTerm } from "@/lib/format";
+import { CardFooter } from "./CardFooter";
 import { CoinListItem } from "./CoinListItem";
 import { CurrencyAmounts } from "./CurrencyAmounts";
 
 /**
  * Card listing what to set aside this month for upcoming amortized yearly charges, one row
  * per charge with the term it saves for and the exact average under the rounded-up amount,
- * followed by the rounded-up subtotal. Renders nothing without reserves.
+ * with a footer holding the rounded-up subtotal per currency. Renders nothing without reserves.
  *
  * @param props.reserves - The month's reserves, already in display order.
  */
@@ -37,10 +38,9 @@ export function MonthReserveList({ reserves }: { reserves: Reserve[] }) {
           );
         })}
       </ul>
-      <div className="flex items-start justify-between gap-3 border-t border-leaf-500/15 pt-4">
-        <span className="text-sm text-ink-soft">預留小計</span>
+      <CardFooter label="預留小計">
         <CurrencyAmounts totals={sumReserves(reserves)} className="items-end font-semibold" />
-      </div>
+      </CardFooter>
     </section>
   );
 }

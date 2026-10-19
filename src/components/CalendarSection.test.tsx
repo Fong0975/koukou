@@ -105,9 +105,11 @@ describe("CalendarSection", () => {
         expect(screen.getByRole("region", { name: "本月扣款清單" })).toHaveTextContent("US$ 10.00≈ NT$ 320");
         expect(screen.getByText("本月總計").nextElementSibling?.textContent).toBe("NT$ 320");
         expect(screen.getByText("2026 年度總計").nextElementSibling?.textContent).toBe("NT$ 4,230");
-        // The month's only foreign charge makes the headline, its category and its payment method all NT$ 320.
+        expect(screen.getByText("扣款小計").nextElementSibling?.textContent).toBe("NT$ 320");
+        // The month's only foreign charge makes the charge list subtotal, the headline, its category and its
+        // payment method all NT$ 320.
         for (const [total, count] of [
-          ["NT$ 320", 3],
+          ["NT$ 320", 4],
           ["NT$ 4,230", 1],
         ] as const) {
           expect(screen.getAllByRole("button", { name: `${total}，查看換算前金額` })).toHaveLength(count);

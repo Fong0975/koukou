@@ -1,4 +1,6 @@
 import type { SubscriptionDto } from "@/types/dto";
+import { amountOn } from "./amountPeriods";
+import { toCents, totalByCurrency, type CurrencyTotals } from "./billingSummary";
 import type { CalendarDate, YearMonth } from "./calendarMonth";
 import { dateKeyToUtcDate, toDateKey } from "./dateKey";
 
@@ -28,6 +30,18 @@ export function monthContractExpiries(items: SubscriptionDto[], target: YearMont
       return [{ day: Number(date.slice(8)), date, subscription }];
     })
     .sort((a, b) => a.day - b.day || a.subscription.name.localeCompare(b.subscription.name));
+}
+
+/**
+ * Adds up the last amount each expiring contract charges, per currency.
+ *
+ * @param expiries - The month's contract expiries.
+ * @returns Whole-cent totals per currency.
+ */
+export function sumExpiries(expiries: ContractExpiry[]): CurrencyTotals {
+  return totalByCurrency(
+    expiries.map(({ date, subscription }) => [subscription.currency, toCents(amountOn(subscription, date))] as const),
+  );
 }
 
 /**

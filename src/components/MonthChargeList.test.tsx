@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Occurrence } from "@/lib/billingOccurrences";
+import { footerAmounts } from "@/test/cardFooter";
 import { makeCategory, makeOccurrence, makeSubscription } from "@/test/fixtures";
 import { MonthChargeList } from "./MonthChargeList";
 
@@ -29,8 +30,10 @@ describe("MonthChargeList", () => {
     order?: string;
     /** Each group's heading with the names of its rows, or null for the empty state. */
     expectedGroups: [string, string[]][] | null;
+    /** The footer's subtotal lines, or null without a footer. */
+    expectedSubtotal: string[] | null;
   }[] = [
-    { name: "a month without charges says so", occurrences: [], expectedGroups: null },
+    { name: "a month without charges says so", occurrences: [], expectedGroups: null, expectedSubtotal: null },
     {
       name: "groups by date by default, only for days with charges",
       occurrences,
@@ -39,6 +42,7 @@ describe("MonthChargeList", () => {
         ["1/3（六）", ["Spotify"]],
         ["1/15（四）", ["Netflix"]],
       ],
+      expectedSubtotal: ["NT$ 780", "US$ 15.49"],
     },
     {
       // 音樂 (sortOrder 10) goes before 影音串流 (sortOrder 20).
@@ -49,16 +53,18 @@ describe("MonthChargeList", () => {
         ["音樂", ["Spotify"]],
         ["🎬 影音串流", ["Netflix"]],
       ],
+      expectedSubtotal: ["NT$ 780", "US$ 15.49"],
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      render(<MonthChargeList occurrences={tt.occurrences} rates={null} />);
+      const { container } = render(<MonthChargeList occurrences={tt.occurrences} rates={null} />);
 
       expect(screen.getByRole("heading", { level: 2, name: "本月扣款清單" })).toBeInTheDocument();
       if (tt.order) fireEvent.click(screen.getByRole("radio", { name: tt.order }));
       expect(screen.getByRole("radio", { checked: true })).toHaveTextContent(tt.order ?? "日期");
+      expect(footerAmounts(container, "扣款小計")).toEqual(tt.expectedSubtotal);
 
       if (tt.expectedGroups === null) {
         expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
