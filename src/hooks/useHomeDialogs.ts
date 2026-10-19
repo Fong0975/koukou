@@ -7,12 +7,13 @@ import type { SubscriptionDto } from "@/types/dto";
 type FormTarget = null | "new" | SubscriptionDto;
 
 /**
- * Open/closed state of the home screen's dialogs: the subscription list, the add/edit form
- * and the delete confirmation. They are independent, so the form and the confirmation can
- * open on top of the list and return to it when closed.
+ * Open/closed state of the home screen's dialogs: the subscription list, the add/edit form,
+ * the delete confirmation and the annual report. They are independent, so the form and the
+ * confirmation can open on top of the list and return to it when closed.
  */
 export function useHomeDialogs() {
   const [listOpen, setListOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [formTarget, setFormTarget] = useState<FormTarget>(null);
   const [deleting, setDeleting] = useState<SubscriptionDto | null>(null);
 
@@ -29,5 +30,8 @@ export function useHomeDialogs() {
     deleting,
     openDelete: (item: SubscriptionDto) => setDeleting(item),
     closeDelete: () => setDeleting(null),
+    reportOpen,
+    openReport: () => setReportOpen(true),
+    closeReport: () => setReportOpen(false),
   };
 }

@@ -12,10 +12,12 @@ describe("Header", () => {
   for (const tt of tests) {
     it(tt.name, async () => {
       const onOpenList = vi.fn();
+      const onOpenReport = vi.fn();
       const onExport = vi.fn(() => Promise.resolve());
       render(
         <Header
           onOpenList={onOpenList}
+          onOpenReport={onOpenReport}
           onExport={onExport}
           onImportFile={() => Promise.resolve()}
           versionLabel={tt.versionLabel}
@@ -28,12 +30,20 @@ describe("Header", () => {
       fireEvent.click(screen.getByRole("button", { name: "所有扣款" }));
       expect(onOpenList).toHaveBeenCalledTimes(1);
 
+      fireEvent.click(screen.getByRole("button", { name: "年度報表" }));
+      expect(onOpenReport).toHaveBeenCalledTimes(1);
+
       fireEvent.click(screen.getByRole("button", { name: "資料備份" }));
       await act(async () => {
         fireEvent.click(screen.getByRole("menuitem", { name: "匯出備份" }));
         await flushPromises();
       });
       expect(onExport).toHaveBeenCalledTimes(1);
+
+      // Narrow screens reach the report through the menu instead of the hidden header button.
+      fireEvent.click(screen.getByRole("button", { name: "資料備份" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: "年度報表" }));
+      expect(onOpenReport).toHaveBeenCalledTimes(2);
     });
   }
 });

@@ -10,6 +10,7 @@ import {
   formatConvertedTotal,
   formatDays,
   formatFullDate,
+  formatPercent,
   formatReserve,
   formatReserveTerm,
   formatSchedule,
@@ -262,6 +263,21 @@ describe("formatApproxTwd", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatApproxTwd(tt.twdCents)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatPercent", () => {
+  const tests = [
+    { name: "rounds to a whole percent", share: 0.4249, expected: "42%" },
+    { name: "whole", share: 1, expected: "100%" },
+    { name: "zero", share: 0, expected: "0%" },
+    { name: "a sliver", share: 0.004, expected: "<1%" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatPercent(tt.share)).toBe(tt.expected);
     });
   }
 });

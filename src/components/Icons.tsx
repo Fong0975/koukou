@@ -70,6 +70,15 @@ export function ListIcon(props: IconProps) {
   );
 }
 
+/** Bar chart, for opening the annual report. */
+export function ChartIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 20h16M7 16v-4M12 16V8M17 16v-7" />
+    </svg>
+  );
+}
+
 /** Down chevron, for expanding a collapsed section. */
 export function ChevronDownIcon(props: IconProps) {
   return (

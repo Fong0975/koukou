@@ -4,23 +4,26 @@ import { useBackup } from "@/hooks/useBackup";
 import { useHomeDialogs } from "@/hooks/useHomeDialogs";
 import { useLookups } from "@/hooks/useLookups";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useToday } from "@/hooks/useToday";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import { AllSubscriptionsModal } from "./AllSubscriptionsModal";
 import { CalendarSection } from "./CalendarSection";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { ConfirmImportDialog } from "./ConfirmImportDialog";
 import { Header } from "./Header";
+import { YearReportModal } from "./report/YearReportModal";
 import { SubscriptionFormModal } from "./SubscriptionFormModal";
 
 /**
  * Client-side home screen: wires the data hooks to the calendar, the subscription list dialog,
- * the add/edit form, the delete dialog and the backup menu with its import confirmation.
+ * the add/edit form, the delete dialog, the annual report and the backup menu with its import confirmation.
  */
 export function HomeView() {
   const subscriptions = useSubscriptions();
   const lookups = useLookups();
   const dialogs = useHomeDialogs();
   const backup = useBackup();
+  const today = useToday();
   const { editing } = dialogs;
 
   const retry = () => void subscriptions.reload();
@@ -36,7 +39,12 @@ export function HomeView() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-3 pb-16 sm:px-6">
-      <Header onOpenList={dialogs.openList} onExport={backup.exportBackup} onImportFile={backup.selectFile} />
+      <Header
+        onOpenList={dialogs.openList}
+        onOpenReport={dialogs.openReport}
+        onExport={backup.exportBackup}
+        onImportFile={backup.selectFile}
+      />
 
       <main className="mt-8">
         <CalendarSection
@@ -59,6 +67,10 @@ export function HomeView() {
           onDelete={dialogs.openDelete}
           onClose={dialogs.closeList}
         />
+      )}
+
+      {dialogs.reportOpen && today && (
+        <YearReportModal items={subscriptions.items} initialYear={today.year} onClose={dialogs.closeReport} />
       )}
 
       {dialogs.formOpen && (
