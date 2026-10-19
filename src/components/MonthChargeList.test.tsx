@@ -62,7 +62,7 @@ describe("MonthChargeList", () => {
     it(tt.name, () => {
       const { container } = render(<MonthChargeList occurrences={tt.occurrences} rates={null} />);
 
-      expect(screen.getByRole("heading", { level: 2, name: "本月扣款清單" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2, name: "本月扣款" })).toBeInTheDocument();
       expect(footerAmounts(container, "扣款小計")).toEqual(tt.expectedSubtotal);
       // The order switch sits in the collapsible body, so it is hidden until the card is expanded.
       expect(screen.queryByRole("radiogroup", { name: "排序方式" })).not.toBeInTheDocument();
@@ -72,7 +72,7 @@ describe("MonthChargeList", () => {
         expect(screen.queryByRole("list")).not.toBeInTheDocument();
         return;
       }
-      expandCard("本月扣款清單");
+      expandCard("本月扣款");
       if (tt.order) fireEvent.click(screen.getByRole("radio", { name: tt.order }));
       expect(screen.getByRole("radio", { checked: true })).toHaveTextContent(tt.order ?? "日期");
       const groups = screen.getAllByRole("heading", { level: 3 }).map((heading) => {

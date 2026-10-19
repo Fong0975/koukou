@@ -13,12 +13,16 @@ const occurrences = [
 const phone = makeSubscription({ id: 3, name: "中華電信", category: makeCategory({ icon: "📱" }) });
 const expiries: ContractExpiry[] = [{ day: 15, date: "2026-01-15", subscription: phone }];
 
-const names = (label: string) => {
+/** The popup section's heading followed by its names, or null when the section is not shown. */
+const section = (label: string) => {
   const list = screen.queryByRole("list", { name: label });
   return list
-    ? within(list)
-        .getAllByRole("listitem")
-        .map((li) => li.textContent)
+    ? [
+        list.previousElementSibling?.textContent,
+        ...within(list)
+          .getAllByRole("listitem")
+          .map((li) => li.textContent),
+      ]
     : null;
 };
 
@@ -30,7 +34,9 @@ describe("DayChargeCount", () => {
     open?: (trigger: HTMLElement) => void;
     expectedLabel: string;
     expectedTrigger: string;
+    /** The charges section's heading and names, or null when not shown. */
     expectedCharges: string[] | null;
+    /** The expiries section's heading and names, or null when not shown. */
     expectedExpiries: string[] | null;
   }[] = [
     {
@@ -49,7 +55,7 @@ describe("DayChargeCount", () => {
       open: (trigger) => fireEvent.click(trigger),
       expectedLabel: "15 日扣款項目（2 筆）",
       expectedTrigger: "2",
-      expectedCharges: ["🎬 Netflix", "記帳 App"],
+      expectedCharges: ["扣款項目", "🎬 Netflix", "記帳 App"],
       expectedExpiries: null,
     },
     {
@@ -59,7 +65,7 @@ describe("DayChargeCount", () => {
       open: (trigger) => movePointer(trigger, "enter", "mouse"),
       expectedLabel: "15 日扣款項目（2 筆）",
       expectedTrigger: "2",
-      expectedCharges: ["🎬 Netflix", "記帳 App"],
+      expectedCharges: ["扣款項目", "🎬 Netflix", "記帳 App"],
       expectedExpiries: null,
     },
     {
@@ -69,8 +75,8 @@ describe("DayChargeCount", () => {
       open: (trigger) => fireEvent.click(trigger),
       expectedLabel: "15 日扣款項目（2 筆）、合約到期（1 筆）",
       expectedTrigger: "21",
-      expectedCharges: ["🎬 Netflix", "記帳 App"],
-      expectedExpiries: ["📱 中華電信"],
+      expectedCharges: ["扣款項目", "🎬 Netflix", "記帳 App"],
+      expectedExpiries: ["合約到期", "📱 中華電信"],
     },
     {
       name: "a day with only an expiry",
@@ -80,7 +86,7 @@ describe("DayChargeCount", () => {
       expectedLabel: "15 日合約到期（1 筆）",
       expectedTrigger: "1",
       expectedCharges: null,
-      expectedExpiries: ["📱 中華電信"],
+      expectedExpiries: ["合約到期", "📱 中華電信"],
     },
   ];
 
@@ -92,8 +98,8 @@ describe("DayChargeCount", () => {
       tt.open?.(trigger);
 
       expect(trigger).toHaveTextContent(tt.expectedTrigger);
-      expect(names("15 日扣款項目")).toEqual(tt.expectedCharges);
-      expect(names("15 日合約到期")).toEqual(tt.expectedExpiries);
+      expect(section("15 日扣款項目")).toEqual(tt.expectedCharges);
+      expect(section("15 日合約到期")).toEqual(tt.expectedExpiries);
     });
   }
 });

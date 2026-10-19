@@ -17,7 +17,7 @@ export function MonthReserveList({ reserves }: { reserves: Reserve[] }) {
 
   return (
     <CollapsibleCard
-      title="預扣款項"
+      title="本月預扣"
       header={<p className="mt-1 text-sm text-ink-soft">年繳項目均攤到扣款前 12 個月，本月應先預留的金額</p>}
       footer={
         <CardFooter label="預留小計">
@@ -25,7 +25,7 @@ export function MonthReserveList({ reserves }: { reserves: Reserve[] }) {
         </CardFooter>
       }
     >
-      <ul aria-label="預扣款項" className="flex flex-col divide-y divide-leaf-500/15">
+      <ul aria-label="本月預扣" className="flex flex-col divide-y divide-leaf-500/15">
         {reserves.map(({ key, subscription, chargeDate, reserveCents, averageCents }) => {
           const { amount, average } = formatReserve(subscription.currency, reserveCents, averageCents);
           return (

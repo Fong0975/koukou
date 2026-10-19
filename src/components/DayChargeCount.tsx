@@ -22,27 +22,43 @@ function triggerLabel(day: number, chargeCount: number, expiryCount: number): st
   return `${day} 日${parts.join("、")}`;
 }
 
+interface NameSectionProps {
+  heading: string;
+  /** Text colour of the heading, matching the trigger's dot. */
+  headingClassName: string;
+  /** The list's accessible name. */
+  label: string;
+  /** The entries, keyed for React. */
+  items: { key: string; subscription: SubscriptionDto }[];
+}
+
 /**
- * Popup list of subscription names, each with its category icon.
+ * Popup section: a heading tinted like its dot, over the subscription names indented beneath it, each with its
+ * category icon.
  *
+ * @param props.heading - The section's title.
+ * @param props.headingClassName - The heading's colour class.
  * @param props.label - The list's accessible name.
- * @param props.items - The entries, keyed for React.
+ * @param props.items - The entries.
  */
-function NameList({ label, items }: { label: string; items: { key: string; subscription: SubscriptionDto }[] }) {
+function NameSection({ heading, headingClassName, label, items }: NameSectionProps) {
   return (
-    <ul aria-label={label} className="flex flex-col gap-1">
-      {items.map(({ key, subscription }) => (
-        <li key={key} className="break-words">
-          <IconLabel icon={subscription.category.icon} label={subscription.name} />
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-1">
+      <p className={`font-semibold ${headingClassName}`}>{heading}</p>
+      <ul aria-label={label} className="flex flex-col gap-1 pl-3">
+        {items.map(({ key, subscription }) => (
+          <li key={key} className="break-words">
+            <IconLabel icon={subscription.category.icon} label={subscription.name} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
 /**
  * Narrow-screen marker of a day's charges and contract expiries: a gold dot with the charge count and a red
- * dot with the expiry count that, on mouse hover or a tap, pop up their names.
+ * dot with the expiry count that, on mouse hover or a tap, pop up their names under a heading per kind.
  *
  * @param props.day - Day of the month, used in the accessible names.
  * @param props.occurrences - Charges falling on this day.
@@ -73,9 +89,11 @@ export function DayChargeCount({ day, occurrences, expiries, align }: DayChargeC
         </>
       }
     >
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {occurrences.length > 0 && (
-          <NameList
+          <NameSection
+            heading="扣款項目"
+            headingClassName="text-coin-600"
             label={`${day} 日扣款項目`}
             items={occurrences.map(({ subscription, scheduleId }) => ({
               key: `${subscription.id}-${scheduleId}`,
@@ -84,13 +102,12 @@ export function DayChargeCount({ day, occurrences, expiries, align }: DayChargeC
           />
         )}
         {expiries.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <p className="text-berry">合約到期</p>
-            <NameList
-              label={`${day} 日合約到期`}
-              items={expiries.map(({ subscription }) => ({ key: String(subscription.id), subscription }))}
-            />
-          </div>
+          <NameSection
+            heading="合約到期"
+            headingClassName="text-berry"
+            label={`${day} 日合約到期`}
+            items={expiries.map(({ subscription }) => ({ key: String(subscription.id), subscription }))}
+          />
         )}
       </div>
     </HoverTapPopup>

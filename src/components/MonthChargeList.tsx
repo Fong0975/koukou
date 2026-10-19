@@ -34,7 +34,7 @@ export function MonthChargeList({ occurrences, rates }: MonthChargeListProps) {
 
   return (
     <CollapsibleCard
-      title="本月扣款清單"
+      title="本月扣款"
       collapsible={!isEmpty}
       footer={
         !isEmpty && (

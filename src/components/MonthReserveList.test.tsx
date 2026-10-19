@@ -46,12 +46,12 @@ describe("MonthReserveList", () => {
       const { container } = render(<MonthReserveList reserves={tt.reserves} />);
 
       if (tt.expectedRows === null) {
-        expect(screen.queryByRole("heading", { name: "預扣款項" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("heading", { name: "本月預扣" })).not.toBeInTheDocument();
         return;
       }
-      expect(screen.getByRole("region", { name: "預扣款項" })).toBeInTheDocument();
-      expandCard("預扣款項");
-      const list = screen.getByRole("list", { name: "預扣款項" });
+      expect(screen.getByRole("region", { name: "本月預扣" })).toBeInTheDocument();
+      expandCard("本月預扣");
+      const list = screen.getByRole("list", { name: "本月預扣" });
       expect(
         within(list)
           .getAllByRole("listitem")
