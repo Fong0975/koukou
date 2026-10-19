@@ -1,11 +1,13 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { PendingImport } from "@/hooks/useBackup";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
+import { flushPromises } from "@/test/async";
 import { makeCategory, makePaymentMethod, makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
 import type { SubscriptionListProps } from "./SubscriptionList";
 
-const { INPUT, subscriptions, lookups, formProps, calendarProps, listProps } = vi.hoisted(() => ({
+const { INPUT, subscriptions, lookups, backup, formProps, calendarProps, listProps } = vi.hoisted(() => ({
   INPUT: { name: "Netflix" } as SubscriptionInput,
   subscriptions: {
     items: [] as SubscriptionDto[],
@@ -16,7 +18,14 @@ const { INPUT, subscriptions, lookups, formProps, calendarProps, listProps } = v
     update: vi.fn(),
     remove: vi.fn(),
   },
-  lookups: { categories: [], paymentMethods: [], addCategory: vi.fn(), addPaymentMethod: vi.fn() },
+  lookups: { categories: [], paymentMethods: [], reload: vi.fn(), addCategory: vi.fn(), addPaymentMethod: vi.fn() },
+  backup: {
+    pendingImport: null as PendingImport | null,
+    exportBackup: vi.fn(),
+    selectFile: vi.fn(),
+    confirmImport: vi.fn(),
+    closeImport: vi.fn(),
+  },
   formProps: vi.fn(),
   calendarProps: vi.fn(),
   listProps: vi.fn(),
@@ -24,8 +33,9 @@ const { INPUT, subscriptions, lookups, formProps, calendarProps, listProps } = v
 
 vi.mock("@/hooks/useSubscriptions", () => ({ useSubscriptions: () => subscriptions }));
 vi.mock("@/hooks/useLookups", () => ({ useLookups: () => lookups }));
+vi.mock("@/hooks/useBackup", () => ({ useBackup: () => backup }));
 
-// The calendar, the list dialog, the form and the confirmation have their own tests;
+// The calendar, the list dialog, the form and the confirmations have their own tests;
 // stand-ins expose only the callbacks HomeView wires up.
 vi.mock("./CalendarSection", () => ({
   CalendarSection: (props: unknown) => {
@@ -89,6 +99,19 @@ vi.mock("./ConfirmDeleteDialog", () => ({
   ),
 }));
 
+vi.mock("./ConfirmImportDialog", () => ({
+  ConfirmImportDialog: (props: { pending: PendingImport; onConfirm: () => Promise<void>; onClose: () => void }) => (
+    <div role="dialog" aria-label={`確認匯入 ${props.pending.fileName}`}>
+      <button type="button" onClick={() => void props.onConfirm().catch(() => {})}>
+        確認匯入
+      </button>
+      <button type="button" onClick={props.onClose}>
+        關閉匯入
+      </button>
+    </div>
+  ),
+}));
+
 import { HomeView } from "./HomeView";
 
 const item = makeSubscription({ id: 1, name: "Netflix" });
@@ -102,6 +125,7 @@ describe("HomeView", () => {
     vi.clearAllMocks();
     Object.assign(subscriptions, { items: [item], status: "ready", loadError: null });
     Object.assign(lookups, { categories: [makeCategory()], paymentMethods: [makePaymentMethod()] });
+    backup.pendingImport = null;
   });
 
   const tests: {
@@ -187,6 +211,112 @@ describe("HomeView", () => {
           }),
         );
       }
+    });
+  }
+});
+
+describe("HomeView backup", () => {
+  const pending: PendingImport = {
+    fileName: "koukou-backup-20261019.json",
+    preview: { appVersion: null, exportedAt: null, counts: { categories: 1, paymentMethods: 1, subscriptions: 1 } },
+    data: {},
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    backup.pendingImport = null;
+    backup.exportBackup.mockResolvedValue(undefined);
+  });
+
+  const tests: {
+    name: string;
+    pendingImport: PendingImport | null;
+    confirmImport?: () => Promise<void>;
+    steps: (() => void)[];
+    expectedDialogs: string[];
+    expectedExports: number;
+    expectedConfirms: number;
+    expectedReloads: number;
+    expectedCloses: number;
+  }[] = [
+    {
+      name: "the header menu exports a backup",
+      pendingImport: null,
+      steps: [
+        () => fireEvent.click(screen.getByRole("button", { name: "資料備份" })),
+        () => fireEvent.click(screen.getByRole("menuitem", { name: "匯出備份" })),
+      ],
+      expectedDialogs: [],
+      expectedExports: 1,
+      expectedConfirms: 0,
+      expectedReloads: 0,
+      expectedCloses: 0,
+    },
+    {
+      name: "a chosen backup file asks for confirmation",
+      pendingImport: pending,
+      steps: [],
+      expectedDialogs: ["確認匯入 koukou-backup-20261019.json"],
+      expectedExports: 0,
+      expectedConfirms: 0,
+      expectedReloads: 0,
+      expectedCloses: 0,
+    },
+    {
+      name: "confirming imports and reloads the subscriptions and option lists",
+      pendingImport: pending,
+      confirmImport: () => Promise.resolve(),
+      steps: [() => fireEvent.click(screen.getByRole("button", { name: "確認匯入" }))],
+      expectedDialogs: ["確認匯入 koukou-backup-20261019.json"],
+      expectedExports: 0,
+      expectedConfirms: 1,
+      expectedReloads: 1,
+      expectedCloses: 0,
+    },
+    {
+      name: "a failed import reloads nothing",
+      pendingImport: pending,
+      confirmImport: () => Promise.reject(new Error("down")),
+      steps: [() => fireEvent.click(screen.getByRole("button", { name: "確認匯入" }))],
+      expectedDialogs: ["確認匯入 koukou-backup-20261019.json"],
+      expectedExports: 0,
+      expectedConfirms: 1,
+      expectedReloads: 0,
+      expectedCloses: 0,
+    },
+    {
+      name: "closing the confirmation forgets the file",
+      pendingImport: pending,
+      steps: [() => fireEvent.click(screen.getByRole("button", { name: "關閉匯入" }))],
+      expectedDialogs: ["確認匯入 koukou-backup-20261019.json"],
+      expectedExports: 0,
+      expectedConfirms: 0,
+      expectedReloads: 0,
+      expectedCloses: 1,
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, async () => {
+      backup.pendingImport = tt.pendingImport;
+      backup.confirmImport.mockImplementation(tt.confirmImport ?? (() => Promise.resolve()));
+      render(<HomeView />);
+
+      for (const step of tt.steps) {
+        await act(async () => {
+          step();
+          await flushPromises();
+        });
+      }
+
+      expect(screen.queryAllByRole("dialog").map((dialog) => dialog.getAttribute("aria-label"))).toEqual(
+        tt.expectedDialogs,
+      );
+      expect(backup.exportBackup).toHaveBeenCalledTimes(tt.expectedExports);
+      expect(backup.confirmImport).toHaveBeenCalledTimes(tt.expectedConfirms);
+      expect(subscriptions.reload).toHaveBeenCalledTimes(tt.expectedReloads);
+      expect(lookups.reload).toHaveBeenCalledTimes(tt.expectedReloads);
+      expect(backup.closeImport).toHaveBeenCalledTimes(tt.expectedCloses);
     });
   }
 });

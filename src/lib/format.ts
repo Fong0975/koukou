@@ -1,8 +1,8 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { BillingScheduleDto } from "@/types/dto";
 import { currencyEntries, type CurrencyTotals } from "./billingSummary";
-import type { CalendarDate } from "./calendarMonth";
-import { dateKeyToUtcDate } from "./dateKey";
+import { toCalendarDate, type CalendarDate } from "./calendarMonth";
+import { dateKeyToUtcDate, toDateKey } from "./dateKey";
 import { CURRENCY_PREFIX, CYCLE_LABELS, WEEKDAY_LABELS } from "./labels";
 
 /** Amount split into a currency prefix and a grouped number, for separate styling. */
@@ -99,6 +99,19 @@ export function formatContractRemaining(days: number): string {
  */
 export function formatFullDate(date: string): string {
   return date.replaceAll("-", "/");
+}
+
+/**
+ * Formats an ISO timestamp as a local date and time, e.g. "2026/10/19 16:05".
+ *
+ * @param timestamp - An ISO timestamp.
+ * @returns The formatted time, or the input unchanged when it is not a valid timestamp.
+ */
+export function formatTimestamp(timestamp: string): string {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return timestamp;
+  const time = [date.getHours(), date.getMinutes()].map((part) => String(part).padStart(2, "0")).join(":");
+  return `${formatFullDate(toDateKey(toCalendarDate(date)))} ${time}`;
 }
 
 /** A monthly reserve split into its rounded-up amount and the exact average, for separate styling. */
