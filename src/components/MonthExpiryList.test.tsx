@@ -1,7 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ContractExpiry } from "@/lib/contractExpiries";
-import { footerAmounts } from "@/test/cardFooter";
 import { makeSubscription } from "@/test/fixtures";
 import { MonthExpiryList } from "./MonthExpiryList";
 
@@ -16,24 +15,19 @@ describe("MonthExpiryList", () => {
     name: string;
     expiries: ContractExpiry[];
     expectedRows: string[] | null;
-    expectedSubtotal: string[] | null;
+    /** The footer's text, or null without a footer. */
+    expectedFooter: string | null;
   }[] = [
-    { name: "says so when nothing ends this month", expiries: [], expectedRows: null, expectedSubtotal: null },
+    { name: "says so when nothing ends this month", expiries: [], expectedRows: null, expectedFooter: null },
     {
-      name: "lists each contract with its end date and last amount",
+      name: "lists each contract with its name and end date, and counts them",
       expiries: [
         expiry(5, { id: 1, name: "健身房", amount: "1200.00" }),
         expiry(18, { id: 2, name: "中華電信", amount: "599.00" }),
-        expiry(31, {
-          id: 3,
-          name: "雲端空間",
-          currency: "USD",
-          amount: "12.00",
-          amountPeriods: [{ id: 1, amount: "9.99", endDate: "2026-12-31" }],
-        }),
+        expiry(31, { id: 3, name: "雲端空間", currency: "USD", amount: "12.00" }),
       ],
-      expectedRows: ["健身房10/5（一）NT$ 1,200", "中華電信10/18（日）NT$ 599", "雲端空間10/31（六）US$ 9.99"],
-      expectedSubtotal: ["NT$ 1,799", "US$ 9.99"],
+      expectedRows: ["健身房10/5（一）", "中華電信10/18（日）", "雲端空間10/31（六）"],
+      expectedFooter: "到期數量3 項",
     },
   ];
 
@@ -43,7 +37,7 @@ describe("MonthExpiryList", () => {
 
       const region = screen.getByRole("region", { name: "本月到期" });
       const list = within(region).queryByRole("list", { name: "到期項目" });
-      expect(footerAmounts(container, "到期小計")).toEqual(tt.expectedSubtotal);
+      expect(container.querySelector("footer")?.textContent ?? null).toBe(tt.expectedFooter);
       if (tt.expectedRows === null) {
         expect(list).not.toBeInTheDocument();
         expect(region).toHaveTextContent("這個月沒有到期的合約。");

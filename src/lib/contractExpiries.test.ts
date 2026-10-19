@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
 import type { CalendarDate, YearMonth } from "./calendarMonth";
-import { daysUntil, monthContractExpiries, sumExpiries, type ContractExpiry } from "./contractExpiries";
+import { daysUntil, monthContractExpiries } from "./contractExpiries";
 
 describe("monthContractExpiries", () => {
   const phone = makeSubscription({ id: 1, name: "Phone", contractEndDate: "2026-10-31" });
@@ -62,45 +62,6 @@ describe("daysUntil", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(daysUntil(today, tt.date)).toBe(tt.expected);
-    });
-  }
-});
-
-describe("sumExpiries", () => {
-  const expiry = (date: string, overrides: Parameters<typeof makeSubscription>[0]): ContractExpiry => ({
-    day: Number(date.slice(8)),
-    date,
-    subscription: makeSubscription(overrides),
-  });
-
-  const tests: { name: string; expiries: ContractExpiry[]; expected: Record<string, number> }[] = [
-    { name: "no expiries", expiries: [], expected: {} },
-    {
-      name: "adds each contract's amount per currency",
-      expiries: [
-        expiry("2026-10-05", { id: 1, amount: "1200.00" }),
-        expiry("2026-10-18", { id: 2, amount: "599.00" }),
-        expiry("2026-10-31", { id: 3, currency: "USD", amount: "12.00" }),
-      ],
-      expected: { TWD: 179900, USD: 1200 },
-    },
-    {
-      name: "uses the amount in effect on the end date",
-      expiries: [
-        expiry("2026-10-31", {
-          id: 3,
-          currency: "USD",
-          amount: "12.00",
-          amountPeriods: [{ id: 1, amount: "9.99", endDate: "2026-12-31" }],
-        }),
-      ],
-      expected: { USD: 999 },
-    },
-  ];
-
-  for (const tt of tests) {
-    it(tt.name, () => {
-      expect(sumExpiries(tt.expiries)).toEqual(tt.expected);
     });
   }
 });

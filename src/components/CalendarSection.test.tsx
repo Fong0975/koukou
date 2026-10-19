@@ -162,7 +162,7 @@ describe("CalendarSection", () => {
       expectDom: () => {
         expect(screen.getByRole("cell", { name: "20 日：合約到期：中華電信" })).toBeInTheDocument();
         expect(screen.getByRole("cell", { name: "25 日" })).toBeInTheDocument();
-        expect(screen.getByRole("list", { name: "到期項目" })).toHaveTextContent("中華電信10/20（二）NT$ 599");
+        expect(screen.getByRole("list", { name: "到期項目" }).textContent).toBe("中華電信10/20（二）");
         expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
       },
     },
