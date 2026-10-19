@@ -6,7 +6,8 @@ import { rethrowPrismaError } from "./prismaErrors";
 
 const logger = createLogger("categoryService");
 
-const categorySelect = { id: true, name: true, icon: true, sortOrder: true } as const;
+/** Columns of a category returned by the API and written to backups. */
+export const categorySelect = { id: true, name: true, icon: true, sortOrder: true } as const;
 
 /**
  * Lists all categories ordered for display.

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useRef, useState, type PointerEvent } from "react";
+import { useDismiss } from "./useDismiss";
 
 /**
  * Open state of a small popup that a mouse opens by hovering and a tap (or click) opens until dismissed.
@@ -17,25 +18,11 @@ export function useHoverOrTapPopup<T extends HTMLElement>() {
   const [pinned, setPinned] = useState(false);
   const open = hovered || pinned;
 
-  useEffect(() => {
-    if (!open) return;
-    const close = () => {
-      setHovered(false);
-      setPinned(false);
-    };
-    const onPointerDown = (event: Event) => {
-      if (!ref.current?.contains(event.target as Node)) close();
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  const close = useCallback(() => {
+    setHovered(false);
+    setPinned(false);
+  }, []);
+  useDismiss(ref, open, close);
 
   const hoverWithMouse = (next: boolean) => (event: PointerEvent) => {
     if (event.pointerType === "mouse") setHovered(next);

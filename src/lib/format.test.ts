@@ -13,6 +13,7 @@ import {
   formatReserve,
   formatReserveTerm,
   formatSchedule,
+  formatTimestamp,
   type ConvertedTotal,
 } from "./format";
 
@@ -121,6 +122,28 @@ describe("formatFullDate", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatFullDate(tt.date)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatTimestamp", () => {
+  const tests = [
+    {
+      name: "formats in local time with zero padding",
+      timestamp: new Date(2026, 9, 9, 8, 5).toISOString(),
+      expected: "2026/10/09 08:05",
+    },
+    {
+      name: "keeps the evening in 24-hour time",
+      timestamp: new Date(2026, 11, 31, 23, 59).toISOString(),
+      expected: "2026/12/31 23:59",
+    },
+    { name: "returns an invalid timestamp unchanged", timestamp: "yesterday", expected: "yesterday" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatTimestamp(tt.timestamp)).toBe(tt.expected);
     });
   }
 });

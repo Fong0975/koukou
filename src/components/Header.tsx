@@ -1,20 +1,28 @@
 import Image from "next/image";
 import { APP_VERSION_LABEL } from "@/lib/appVersion";
+import { DataMenu } from "./DataMenu";
 import { ListIcon } from "./Icons";
 
 interface HeaderProps {
   onOpenList: () => void;
+  /** Saves all data to a backup file. */
+  onExport: () => Promise<void>;
+  /** Reads a chosen backup file, ahead of confirming its import. */
+  onImportFile: (file: File) => Promise<void>;
   /** Version label shown next to the brand; defaults to the running build's version. */
   versionLabel?: string;
 }
 
 /**
- * Top bar with the KouKou brand, the app version and the button that opens the full subscription list.
+ * Top bar with the KouKou brand, the app version, the backup menu and the button that opens the full
+ * subscription list.
  *
  * @param props.onOpenList - Opens the subscription list dialog.
+ * @param props.onExport - Saves all data to a backup file.
+ * @param props.onImportFile - Reads a chosen backup file.
  * @param props.versionLabel - Overrides the displayed version (used by tests).
  */
-export function Header({ onOpenList, versionLabel = APP_VERSION_LABEL }: HeaderProps) {
+export function Header({ onOpenList, onExport, onImportFile, versionLabel = APP_VERSION_LABEL }: HeaderProps) {
   return (
     <header className="glass sticky top-3 z-20 flex items-center justify-between gap-3 rounded-full py-2 pr-2 pl-3">
       <div className="flex items-center gap-2.5">
@@ -33,10 +41,13 @@ export function Header({ onOpenList, versionLabel = APP_VERSION_LABEL }: HeaderP
           </span>
         </div>
       </div>
-      <button type="button" className="btn btn-primary" onClick={onOpenList}>
-        <ListIcon />
-        所有扣款
-      </button>
+      <div className="flex items-center gap-1">
+        <DataMenu onExport={onExport} onImportFile={onImportFile} />
+        <button type="button" className="btn btn-primary" onClick={onOpenList}>
+          <ListIcon />
+          所有扣款
+        </button>
+      </div>
     </header>
   );
 }

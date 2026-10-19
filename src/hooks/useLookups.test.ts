@@ -58,6 +58,31 @@ describe("useLookups", () => {
       expectedPaymentMethods: [],
     },
     {
+      name: "reload fetches both lists again",
+      act: (hook) => {
+        respondWith(
+          () => Promise.resolve([telecom]),
+          () => Promise.resolve([account, card]),
+        );
+        return hook.reload();
+      },
+      expectedCategories: ["電信"],
+      expectedPaymentMethods: ["國泰 CUBE", "台新 Richart"],
+    },
+    {
+      name: "reload logs and keeps the lists when loading fails",
+      act: (hook) => {
+        respondWith(
+          () => Promise.reject(new Error("down")),
+          () => Promise.resolve([]),
+        );
+        return hook.reload();
+      },
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["國泰 CUBE"],
+      expectLogged: true,
+    },
+    {
       name: "addCategory inserts by sortOrder",
       act: (hook) => hook.addCategory({ name: "健身房", icon: "" }),
       created: makeCategory({ id: 9, name: "健身房", sortOrder: 30 }),
@@ -99,7 +124,7 @@ describe("useLookups", () => {
       await act(flushPromises);
 
       if (tt.act) {
-        apiRequest.mockResolvedValueOnce(tt.created);
+        if (tt.created) apiRequest.mockResolvedValueOnce(tt.created);
         await act(async () => {
           await tt.act!(result.current);
         });

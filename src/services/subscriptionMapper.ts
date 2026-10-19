@@ -46,16 +46,21 @@ export const subscriptionInclude = {
 } as const;
 
 /** Serializes a DECIMAL(12, 2) value as a fixed 2-decimal string. */
-const toAmountString = (amount: DecimalLike) => amount.toFixed(2);
+export const toAmountString = (amount: DecimalLike) => amount.toFixed(2);
+
+/** The scalar columns of a subscription record that every serialized form carries. */
+export type SubscriptionColumnsRecord = Pick<
+  SubscriptionRecord,
+  "id" | "name" | "currency" | "amount" | "amortize" | "startDate" | "contractEndDate" | "note" | "createdAt"
+>;
 
 /**
- * Converts a DB record into a JSON-safe DTO (Decimal → string, Date → ISO string,
- * DATE column → "YYYY-MM-DD").
+ * Serializes the scalar columns shared by the API DTO and the backup entry of a subscription
+ * (Decimal → string, Date → ISO string, DATE column → "YYYY-MM-DD").
  *
- * @param record - Subscription loaded with {@link subscriptionInclude}.
- * @returns The serialized subscription.
+ * @param record - The subscription's columns.
  */
-export function toSubscriptionDto(record: SubscriptionRecord): SubscriptionDto {
+export function serializeSubscriptionColumns(record: SubscriptionColumnsRecord) {
   return {
     id: record.id,
     name: record.name,
@@ -64,16 +69,28 @@ export function toSubscriptionDto(record: SubscriptionRecord): SubscriptionDto {
     amortize: record.amortize,
     startDate: utcDateToDateKey(record.startDate),
     contractEndDate: record.contractEndDate === null ? null : utcDateToDateKey(record.contractEndDate),
+    note: record.note,
+    createdAt: record.createdAt.toISOString(),
+  };
+}
+
+/**
+ * Converts a DB record into a JSON-safe DTO.
+ *
+ * @param record - Subscription loaded with {@link subscriptionInclude}.
+ * @returns The serialized subscription.
+ */
+export function toSubscriptionDto(record: SubscriptionRecord): SubscriptionDto {
+  return {
+    ...serializeSubscriptionColumns(record),
     amountPeriods: record.amountPeriods.map((period) => ({
       id: period.id,
       amount: toAmountString(period.amount),
       endDate: utcDateToDateKey(period.endDate),
     })),
-    note: record.note,
     category: record.category,
     paymentMethod: record.paymentMethod,
     schedules: record.schedules,
-    createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   };
 }

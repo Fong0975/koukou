@@ -106,3 +106,30 @@ export function CardIcon(props: IconProps) {
     </svg>
   );
 }
+
+/** Three horizontal dots, for opening a menu of more actions. */
+export function MoreIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3} />
+    </svg>
+  );
+}
+
+/** Arrow into a tray, for saving a file. */
+export function DownloadIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+    </svg>
+  );
+}
+
+/** Arrow out of a tray, for loading a file. */
+export function UploadIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 15V4M7 9l5-5 5 5M5 20h14" />
+    </svg>
+  );
+}
