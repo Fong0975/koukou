@@ -70,3 +70,8 @@ export const optionalDate = (label: string) =>
     .nullish()
     .transform((value) => (value ? value : null))
     .refine((value) => value === null || isDateKey(value), invalidDateMessage(label));
+
+/** The part of a zod refinement context that cross-field checks report through. */
+export interface IssueSink {
+  addIssue(issue: { code: "custom"; path: (string | number)[]; message: string }): void;
+}

@@ -1,10 +1,10 @@
-import { dateKeyToUtcDate } from "@/lib/dateKey";
 import { prisma } from "@/lib/db";
 import { NotFoundError } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import type { SubscriptionData } from "@/lib/validation/subscriptionSchema";
 import type { SubscriptionDto } from "@/types/dto";
 import { rethrowPrismaError, type PrismaErrorMessages } from "./prismaErrors";
+import { toAmountPeriodRows, toSubscriptionColumns } from "./subscriptionColumns";
 import { subscriptionInclude, toSubscriptionDto } from "./subscriptionMapper";
 
 const logger = createLogger("subscriptionService");
@@ -15,32 +15,6 @@ const writeErrorMessages = (id?: number): PrismaErrorMessages => ({
   notFound: id === undefined ? undefined : notFoundMessage(id),
   foreignKey: "選擇的類型或扣款方式不存在",
 });
-
-/** Formats a validated amount for a DECIMAL(12, 2) column. */
-const toDecimalColumn = (amount: number) => amount.toFixed(2);
-
-/** Maps validated input to the scalar columns of a subscription. */
-function toSubscriptionColumns(data: SubscriptionData) {
-  return {
-    name: data.name,
-    categoryId: data.categoryId,
-    paymentMethodId: data.paymentMethodId,
-    currency: data.currency,
-    amount: toDecimalColumn(data.amount),
-    amortize: data.amortize,
-    startDate: dateKeyToUtcDate(data.startDate),
-    contractEndDate: data.contractEndDate === null ? null : dateKeyToUtcDate(data.contractEndDate),
-    note: data.note,
-  };
-}
-
-/** Maps validated past amounts to rows of the amount period table. */
-function toAmountPeriodRows(data: SubscriptionData) {
-  return data.amountPeriods.map((period) => ({
-    amount: toDecimalColumn(period.amount),
-    endDate: dateKeyToUtcDate(period.endDate),
-  }));
-}
 
 /** Child row counts included in write log entries. */
 const childCounts = (data: SubscriptionData) => ({

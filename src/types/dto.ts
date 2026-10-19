@@ -1,4 +1,5 @@
 import type { BillingCycle, Currency, PaymentType } from "@/generated/prisma/enums";
+import type { BACKUP_FORMAT, BACKUP_VERSION } from "@/lib/constants/backupFormat";
 
 /** Category as returned by the API. */
 export interface CategoryDto {
@@ -53,6 +54,46 @@ export interface SubscriptionDto {
   schedules: BillingScheduleDto[];
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Subscription as stored in a backup: relations are referenced by id, and schedules and past
+ * amounts carry no ids of their own because they are recreated on import.
+ */
+export interface BackupSubscriptionDto {
+  id: number;
+  name: string;
+  categoryId: number;
+  paymentMethodId: number;
+  currency: Currency;
+  amount: string;
+  amortize: boolean;
+  startDate: string;
+  contractEndDate: string | null;
+  note: string | null;
+  createdAt: string;
+  schedules: Omit<BillingScheduleDto, "id">[];
+  amountPeriods: Omit<AmountPeriodDto, "id">[];
+}
+
+/** Every stored record, as written to a backup file. */
+export interface BackupDto {
+  format: typeof BACKUP_FORMAT;
+  version: typeof BACKUP_VERSION;
+  /** Version label of the app that wrote the backup, e.g. "v1.0.12". */
+  appVersion: string;
+  /** When the backup was written, as an ISO timestamp. */
+  exportedAt: string;
+  categories: CategoryDto[];
+  paymentMethods: PaymentMethodDto[];
+  subscriptions: BackupSubscriptionDto[];
+}
+
+/** How many records of each kind a backup holds, or an import restored. */
+export interface BackupCountsDto {
+  categories: number;
+  paymentMethods: number;
+  subscriptions: number;
 }
 
 /** USD→TWD rate published for one day, as TWD per 1 USD. */

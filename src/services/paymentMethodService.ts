@@ -6,7 +6,8 @@ import { rethrowPrismaError } from "./prismaErrors";
 
 const logger = createLogger("paymentMethodService");
 
-const paymentMethodSelect = { id: true, type: true, name: true, note: true } as const;
+/** Columns of a payment method returned by the API and written to backups. */
+export const paymentMethodSelect = { id: true, type: true, name: true, note: true } as const;
 
 /**
  * Lists all payment methods grouped by type.
