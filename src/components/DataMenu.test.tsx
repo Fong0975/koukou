@@ -22,6 +22,7 @@ describe("DataMenu", () => {
     expectedExports: number;
     expectedImports: File[];
     expectedPickerOpens?: number;
+    expectedReports?: number;
   }[] = [
     { name: "starts closed", steps: [], expectedOpen: false, expectedExports: 0, expectedImports: [] },
     { name: "the button opens the menu", steps: [toggle], expectedOpen: true, expectedExports: 0, expectedImports: [] },
@@ -55,6 +56,14 @@ describe("DataMenu", () => {
       expectedOpen: true,
       expectedExports: 1,
       expectedImports: [],
+    },
+    {
+      name: "the report item opens the report and closes the menu",
+      steps: [toggle, () => choose("年度報表")],
+      expectedOpen: false,
+      expectedExports: 0,
+      expectedImports: [],
+      expectedReports: 1,
     },
     {
       name: "importing opens the file picker",
@@ -93,8 +102,9 @@ describe("DataMenu", () => {
     it(tt.name, async () => {
       const onExport = vi.fn(tt.onExport ?? (() => Promise.resolve()));
       const onImportFile = vi.fn(tt.onImportFile ?? (() => Promise.resolve()));
+      const onOpenReport = vi.fn();
       const openPicker = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
-      render(<DataMenu onExport={onExport} onImportFile={onImportFile} />);
+      render(<DataMenu onOpenReport={onOpenReport} onExport={onExport} onImportFile={onImportFile} />);
 
       for (const step of tt.steps) {
         await act(async () => {
@@ -110,6 +120,7 @@ describe("DataMenu", () => {
       expect(onExport).toHaveBeenCalledTimes(tt.expectedExports);
       expect(onImportFile.mock.calls).toEqual(tt.expectedImports.map((file) => [file]));
       expect(openPicker).toHaveBeenCalledTimes(tt.expectedPickerOpens ?? 0);
+      expect(onOpenReport).toHaveBeenCalledTimes(tt.expectedReports ?? 0);
     });
   }
 });

@@ -39,6 +39,11 @@ describe("Header", () => {
         await flushPromises();
       });
       expect(onExport).toHaveBeenCalledTimes(1);
+
+      // Narrow screens reach the report through the menu instead of the hidden header button.
+      fireEvent.click(screen.getByRole("button", { name: "資料備份" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: "年度報表" }));
+      expect(onOpenReport).toHaveBeenCalledTimes(2);
     });
   }
 });

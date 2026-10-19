@@ -16,7 +16,7 @@ interface HeaderProps {
 
 /**
  * Top bar with the KouKou brand, the app version, the backup menu and the buttons that open the annual report
- * and the full subscription list.
+ * (in the menu on narrow screens) and the full subscription list.
  *
  * @param props.onOpenList - Opens the subscription list dialog.
  * @param props.onOpenReport - Opens the annual report dialog.
@@ -50,15 +50,21 @@ export function Header({
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <DataMenu onExport={onExport} onImportFile={onImportFile} />
-        {/* Icon only on narrow screens, where the header has no room for another label. */}
-        <button type="button" className="btn btn-ghost px-3 sm:px-4.5" onClick={onOpenReport} aria-label="年度報表">
+        <DataMenu onOpenReport={onOpenReport} onExport={onExport} onImportFile={onImportFile} />
+        {/* Narrow screens have no room for a third button, so the report moves into the menu there. */}
+        <button type="button" className="btn btn-ghost hidden sm:inline-flex" onClick={onOpenReport}>
           <ChartIcon />
-          <span className="hidden sm:inline">年度報表</span>
+          年度報表
         </button>
-        <button type="button" className="btn btn-primary" onClick={onOpenList}>
+        {/* Icon only on narrow screens; the label stays as the accessible name. */}
+        <button
+          type="button"
+          className="btn btn-primary w-10 px-0 sm:w-auto sm:px-4.5"
+          onClick={onOpenList}
+          aria-label="所有扣款"
+        >
           <ListIcon />
-          所有扣款
+          <span className="hidden sm:inline">所有扣款</span>
         </button>
       </div>
     </header>
