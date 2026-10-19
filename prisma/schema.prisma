@@ -106,3 +106,29 @@ model BillingSchedule {
   @@index([subscriptionId])
   @@map("billing_schedules")
 }
+
+/// Published exchange rate of one day, as `quote` per 1 `base` (e.g. TWD per 1 USD). A cache of
+/// public data, so it is left out of backups.
+model ExchangeRate {
+  base  Currency
+  quote Currency
+  date  DateTime @db.Date
+  rate  Decimal  @db.Decimal(14, 6)
+
+  @@id([base, quote, date])
+  @@map("exchange_rates")
+}
+
+/// When a currency pair's rates of one year were last fetched. Days without a publication have no
+/// rate row, so this is what tells "not published" apart from "not fetched yet". `complete` marks a
+/// year whose rates were fetched after it ended, so it never needs fetching again.
+model ExchangeRateSync {
+  base     Currency
+  quote    Currency
+  year     Int      @db.SmallInt
+  syncedOn DateTime @map("synced_on") @db.Date
+  complete Boolean  @default(false)
+
+  @@id([base, quote, year])
+  @@map("exchange_rate_syncs")
+}
