@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import type { CurrencyTotals } from "@/lib/billingSummary";
+import { expandCard } from "@/test/collapsibleCard";
 import { makeOccurrence, makeSubscription } from "@/test/fixtures";
 import type { ExchangeRateDto } from "@/types/dto";
 import { MonthSummary } from "./MonthSummary";
@@ -25,8 +26,9 @@ describe("MonthSummary", () => {
     expectedHeadline: string[];
     expectedYear: string;
     expectedTexts: string[];
+    /** Whether the card can be expanded to show the breakdowns. */
     expectedGroups: boolean;
-    /** Converted totals keeping their breakdown in a popup: headline, subtotals and year. */
+    /** Converted totals keeping their breakdown in a popup once expanded: headline, subtotals and year. */
     expectedPopups: number;
   }[] = [
     {
@@ -81,13 +83,19 @@ describe("MonthSummary", () => {
       const headline = screen.getByText("本月總計").nextElementSibling;
       expect([...(headline?.children ?? [])].map((line) => line.textContent)).toEqual(tt.expectedHeadline);
       expect(screen.getByText("2026 年度總計").nextElementSibling?.textContent).toBe(tt.expectedYear);
-      expect(screen.queryAllByRole("button", { name: /查看換算前金額$/ })).toHaveLength(tt.expectedPopups);
-      for (const text of tt.expectedTexts) expect(screen.getByText(text)).toBeInTheDocument();
-      for (const name of ["依類別", "依付款方式", "信用卡"]) {
-        const heading = screen.queryByRole("heading", { name });
-        if (tt.expectedGroups) expect(heading).toBeInTheDocument();
-        else expect(heading).not.toBeInTheDocument();
+      for (const text of tt.expectedTexts) expect(screen.getByText(text)).toBeVisible();
+      const breakdowns = ["依類別", "依付款方式", "信用卡"];
+      for (const name of breakdowns) expect(screen.queryByRole("heading", { name })).not.toBeInTheDocument();
+
+      // The count line, not the title, toggles the breakdowns.
+      expect(screen.queryByRole("button", { name: "本月總結" })).not.toBeInTheDocument();
+      if (tt.expectedGroups) {
+        expandCard(tt.expectedTexts[0]);
+        for (const name of breakdowns) expect(screen.getByRole("heading", { name })).toBeInTheDocument();
+      } else {
+        expect(screen.queryByRole("button", { name: tt.expectedTexts[0] })).not.toBeInTheDocument();
       }
+      expect(screen.queryAllByRole("button", { name: /查看換算前金額$/ })).toHaveLength(tt.expectedPopups);
     });
   }
 });

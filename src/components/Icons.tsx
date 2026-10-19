@@ -70,6 +70,15 @@ export function ListIcon(props: IconProps) {
   );
 }
 
+/** Down chevron, for expanding a collapsed section. */
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 /** Left chevron, for "previous" navigation. */
 export function ChevronLeftIcon(props: IconProps) {
   return (

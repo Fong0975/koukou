@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LoadStatus } from "@/hooks/useSubscriptions";
+import { expandCard } from "@/test/collapsibleCard";
 import { makeSubscription } from "@/test/fixtures";
 import type { ExchangeRateDto, SubscriptionDto } from "@/types/dto";
 
@@ -91,7 +92,7 @@ describe("CalendarSection", () => {
         expect(screen.getByRole("cell", { name: "5 日" })).toBeInTheDocument();
         expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
         expect(screen.getByText("共 0 次扣款，來自 0 個項目")).toBeInTheDocument();
-        expect(screen.queryByRole("list", { name: "預扣款項" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("list", { name: "本月預扣" })).not.toBeInTheDocument();
         expect(screen.getByRole("region", { name: "本月到期" })).toHaveTextContent("這個月沒有到期的合約。");
       },
       expectedRateRequest: [2026, false],
@@ -102,12 +103,15 @@ describe("CalendarSection", () => {
       items: [netflix, spotify],
       rates,
       expectDom: () => {
-        expect(screen.getByRole("region", { name: "本月扣款清單" })).toHaveTextContent("US$ 10.00≈ NT$ 320");
+        expect(screen.getByRole("region", { name: "本月扣款" })).toHaveTextContent("US$ 10.00≈ NT$ 320");
         expect(screen.getByText("本月總計").nextElementSibling?.textContent).toBe("NT$ 320");
         expect(screen.getByText("2026 年度總計").nextElementSibling?.textContent).toBe("NT$ 4,230");
-        // The month's only foreign charge makes the headline, its category and its payment method all NT$ 320.
+        expect(screen.getByText("扣款小計").nextElementSibling?.textContent).toBe("NT$ 320");
+        expandCard("共 1 次扣款，來自 1 個項目");
+        // The month's only foreign charge makes the charge list subtotal, the headline, its category and its
+        // payment method all NT$ 320.
         for (const [total, count] of [
-          ["NT$ 320", 3],
+          ["NT$ 320", 4],
           ["NT$ 4,230", 1],
         ] as const) {
           expect(screen.getAllByRole("button", { name: `${total}，查看換算前金額` })).toHaveLength(count);
@@ -120,7 +124,7 @@ describe("CalendarSection", () => {
       status: "ready",
       items: [spotify],
       expectDom: () => {
-        expect(screen.getByRole("region", { name: "本月扣款清單" })).not.toHaveTextContent("≈");
+        expect(screen.getByRole("region", { name: "本月扣款" })).not.toHaveTextContent("≈");
         expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("US$ 10.00");
       },
       expectedRateRequest: [2026, true],
@@ -131,7 +135,8 @@ describe("CalendarSection", () => {
       items: [domain],
       expectDom: () => {
         expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("NT$ 1,000");
-        expect(screen.getByRole("list", { name: "預扣款項" })).toHaveTextContent(
+        expandCard("本月預扣");
+        expect(screen.getByRole("list", { name: "本月預扣" })).toHaveTextContent(
           "網域2027 年期（10/11 扣款）NT$ 84(NT$ 83.3)",
         );
         expect(screen.getByText("預留小計").nextElementSibling).toHaveTextContent("NT$ 84");
@@ -144,14 +149,15 @@ describe("CalendarSection", () => {
       act: () => fireEvent.click(screen.getByRole("button", { name: "上個月" })),
       expectDom: () => {
         expect(screen.getByRole("heading", { name: "2026 年 9 月" })).toBeInTheDocument();
-        expect(screen.getByRole("list", { name: "預扣款項" })).toHaveTextContent("2026 年期（10/11 扣款）");
+        expandCard("本月預扣");
+        expect(screen.getByRole("list", { name: "本月預扣" })).toHaveTextContent("2026 年期（10/11 扣款）");
       },
     },
     {
       name: "places expiries and reserves before the charge list and the summary",
       status: "ready",
       items: [domain],
-      expectDom: () => expect(cardHeadings()).toEqual(["本月到期", "預扣款項", "本月扣款清單", "本月總結"]),
+      expectDom: () => expect(cardHeadings()).toEqual(["本月到期", "本月預扣", "本月扣款", "本月總結"]),
     },
     {
       name: "a contract ending this month is marked and listed, and stops charging after it",
@@ -160,7 +166,8 @@ describe("CalendarSection", () => {
       expectDom: () => {
         expect(screen.getByRole("cell", { name: "20 日：合約到期：中華電信" })).toBeInTheDocument();
         expect(screen.getByRole("cell", { name: "25 日" })).toBeInTheDocument();
-        expect(screen.getByRole("list", { name: "到期項目" })).toHaveTextContent("中華電信10/20（二）NT$ 599");
+        expandCard("本月到期");
+        expect(screen.getByRole("list", { name: "到期項目" }).textContent).toBe("中華電信10/20（二）");
         expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
       },
     },
@@ -180,7 +187,7 @@ describe("CalendarSection", () => {
         expect(screen.getByRole("cell", { name: "5 日：Netflix" })).toBeInTheDocument();
         expect(screen.queryByRole("cell", { name: /今天/ })).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "回到本月" })).toBeEnabled();
-        expect(screen.getByRole("region", { name: "本月扣款清單" })).toHaveTextContent("Netflix");
+        expect(screen.getByRole("region", { name: "本月扣款" })).toHaveTextContent("Netflix");
         expect(screen.getByText("共 1 次扣款，來自 1 個項目")).toBeInTheDocument();
       },
     },

@@ -1,6 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Reserve } from "@/lib/amortization";
+import { footerAmounts } from "@/test/cardFooter";
+import { expandCard } from "@/test/collapsibleCard";
 import { makeSubscription } from "@/test/fixtures";
 import { MonthReserveList } from "./MonthReserveList";
 
@@ -41,21 +43,21 @@ describe("MonthReserveList", () => {
 
   for (const tt of tests) {
     it(tt.name, () => {
-      render(<MonthReserveList reserves={tt.reserves} />);
+      const { container } = render(<MonthReserveList reserves={tt.reserves} />);
 
       if (tt.expectedRows === null) {
-        expect(screen.queryByRole("heading", { name: "預扣款項" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("heading", { name: "本月預扣" })).not.toBeInTheDocument();
         return;
       }
-      expect(screen.getByRole("region", { name: "預扣款項" })).toBeInTheDocument();
-      const list = screen.getByRole("list", { name: "預扣款項" });
+      expect(screen.getByRole("region", { name: "本月預扣" })).toBeInTheDocument();
+      expandCard("本月預扣");
+      const list = screen.getByRole("list", { name: "本月預扣" });
       expect(
         within(list)
           .getAllByRole("listitem")
           .map((li) => li.textContent),
       ).toEqual(tt.expectedRows);
-      const subtotal = screen.getByText("預留小計").nextElementSibling;
-      expect([...(subtotal?.children ?? [])].map((line) => line.textContent)).toEqual(tt.expectedSubtotal);
+      expect(footerAmounts(container, "預留小計")).toEqual(tt.expectedSubtotal);
     });
   }
 });
