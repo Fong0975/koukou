@@ -38,7 +38,8 @@ export async function exportBackup(): Promise<BackupDto> {
 
 /**
  * Replaces all categories, payment methods and subscriptions with those of a backup. Everything
- * runs in one transaction, so a failure leaves the current data untouched.
+ * runs in one transaction, so a failure leaves the current data untouched. Stored exchange rates
+ * are a cache of public data, so they are neither backed up nor cleared.
  *
  * @param data - The validated backup.
  * @returns How many records of each kind were restored.

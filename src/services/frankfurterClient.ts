@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RATE_BASE, RATE_QUOTE } from "@/lib/constants/exchangeRate";
 import { UpstreamError } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import type { ExchangeRateDto } from "@/types/dto";
@@ -7,13 +8,6 @@ const logger = createLogger("services/frankfurterClient");
 
 const BASE_URL = "https://api.frankfurter.dev/v2";
 const UPSTREAM_MESSAGE = "無法取得匯率，請稍後再試";
-
-/**
- * USD is the base so each rate reads as TWD per 1 USD, like a bank's quote, and a USD amount converts by
- * multiplication. The inverse pair is published with fewer significant digits and would lose precision.
- */
-const BASE = "USD";
-const QUOTE = "TWD";
 
 const rateSchema = z.object({ date: z.string(), rate: z.number().positive() });
 
@@ -53,7 +47,7 @@ async function getJson<T>(url: string, schema: z.ZodType<T>): Promise<T> {
  * @throws UpstreamError when the service cannot be reached or answers unexpectedly.
  */
 export async function fetchDailyRates(from: string, to: string): Promise<ExchangeRateDto[]> {
-  const query = new URLSearchParams({ base: BASE, quotes: QUOTE, from, to });
+  const query = new URLSearchParams({ base: RATE_BASE, quotes: RATE_QUOTE, from, to });
   const rates = await getJson(`${BASE_URL}/rates?${query}`, z.array(rateSchema));
   return rates.map(({ date, rate }) => ({ date, rate }));
 }
@@ -64,6 +58,6 @@ export async function fetchDailyRates(from: string, to: string): Promise<Exchang
  * @throws UpstreamError when the service cannot be reached or answers unexpectedly.
  */
 export async function fetchLatestRate(): Promise<ExchangeRateDto> {
-  const { date, rate } = await getJson(`${BASE_URL}/rate/${BASE}/${QUOTE}`, rateSchema);
+  const { date, rate } = await getJson(`${BASE_URL}/rate/${RATE_BASE}/${RATE_QUOTE}`, rateSchema);
   return { date, rate };
 }
