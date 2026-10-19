@@ -1,6 +1,6 @@
 {
   "name": "koukou",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "private": true,
   "description": "KouKou - a cute ledger for recurring payments",
   "scripts": {
