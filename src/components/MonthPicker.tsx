@@ -31,12 +31,17 @@ function yearOptions(currentYear: number, shownYear: number): number[] {
  */
 export function MonthPicker({ value, current, onChange }: MonthPickerProps) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <button type="button" className="icon-btn" onClick={() => onChange(shiftMonth(value, -1))} aria-label="上個月">
+    <div className="ml-auto flex flex-wrap items-center gap-1.5">
+      <button
+        type="button"
+        className="icon-btn icon-btn-sm"
+        onClick={() => onChange(shiftMonth(value, -1))}
+        aria-label="上個月"
+      >
         <ChevronLeftIcon />
       </button>
       <select
-        className="field w-auto"
+        className="field field-sm w-auto"
         aria-label="年份"
         value={value.year}
         onChange={(event) => onChange({ ...value, year: Number(event.target.value) })}
@@ -48,7 +53,7 @@ export function MonthPicker({ value, current, onChange }: MonthPickerProps) {
         ))}
       </select>
       <select
-        className="field w-auto"
+        className="field field-sm w-auto"
         aria-label="月份"
         value={value.month}
         onChange={(event) => onChange({ ...value, month: Number(event.target.value) })}
@@ -59,7 +64,12 @@ export function MonthPicker({ value, current, onChange }: MonthPickerProps) {
           </option>
         ))}
       </select>
-      <button type="button" className="icon-btn" onClick={() => onChange(shiftMonth(value, 1))} aria-label="下個月">
+      <button
+        type="button"
+        className="icon-btn icon-btn-sm"
+        onClick={() => onChange(shiftMonth(value, 1))}
+        aria-label="下個月"
+      >
         <ChevronRightIcon />
       </button>
     </div>
