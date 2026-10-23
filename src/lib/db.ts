@@ -2,6 +2,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 import { describeDatabaseUrl } from "@/lib/databaseUrl";
 import { createLogger } from "@/lib/logger";
+import { readSecret } from "@/lib/secret";
 
 const logger = createLogger("db");
 
@@ -12,9 +13,11 @@ const logger = createLogger("db");
  * @throws Error when DATABASE_URL is not configured.
  */
 function createPrismaClient(): PrismaClient {
-  const url = process.env.DATABASE_URL;
+  const url = readSecret("DATABASE_URL");
   if (!url) {
-    throw new Error("DATABASE_URL is not set. Copy .env.example to .env and fill it in.");
+    throw new Error(
+      "DATABASE_URL is not set (or DATABASE_URL_FILE is empty). Copy .env.example to .env and fill it in.",
+    );
   }
   const client = new PrismaClient({ adapter: new PrismaMariaDb(url) });
   logger.debug("Prisma client created", describeDatabaseUrl(url));

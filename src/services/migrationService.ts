@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
 import { createLogger } from "@/lib/logger";
+import { readSecret } from "@/lib/secret";
 
 /** Minimal execFile signature, injectable for testing. */
 export type ExecFileFn = (
@@ -30,6 +31,8 @@ export function getPrismaCliPath(cwd: string = process.cwd()): string {
 /**
  * Applies all pending migrations (`prisma migrate deploy`), creating tables on an empty
  * database and adding new tables/columns introduced by later migrations.
+ * DATABASE_URL (possibly sourced from a Docker secret file) is handed to the CLI through its own
+ * environment only.
  *
  * @param exec - Process runner; defaults to child_process.execFile.
  * @param cwd - Project root directory.
@@ -39,7 +42,7 @@ export function getPrismaCliPath(cwd: string = process.cwd()): string {
 export async function runMigrations(exec: ExecFileFn = defaultExec, cwd: string = process.cwd()): Promise<string> {
   const { stdout, stderr } = await exec(process.execPath, [getPrismaCliPath(cwd), "migrate", "deploy"], {
     cwd,
-    env: process.env,
+    env: { ...process.env, DATABASE_URL: readSecret("DATABASE_URL") },
   });
   logger.debug("prisma migrate deploy finished", { stdout: stdout.trim() });
   // The CLI writes routine progress ("Loaded Prisma config…") to stderr; real failures exit non-zero and throw above.
