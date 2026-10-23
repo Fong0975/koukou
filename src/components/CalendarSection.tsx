@@ -47,7 +47,12 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
             <h2 id={titleId} className="font-num text-2xl">
               {cursor.year} 年 {cursor.month} 月
             </h2>
-            <button type="button" className="btn btn-ghost" onClick={() => setCursor(null)} disabled={isCurrentMonth}>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => setCursor(null)}
+              disabled={isCurrentMonth}
+            >
               回到本月
             </button>
           </div>
