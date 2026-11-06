@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Taipei"
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "chore"
+    pull-request-branch-name:
+      prefix: "chore"
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      # Packages that must move in lockstep; listed after minor-and-patch so
+      # they only catch the major bumps that group leaves behind.
+      prisma:
+        applies-to: version-updates
+        patterns: ["prisma", "@prisma/*"]
+      next:
+        applies-to: version-updates
+        patterns: ["next", "eslint-config-next"]
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
