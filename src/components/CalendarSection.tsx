@@ -44,7 +44,7 @@ export function CalendarSection({ items, status, loadError, onRetry }: CalendarS
       <section aria-labelledby={titleId} className="glass relative z-10 rounded-[1.75rem] p-3 sm:p-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
           <div className="flex items-center gap-3">
-            <h2 id={titleId} className="font-num text-2xl">
+            <h2 id={titleId} className="font-num text-2xl font-semibold">
               {cursor.year} 年 {cursor.month} 月
             </h2>
             <button
