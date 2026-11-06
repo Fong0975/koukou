@@ -38,7 +38,7 @@ export function Header({
         {/* One baseline row so the subtitle and the version badge sit on the same text line. */}
         <div className="flex items-baseline gap-2">
           <h1 className="flex items-baseline gap-2">
-            <span className="font-num text-2xl font-semibold tracking-tight text-leaf-800">KouKou</span>
+            <span className="font-num text-2xl font-bold tracking-tight text-leaf-800">KouKou</span>
             <span className="hidden text-sm text-ink-soft sm:inline">扣扣帳本</span>
           </h1>
           <span
