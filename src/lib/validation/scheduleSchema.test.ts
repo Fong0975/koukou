@@ -63,22 +63,40 @@ describe("scheduleSchema", () => {
 describe("schedulesSchema", () => {
   const monthly = (day: number) => ({ cycle: "MONTHLY", dayOfMonth: day });
 
-  const tests: { name: string; input: unknown; valid: boolean }[] = [
+  const tests: {
+    name: string;
+    input: unknown;
+    valid: boolean;
+    expectedIssues?: { path: string; message: string }[];
+  }[] = [
     { name: "multiple distinct schedules", input: [monthly(1), monthly(15)], valid: true },
     { name: "mixed cycles", input: [{ cycle: "DAILY" }, { cycle: "WEEKLY", dayOfWeek: 1 }], valid: true },
     { name: "empty list", input: [], valid: false },
     { name: "duplicate schedules", input: [monthly(1), monthly(1)], valid: false },
     {
       name: "more than 20 schedules",
-      input: Array.from({ length: 21 }, (_, i) => monthly((i % 28) + 1)),
+      input: Array.from({ length: 21 }, (_, i) => monthly(i + 1)),
       valid: false,
+      expectedIssues: [{ path: "", message: "扣款週期最多 20 個" }],
+    },
+    {
+      name: "more than 20 schedules reports only the size limit, not invalid or duplicate rows",
+      input: [{ cycle: "WEEKLY" }, ...Array.from({ length: 20 }, () => monthly(1))],
+      valid: false,
+      expectedIssues: [{ path: "", message: "扣款週期最多 20 個" }],
     },
     { name: "not an array", input: undefined, valid: false },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(schedulesSchema.safeParse(tt.input).success).toBe(tt.valid);
+      const result = schedulesSchema.safeParse(tt.input);
+      expect(result.success).toBe(tt.valid);
+      if (tt.expectedIssues) {
+        expect(result.error?.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message }))).toEqual(
+          tt.expectedIssues,
+        );
+      }
     });
   }
 });
