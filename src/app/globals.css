@@ -15,8 +15,7 @@
   --color-ink-soft: #5b6b55;
   --color-berry: #c2493d;
 
-  --font-sans: var(--font-huninn), "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
-  --font-num: var(--font-fredoka), var(--font-huninn), system-ui, sans-serif;
+  --font-num: var(--font-sans);
 }
 
 html {
