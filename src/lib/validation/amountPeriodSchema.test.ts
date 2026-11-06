@@ -9,6 +9,7 @@ describe("amountPeriodsSchema", () => {
     expected?: unknown;
     errorPath?: string;
     errorMessage?: string;
+    onlyIssue?: boolean;
   }[] = [
     { name: "defaults to an empty list", input: undefined, expected: [] },
     {
@@ -51,6 +52,15 @@ describe("amountPeriodsSchema", () => {
         endDate: `${2000 + i}-01-01`,
       })),
       errorPath: "",
+      errorMessage: `金額紀錄最多 ${MAX_AMOUNT_PERIODS} 筆`,
+      onlyIssue: true,
+    },
+    {
+      name: "reports only the size limit when too many periods also repeat end dates",
+      input: Array.from({ length: MAX_AMOUNT_PERIODS + 1 }, () => ({ amount: 100, endDate: "2026-05-31" })),
+      errorPath: "",
+      errorMessage: `金額紀錄最多 ${MAX_AMOUNT_PERIODS} 筆`,
+      onlyIssue: true,
     },
     { name: "rejects a non-array", input: "oops", errorPath: "" },
   ];
@@ -67,6 +77,7 @@ describe("amountPeriodsSchema", () => {
       const issue = result.error?.issues.find((i) => i.path.join(".") === tt.errorPath);
       expect(issue).toBeDefined();
       if (tt.errorMessage) expect(issue?.message).toBe(tt.errorMessage);
+      if (tt.onlyIssue) expect(result.error?.issues).toHaveLength(1);
     });
   }
 });
