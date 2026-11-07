@@ -87,14 +87,6 @@ KouKou is a small web app for keeping track of recurring payments — membership
 2. Run `npm run db:migrate -- --name <short-description>` to generate a migration under `prisma/migrations/`.
 3. Commit the migration. Other environments pick it up automatically on the next start.
 
-## Versioning
-
-The app version lives in `package.json` only and is shown next to the logo in the header. Frontend and backend ship together, so this one number covers both.
-
-Every push to `main` that touches the app runs [`bump-version.yml`](.github/workflows/bump-version.yml), which bumps the patch version, commits it with `[skip ci]` (so no workflow runs again) and tags `vX.Y.Z`. For a minor or major release, run the workflow manually from the Actions tab.
-
-The workflow pushes through a GitHub App so it can bypass branch protection. Add these repository secrets: `APP_CLIENT_ID` and `APP_PRIVATE_KEY`.
-
 ## Project structure
 
 ```
