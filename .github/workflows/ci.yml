@@ -30,18 +30,15 @@ jobs:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
-      # DATABASE_URL is a placeholder: prisma.config.ts resolves it during `npm ci`
-      # (postinstall `prisma generate`) and src/lib/db.ts requires it to exist, but no
-      # job opens a database connection.
+      # prisma.config.ts resolves DATABASE_URL during `npm ci` (postinstall `prisma generate`),
+      # but no job opens a database connection, so the placeholder from .env.example is enough.
+      # It is loaded from a file because GitHub drops the project list when it carries the URL.
       projects: |
         [
           {
             "name": "app",
             "language": "node",
-            "env": {
-              "NEXT_TELEMETRY_DISABLED": "1",
-              "DATABASE_URL": "mysql://ci:ci@localhost:3306/koukou"
-            },
+            "install": "cp .env.example .env && npm ci",
             "coverage-threshold": 85
           }
         ]
