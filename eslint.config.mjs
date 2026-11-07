@@ -1,10 +1,6 @@
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { FlatCompat } from "@eslint/eslintrc";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
-
-// eslint-config-next 15 still ships legacy (eslintrc) presets, so they are loaded through FlatCompat.
-const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)) });
 
 const DB_ACCESS_MESSAGE = "Database access belongs in src/services/. UI and API layers must call a service instead.";
 const LOGGER_MESSAGE = "The logger writes files with node:fs and runs only on the server. Do not use it in UI code.";
@@ -29,7 +25,8 @@ const eslintConfig = [
     ],
   },
 
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextCoreWebVitals,
+  ...nextTypescript,
 
   {
     rules: {
