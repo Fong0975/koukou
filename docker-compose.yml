@@ -19,6 +19,9 @@ services:
       PORT: ${APP_PORT:-3000}
       # The connection string holds the DB password, so it is read from a Docker secret file.
       DATABASE_URL_FILE: /run/secrets/database_url
+      # LINE credentials for reminder messages, read from Docker secret files like the connection string.
+      LINE_CHANNEL_ACCESS_TOKEN_FILE: /run/secrets/line_channel_access_token
+      LINE_USER_ID_FILE: /run/secrets/line_user_id
       TZ: ${TZ:-Asia/Taipei}
       LOG_FILE_ENABLED: ${LOG_FILE_ENABLED:-true}
       # Fixed path inside the container; choose the host directory with LOG_HOST_DIR instead.
@@ -28,6 +31,8 @@ services:
       LOG_MAX_FILES: ${LOG_MAX_FILES:-5}
     secrets:
       - database_url
+      - line_channel_access_token
+      - line_user_id
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:${APP_PORT:-3000}/api/health"]
@@ -45,6 +50,11 @@ services:
 # variables, so they don't show up in `docker inspect` or the container's process environment.
 # Each one is still sourced from the variable of the same name in the env file, so that variable
 # must be defined there.
+# The LINE variables may be left empty to run without reminders, but must still be defined.
 secrets:
   database_url:
     environment: DATABASE_URL
+  line_channel_access_token:
+    environment: LINE_CHANNEL_ACCESS_TOKEN
+  line_user_id:
+    environment: LINE_USER_ID

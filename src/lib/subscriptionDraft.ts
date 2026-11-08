@@ -1,9 +1,10 @@
 import type { BillingCycle, Currency } from "@/generated/prisma/enums";
 import { amountPeriodRanges } from "@/lib/amountPeriods";
 import { isDateKey } from "@/lib/dateKey";
+import { isExpiryReminderDay } from "@/lib/reminderDays";
 import type { ScheduleInput } from "@/lib/validation/scheduleSchema";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
-import type { SubscriptionDto } from "@/types/dto";
+import type { RemindersDto, SubscriptionDto } from "@/types/dto";
 
 /** Editable billing rule; numeric fields are strings because they come from inputs. */
 export interface ScheduleDraft {
@@ -39,6 +40,8 @@ export interface SubscriptionDraft {
   amountPeriods: AmountPeriodDraft[];
   note: string;
   schedules: ScheduleDraft[];
+  /** LINE reminder days; expiry ones are dropped on submit while there is no contract end date. */
+  reminders: RemindersDto;
 }
 
 /** Error messages keyed by dotted field path, e.g. "schedules.0.dayOfMonth". */
@@ -125,6 +128,7 @@ export function emptyDraft(startDate: string): SubscriptionDraft {
     amountPeriods: [],
     note: "",
     schedules: [newScheduleDraft()],
+    reminders: { chargeDaysBefore: [], expiryDaysBefore: [] },
   };
 }
 
@@ -156,6 +160,10 @@ export function draftFromDto(dto: SubscriptionDto): SubscriptionDraft {
         month: text(schedule.month, "1"),
       }),
     ),
+    reminders: {
+      chargeDaysBefore: [...dto.reminders.chargeDaysBefore],
+      expiryDaysBefore: [...dto.reminders.expiryDaysBefore],
+    },
   };
 }
 
@@ -176,7 +184,8 @@ function scheduleToInput(schedule: ScheduleDraft): ScheduleInput {
 /**
  * Converts form state into the API payload. Values stay as strings; the shared
  * zod schema coerces and validates them on both client and server. `amortize` is
- * sent as false once no yearly schedule is left, so a hidden toggle never stays on.
+ * sent as false once no yearly schedule is left, and expiry reminders are dropped once the
+ * contract end date is cleared, so a hidden control never stays on.
  *
  * @param draft - Form state.
  */
@@ -193,6 +202,10 @@ export function draftToInput(draft: SubscriptionDraft): SubscriptionInput {
     amountPeriods: draft.amountPeriods.map(({ amount, endDate }) => ({ amount, endDate })),
     note: draft.note,
     schedules: draft.schedules.map(scheduleToInput),
+    reminders: {
+      chargeDaysBefore: draft.reminders.chargeDaysBefore,
+      expiryDaysBefore: draft.contractEndDate ? draft.reminders.expiryDaysBefore.filter(isExpiryReminderDay) : [],
+    },
   };
 }
 
@@ -211,4 +224,16 @@ export function toFieldErrors(
     errors[path] ??= issue.message;
   }
   return errors;
+}
+
+/**
+ * Finds the error of a field or of anything nested under it, e.g. "reminders.chargeDaysBefore"
+ * also matches "reminders.chargeDaysBefore.0".
+ *
+ * @param errors - Field errors keyed by dotted path.
+ * @param path - The field's dotted path.
+ * @returns The field's own message, else the first nested one, else undefined.
+ */
+export function errorUnder(errors: FieldErrors, path: string): string | undefined {
+  return errors[path] ?? Object.entries(errors).find(([key]) => key.startsWith(`${path}.`))?.[1];
 }

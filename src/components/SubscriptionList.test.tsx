@@ -90,7 +90,15 @@ describe("SubscriptionList", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       const handlers = { onRetry: vi.fn(), onAdd: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn() };
-      render(<SubscriptionList items={tt.items} status={tt.status} loadError={tt.loadError ?? null} {...handlers} />);
+      render(
+        <SubscriptionList
+          items={tt.items}
+          status={tt.status}
+          loadError={tt.loadError ?? null}
+          {...handlers}
+          remindersActive
+        />,
+      );
 
       if (tt.click) fireEvent.click(screen.getByRole("button", { name: tt.click }));
 

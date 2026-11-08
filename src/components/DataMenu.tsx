@@ -3,11 +3,13 @@
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { useDismiss } from "@/hooks/useDismiss";
-import { ChartIcon, DownloadIcon, MoreIcon, UploadIcon } from "./Icons";
+import { BellIcon, ChartIcon, DownloadIcon, MoreIcon, UploadIcon } from "./Icons";
 
 interface DataMenuProps {
   /** Opens the annual report; offered here only on narrow screens, where the header has no room for its button. */
   onOpenReport: () => void;
+  /** Opens the LINE notification settings. */
+  onOpenSettings: () => void;
   /** Saves all data to a backup file. */
   onExport: () => Promise<void>;
   /** Reads a chosen backup file, ahead of confirming its import. */
@@ -40,15 +42,16 @@ function MenuItem({ icon, onClick, disabled, className = "", children }: MenuIte
 }
 
 /**
- * "More" button opening a menu to export all data to a backup file or pick one to import, and on narrow
- * screens to open the annual report. The menu stays open while a backup action runs and shows why it
- * failed; it closes once the action succeeds.
+ * "More" button opening a menu to open the notification settings, export all data to a backup file or pick
+ * one to import, and on narrow screens to open the annual report. The menu stays open while a backup action
+ * runs and shows why it failed; it closes once the action succeeds.
  *
  * @param props.onOpenReport - Opens the annual report.
+ * @param props.onOpenSettings - Opens the notification settings.
  * @param props.onExport - Saves all data to a backup file.
  * @param props.onImportFile - Reads the chosen backup file.
  */
-export function DataMenu({ onOpenReport, onExport, onImportFile }: DataMenuProps) {
+export function DataMenu({ onOpenReport, onOpenSettings, onExport, onImportFile }: DataMenuProps) {
   const ref = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -65,9 +68,10 @@ export function DataMenu({ onOpenReport, onExport, onImportFile }: DataMenuProps
     setOpen((current) => !current);
   };
 
-  const openReport = () => {
+  /** Closes the menu, then opens a dialog. */
+  const closeThen = (openDialog: () => void) => () => {
     close();
-    onOpenReport();
+    openDialog();
   };
 
   const importChosenFile = (file: File | undefined) => {
@@ -89,8 +93,11 @@ export function DataMenu({ onOpenReport, onExport, onImportFile }: DataMenuProps
       </button>
       {open && (
         <div role="menu" aria-label="資料備份" className="popup right-0 flex max-w-none flex-col text-sm">
-          <MenuItem icon={<ChartIcon />} onClick={openReport} disabled={pending} className="sm:hidden">
+          <MenuItem icon={<ChartIcon />} onClick={closeThen(onOpenReport)} disabled={pending} className="sm:hidden">
             年度報表
+          </MenuItem>
+          <MenuItem icon={<BellIcon />} onClick={closeThen(onOpenSettings)} disabled={pending}>
+            通知設定
           </MenuItem>
           <MenuItem icon={<DownloadIcon />} onClick={() => void run(onExport)} disabled={pending}>
             匯出備份

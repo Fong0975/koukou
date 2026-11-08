@@ -5,11 +5,13 @@ import {
   draftFromDto,
   draftToInput,
   emptyDraft,
+  errorUnder,
   hasYearlySchedule,
   newAmountPeriodDraft,
   newScheduleDraft,
   nextAmountPeriodDraft,
   toFieldErrors,
+  type FieldErrors,
   type SubscriptionDraft,
 } from "./subscriptionDraft";
 
@@ -134,6 +136,7 @@ describe("emptyDraft", () => {
         contractEndDate: "",
         amountPeriods: [],
         note: "",
+        reminders: { chargeDaysBefore: [], expiryDaysBefore: [] },
       });
       expect(draft.schedules).toHaveLength(1);
       expect(draft.schedules[0]).toMatchObject({ cycle: "MONTHLY", dayOfMonth: "1" });
@@ -181,6 +184,18 @@ describe("draftFromDto", () => {
       expectedAmountPeriods: [],
     },
     {
+      name: "keeps the reminders",
+      dto: {
+        ...dto,
+        contractEndDate: "2027-03-31",
+        reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7] },
+        amountPeriods: [],
+      },
+      expected: { reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7] } },
+      expectedSchedules: [{ cycle: "MONTHLY" }, { cycle: "WEEKLY" }],
+      expectedAmountPeriods: [],
+    },
+    {
       name: "keeps the amortize flag",
       dto: { ...dto, amortize: true },
       expected: { amortize: true },
@@ -217,6 +232,7 @@ describe("draftToInput", () => {
     amountPeriods: [newAmountPeriodDraft({ amount: "350", endDate: "2026-05-31" })],
     note: "",
     schedules: [],
+    reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7] },
   };
   const schedule = (cycle: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY") =>
     newScheduleDraft({ cycle, dayOfWeek: "3", dayOfMonth: "15", month: "6" });
@@ -271,7 +287,30 @@ describe("draftToInput", () => {
         amountPeriods: [{ amount: "350", endDate: "2026-05-31" }],
         note: "",
         schedules: [tt.expected],
+        reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7] },
       });
+    });
+  }
+});
+
+describe("draftToInput reminders", () => {
+  const draft = { ...emptyDraft("2026-01-01"), reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7, 0] } };
+  const tests = [
+    {
+      name: "keeps expiry reminders with a contract end date",
+      contractEndDate: "2027-03-31",
+      expected: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7, 0] },
+    },
+    {
+      name: "drops expiry reminders once the contract end date is cleared",
+      contractEndDate: "",
+      expected: { chargeDaysBefore: [0, 3], expiryDaysBefore: [] },
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(draftToInput({ ...draft, contractEndDate: tt.contractEndDate }).reminders).toEqual(tt.expected);
     });
   }
 });
@@ -316,6 +355,29 @@ describe("toFieldErrors", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(toFieldErrors(tt.issues)).toEqual(tt.expected);
+    });
+  }
+});
+
+describe("errorUnder", () => {
+  const tests: { name: string; errors: FieldErrors; expected?: string }[] = [
+    {
+      name: "prefers the field's own message",
+      errors: { "reminders.chargeDaysBefore": "own", "reminders.chargeDaysBefore.0": "nested" },
+      expected: "own",
+    },
+    {
+      name: "falls back to a nested message",
+      errors: { "reminders.chargeDaysBefore.1": "nested" },
+      expected: "nested",
+    },
+    { name: "ignores fields that only share a prefix", errors: { "reminders.chargeDaysBeforeX": "other" } },
+    { name: "no errors", errors: {} },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(errorUnder(tt.errors, "reminders.chargeDaysBefore")).toBe(tt.expected);
     });
   }
 });

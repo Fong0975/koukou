@@ -1,6 +1,14 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { addDays, dateKeyToUtcDate, isDateKey, toDateKey, todayKey, utcDateToDateKey } from "./dateKey";
+import {
+  addDays,
+  dateKeyToUtcDate,
+  dateKeyToYearMonth,
+  isDateKey,
+  toDateKey,
+  todayKey,
+  utcDateToDateKey,
+} from "./dateKey";
 
 describe("isDateKey", () => {
   const tests = [
@@ -63,6 +71,19 @@ describe("addDays", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(addDays(tt.key, tt.days)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("dateKeyToYearMonth", () => {
+  const tests = [
+    { name: "reads the year and month", key: "2026-10-17", expected: { year: 2026, month: 10 } },
+    { name: "drops the leading zero of the month", key: "2027-01-01", expected: { year: 2027, month: 1 } },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(dateKeyToYearMonth(tt.key)).toEqual(tt.expected);
     });
   }
 });

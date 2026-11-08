@@ -8,12 +8,13 @@ type FormTarget = null | "new" | SubscriptionDto;
 
 /**
  * Open/closed state of the home screen's dialogs: the subscription list, the add/edit form,
- * the delete confirmation and the annual report. They are independent, so the form and the
+ * the delete confirmation, the annual report and the notification settings. They are independent, so the form and the
  * confirmation can open on top of the list and return to it when closed.
  */
 export function useHomeDialogs() {
   const [listOpen, setListOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [formTarget, setFormTarget] = useState<FormTarget>(null);
   const [deleting, setDeleting] = useState<SubscriptionDto | null>(null);
 
@@ -33,5 +34,8 @@ export function useHomeDialogs() {
     reportOpen,
     openReport: () => setReportOpen(true),
     closeReport: () => setReportOpen(false),
+    settingsOpen,
+    openSettings: () => setSettingsOpen(true),
+    closeSettings: () => setSettingsOpen(false),
   };
 }

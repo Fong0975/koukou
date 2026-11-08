@@ -23,6 +23,7 @@ import { CategoryQuickAdd } from "./CategoryQuickAdd";
 import { DateField } from "./DateField";
 import { Modal } from "./Modal";
 import { PaymentMethodQuickAdd } from "./PaymentMethodQuickAdd";
+import { ReminderSection } from "./ReminderSection";
 import { ScheduleEditor } from "./ScheduleEditor";
 import { SelectWithQuickAdd } from "./SelectWithQuickAdd";
 
@@ -35,6 +36,8 @@ interface SubscriptionFormModalProps {
   onAddPaymentMethod: (input: PaymentMethodInput) => Promise<PaymentMethodDto>;
   onSubmit: (input: SubscriptionInput) => Promise<unknown>;
   onClose: () => void;
+  /** Whether LINE reminders go out; the reminder block is locked otherwise. */
+  remindersActive: boolean;
 }
 
 /**
@@ -42,7 +45,8 @@ interface SubscriptionFormModalProps {
  * then maps any server-side field errors back onto the inputs.
  */
 export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
-  const { initial, categories, paymentMethods, onAddCategory, onAddPaymentMethod, onSubmit, onClose } = props;
+  const { initial, categories, paymentMethods, onAddCategory, onAddPaymentMethod, onSubmit, onClose, remindersActive } =
+    props;
   const [draft, setDraft] = useState<SubscriptionDraft>(() =>
     initial ? draftFromDto(initial) : emptyDraft(todayKey()),
   );
@@ -155,6 +159,14 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
           error={fieldErrors.paymentMethodId}
           addLabel="新增扣款方式"
           renderAddForm={(done) => <PaymentMethodQuickAdd onCreate={onAddPaymentMethod} onDone={done} />}
+        />
+
+        <ReminderSection
+          reminders={draft.reminders}
+          hasContractEnd={draft.contractEndDate !== ""}
+          disabled={!remindersActive}
+          onChange={(reminders) => set("reminders", reminders)}
+          errors={fieldErrors}
         />
 
         <div>

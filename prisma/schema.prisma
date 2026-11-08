@@ -72,6 +72,7 @@ model Subscription {
   paymentMethod   PaymentMethod              @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
   schedules       BillingSchedule[]
   amountPeriods   SubscriptionAmountPeriod[]
+  reminders       SubscriptionReminder[]
 
   @@index([categoryId])
   @@index([paymentMethodId])
@@ -105,6 +106,54 @@ model BillingSchedule {
 
   @@index([subscriptionId])
   @@map("billing_schedules")
+}
+
+enum ReminderKind {
+  CHARGE
+  EXPIRY
+}
+
+/// A LINE reminder of a subscription, sent `daysBefore` days ahead of the event (0 = on the day).
+/// CHARGE fires before each charge day; EXPIRY fires before the contract end date.
+model SubscriptionReminder {
+  id             Int          @id @default(autoincrement())
+  subscriptionId Int          @map("subscription_id")
+  kind           ReminderKind
+  daysBefore     Int          @map("days_before") @db.TinyInt
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, kind, daysBefore])
+  @@map("subscription_reminders")
+}
+
+/// The app-wide LINE notification settings; a single row with id 1. `sendTime` ("HH:mm") is read
+/// in the server's time zone.
+model NotificationSetting {
+  id                    Int      @id @default(1)
+  enabled               Boolean  @default(false)
+  monthlySummaryEnabled Boolean  @default(true) @map("monthly_summary_enabled")
+  sendTime              String   @default("09:00") @map("send_time") @db.VarChar(5)
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_settings")
+}
+
+enum DispatchStatus {
+  SENT
+  SKIPPED
+  FAILED
+}
+
+/// Outcome of one day's reminder message, so a day is sent at most once and a missed send time
+/// can still be caught up later that day. A log, so it is left out of backups.
+model NotificationDispatch {
+  date      DateTime       @id @db.Date
+  status    DispatchStatus
+  attempts  Int            @default(0)
+  lastError String?        @map("last_error") @db.VarChar(255)
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  @@map("notification_dispatches")
 }
 
 /// Published exchange rate of one day, as `quote` per 1 `base` (e.g. TWD per 1 USD). A cache of

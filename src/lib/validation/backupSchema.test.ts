@@ -33,6 +33,36 @@ describe("backupSchema", () => {
       },
     },
     { name: "accepts an empty backup", input: makeBackup({ categories: [], paymentMethods: [], subscriptions: [] }) },
+    {
+      name: "keeps reminders and notification settings",
+      input: backup,
+      expected: {
+        subscriptions: [expect.objectContaining({ reminders: { chargeDaysBefore: [0], expiryDaysBefore: [] } })],
+        notificationSetting: { enabled: true, monthlySummaryEnabled: false, sendTime: "08:30" },
+      },
+    },
+    {
+      name: "accepts a backup written before reminders existed",
+      input: makeBackup({
+        subscriptions: [{ ...subscription, reminders: undefined } as unknown as typeof subscription],
+        notificationSetting: undefined,
+      }),
+      expected: {
+        subscriptions: [expect.objectContaining({ reminders: { chargeDaysBefore: [], expiryDaysBefore: [] } })],
+      },
+    },
+    {
+      name: "applies the reminder rules",
+      input: makeBackup({
+        subscriptions: [{ ...subscription, reminders: { chargeDaysBefore: [], expiryDaysBefore: [7] } }],
+      }),
+      error: { path: "subscriptions.0.reminders.expiryDaysBefore" },
+    },
+    {
+      name: "rejects invalid notification settings",
+      input: makeBackup({ notificationSetting: { enabled: true, monthlySummaryEnabled: true, sendTime: "9am" } }),
+      error: { path: "notificationSetting.sendTime" },
+    },
     { name: "rejects a non-object", input: "hello", error: { path: "", message: "這不是 KouKou 的備份檔" } },
     {
       name: "rejects another format",

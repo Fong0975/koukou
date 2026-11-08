@@ -2,8 +2,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loggerMock } from "@/test/logger";
 
-const { initializeDatabase } = vi.hoisted(() => ({ initializeDatabase: vi.fn() }));
+const { initializeDatabase, startReminderScheduler } = vi.hoisted(() => ({
+  initializeDatabase: vi.fn(),
+  startReminderScheduler: vi.fn(),
+}));
 vi.mock("@/services/dbInitService", () => ({ initializeDatabase }));
+vi.mock("@/services/reminderScheduler", () => ({ startReminderScheduler }));
 vi.mock("@/lib/logger", () => import("@/test/logger"));
 
 import { register } from "./instrumentation";
@@ -15,7 +19,11 @@ describe("register", () => {
   });
 
   const tests = [
-    { name: "logs the start-up and prepares the database on the Node.js runtime", runtime: "nodejs", expectedCalls: 1 },
+    {
+      name: "logs the start-up, prepares the database and starts the reminders on the Node.js runtime",
+      runtime: "nodejs",
+      expectedCalls: 1,
+    },
     { name: "skips the Edge runtime", runtime: "edge", expectedCalls: 0 },
   ];
 
@@ -27,6 +35,7 @@ describe("register", () => {
       await register();
 
       expect(initializeDatabase).toHaveBeenCalledTimes(tt.expectedCalls);
+      expect(startReminderScheduler).toHaveBeenCalledTimes(tt.expectedCalls);
       expect(loggerMock.info).toHaveBeenCalledTimes(tt.expectedCalls);
       if (tt.expectedCalls > 0) {
         expect(loggerMock.info).toHaveBeenCalledWith("Server starting", expect.objectContaining({ version: "1.2.3" }));

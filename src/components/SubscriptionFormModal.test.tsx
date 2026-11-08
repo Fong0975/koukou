@@ -20,6 +20,8 @@ function fillForm() {
   fireEvent.change(screen.getByLabelText("扣款方式"), { target: { value: "3" } });
 }
 
+const noReminders = { chargeDaysBefore: [], expiryDaysBefore: [] };
+
 const filledInput: SubscriptionInput = {
   name: "Spotify",
   categoryId: "5",
@@ -32,6 +34,7 @@ const filledInput: SubscriptionInput = {
   amountPeriods: [],
   note: "",
   schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
+  reminders: noReminders,
 };
 
 describe("SubscriptionFormModal", () => {
@@ -43,6 +46,8 @@ describe("SubscriptionFormModal", () => {
     /** Extra interaction after filling and before clicking. */
     act?: () => void;
     click: string;
+    /** Whether LINE reminders go out; defaults to true. */
+    remindersActive?: boolean;
     expectedTitle: string;
     expectedInput?: SubscriptionInput;
     expectedCloses: number;
@@ -76,6 +81,7 @@ describe("SubscriptionFormModal", () => {
         amountPeriods: [],
         note: "家庭方案",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
+        reminders: noReminders,
       },
       expectedCloses: 1,
     },
@@ -99,6 +105,7 @@ describe("SubscriptionFormModal", () => {
         amountPeriods: [{ amount: "330", endDate: "2026-03-31" }],
         note: "",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
+        reminders: noReminders,
       },
       expectedCloses: 1,
     },
@@ -134,6 +141,7 @@ describe("SubscriptionFormModal", () => {
         ...filledInput,
         amortize: true,
         schedules: [{ cycle: "YEARLY", month: "1", dayOfMonth: "1" }],
+        reminders: noReminders,
       },
       expectedCloses: 1,
     },
@@ -142,6 +150,7 @@ describe("SubscriptionFormModal", () => {
       initial: makeSubscription({
         amortize: true,
         schedules: [{ id: 10, cycle: "YEARLY", dayOfWeek: null, dayOfMonth: 11, month: 10 }],
+        reminders: noReminders,
       }),
       act: () => {
         expect(screen.getByRole("checkbox", { name: "年繳金額均攤預留" })).toBeChecked();
@@ -162,6 +171,7 @@ describe("SubscriptionFormModal", () => {
         amountPeriods: [],
         note: "",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "11" }],
+        reminders: noReminders,
       },
       expectedCloses: 1,
     },
@@ -191,6 +201,7 @@ describe("SubscriptionFormModal", () => {
         amountPeriods: [],
         note: "",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
+        reminders: noReminders,
       },
       expectedCloses: 1,
     },
@@ -256,8 +267,76 @@ describe("SubscriptionFormModal", () => {
       expectedAlert: "連不上伺服器",
     },
     {
+      name: "charge reminders can be set for the charge day and days ahead",
+      fill: true,
+      act: () => {
+        for (const value of ["0", "3"]) {
+          fireEvent.change(screen.getByLabelText("提前"), { target: { value } });
+          fireEvent.click(screen.getByRole("button", { name: "新增" }));
+        }
+      },
+      click: "新增扣款",
+      expectedTitle: "新增扣款",
+      expectedInput: { ...filledInput, reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [] } },
+      expectedCloses: 1,
+    },
+    {
+      name: "expiry reminders are offered once a contract end date is set",
+      fill: true,
+      act: () => {
+        expect(screen.queryByRole("checkbox", { name: "到期前 7 天" })).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("合約到期日（選填）"), { target: { value: "2099-12-31" } });
+        fireEvent.click(screen.getByRole("checkbox", { name: "到期前 7 天" }));
+        fireEvent.click(screen.getByRole("checkbox", { name: "到期當日" }));
+      },
+      click: "新增扣款",
+      expectedTitle: "新增扣款",
+      expectedInput: {
+        ...filledInput,
+        contractEndDate: "2099-12-31",
+        reminders: { chargeDaysBefore: [], expiryDaysBefore: [0, 7] },
+      },
+      expectedCloses: 1,
+    },
+    {
+      name: "clearing the contract end date drops the expiry reminders",
+      initial: makeSubscription({
+        contractEndDate: "2027-03-31",
+        reminders: { chargeDaysBefore: [1], expiryDaysBefore: [7] },
+      }),
+      act: () => {
+        expect(screen.getByRole("checkbox", { name: "到期前 7 天" })).toBeChecked();
+        fireEvent.change(screen.getByLabelText("合約到期日（選填）"), { target: { value: "" } });
+        expect(screen.queryByRole("checkbox", { name: "到期前 7 天" })).not.toBeInTheDocument();
+      },
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedInput: {
+        name: "Netflix",
+        categoryId: "2",
+        paymentMethodId: "3",
+        currency: "TWD",
+        amount: "390",
+        amortize: false,
+        startDate: "2026-01-01",
+        contractEndDate: "",
+        amountPeriods: [],
+        note: "",
+        schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
+        reminders: { chargeDaysBefore: [1], expiryDaysBefore: [] },
+      },
+      expectedCloses: 1,
+    },
+    {
       name: "cancel closes without submitting",
       fill: true,
+      click: "取消",
+      expectedTitle: "新增扣款",
+      expectedCloses: 1,
+    },
+    {
+      name: "the reminder block is locked while LINE reminders are off",
+      remindersActive: false,
       click: "取消",
       expectedTitle: "新增扣款",
       expectedCloses: 1,
@@ -277,9 +356,12 @@ describe("SubscriptionFormModal", () => {
           onAddPaymentMethod={vi.fn()}
           onSubmit={onSubmit}
           onClose={onClose}
+          remindersActive={tt.remindersActive ?? true}
         />,
       );
       expect(screen.getByRole("dialog", { name: tt.expectedTitle })).toBeInTheDocument();
+      const remindersLocked = tt.remindersActive === false;
+      expect(screen.getByLabelText("提前").matches(":disabled")).toBe(remindersLocked);
 
       if (tt.fill) fillForm();
       tt.act?.();

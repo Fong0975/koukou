@@ -1,4 +1,4 @@
-import { toCalendarDate, type CalendarDate } from "./calendarMonth";
+import { toCalendarDate, type CalendarDate, type YearMonth } from "./calendarMonth";
 
 const DATE_KEY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -31,6 +31,15 @@ export function toDateKey({ year, month, day }: CalendarDate): string {
 /** Today's date key in the local time zone. */
 export function todayKey(): string {
   return toDateKey(toCalendarDate(new Date()));
+}
+
+/**
+ * Reads the month a date key falls in.
+ *
+ * @param key - A "YYYY-MM-DD" key.
+ */
+export function dateKeyToYearMonth(key: string): YearMonth {
+  return { year: Number(key.slice(0, 4)), month: Number(key.slice(5, 7)) };
 }
 
 /**

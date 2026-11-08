@@ -160,6 +160,20 @@ body {
   .btn-ghost:hover:not(:disabled) {
     background: rgb(255 255 255 / 0.9);
   }
+  /* Tinted secondary action, so it reads as a button on white panels without competing with the primary one. */
+  .btn-soft {
+    background: var(--color-leaf-100);
+    color: var(--color-leaf-800);
+    border: 1px solid rgb(78 154 74 / 0.35);
+  }
+  .btn-soft:hover:not(:disabled) {
+    background: var(--color-leaf-300);
+  }
+  .btn-soft:disabled {
+    background: rgb(0 0 0 / 0.06);
+    color: var(--color-ink-soft);
+    border-color: transparent;
+  }
   /* Compact variants for controls that sit beside a heading rather than being the main action. */
   .btn-sm {
     min-height: 2rem;
@@ -257,6 +271,15 @@ body {
   .field[aria-invalid="true"] {
     border-color: var(--color-berry);
   }
+  .field:disabled,
+  .option-box:has(:disabled) {
+    background: rgb(0 0 0 / 0.04);
+    color: var(--color-ink-soft);
+    cursor: not-allowed;
+  }
+  .option-box :disabled {
+    cursor: not-allowed;
+  }
   /*
    * Chromium on Windows opens a <select>'s native popup as a separate OS window that shows
    * black for about a second before its options appear. Where supported, base-select draws
@@ -319,6 +342,18 @@ body {
     margin-top: 0.375rem;
     font-size: 0.8125rem;
     color: var(--color-berry);
+  }
+
+  /* Bordered box grouping a form option with its explanation, e.g. a checkbox and its hint. */
+  .option-box {
+    border: 1px solid rgb(78 154 74 / 0.3);
+    border-radius: 0.875rem;
+    background: rgb(255 255 255 / 0.75);
+    padding: 0.625rem 0.875rem;
+  }
+  /* Lets the dialog show through, so inputs inside the box stand out from it. */
+  .option-box-clear {
+    background: transparent;
   }
 }
 

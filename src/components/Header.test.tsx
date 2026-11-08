@@ -13,11 +13,13 @@ describe("Header", () => {
     it(tt.name, async () => {
       const onOpenList = vi.fn();
       const onOpenReport = vi.fn();
+      const onOpenSettings = vi.fn();
       const onExport = vi.fn(() => Promise.resolve());
       render(
         <Header
           onOpenList={onOpenList}
           onOpenReport={onOpenReport}
+          onOpenSettings={onOpenSettings}
           onExport={onExport}
           onImportFile={() => Promise.resolve()}
           versionLabel={tt.versionLabel}
@@ -44,6 +46,10 @@ describe("Header", () => {
       fireEvent.click(screen.getByRole("button", { name: "資料備份" }));
       fireEvent.click(screen.getByRole("menuitem", { name: "年度報表" }));
       expect(onOpenReport).toHaveBeenCalledTimes(2);
+
+      fireEvent.click(screen.getByRole("button", { name: "資料備份" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: "通知設定" }));
+      expect(onOpenSettings).toHaveBeenCalledTimes(1);
     });
   }
 });

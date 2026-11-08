@@ -39,6 +39,7 @@ export function makeSubscription(overrides: Partial<SubscriptionDto> = {}): Subs
     category: makeCategory(),
     paymentMethod: makePaymentMethod(),
     schedules: [{ id: 10, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
+    reminders: { chargeDaysBefore: [], expiryDaysBefore: [] },
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,

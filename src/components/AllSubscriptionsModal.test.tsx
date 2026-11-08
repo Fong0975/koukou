@@ -24,7 +24,7 @@ describe("AllSubscriptionsModal", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       const handlers = { onRetry: vi.fn(), onAdd: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn(), onClose: vi.fn() };
-      render(<AllSubscriptionsModal items={tt.items} status="ready" loadError={null} {...handlers} />);
+      render(<AllSubscriptionsModal items={tt.items} status="ready" loadError={null} {...handlers} remindersActive />);
 
       const dialog = screen.getByRole("dialog", { name: "所有扣款" });
       expect(within(dialog).getByRole("heading", { level: 2, name: "所有扣款" })).toHaveClass("font-semibold");

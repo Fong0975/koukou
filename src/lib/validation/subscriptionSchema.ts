@@ -3,6 +3,7 @@ import { Currency } from "@/generated/prisma/enums";
 import { amountPeriodsSchema } from "./amountPeriodSchema";
 import { amountSchema } from "./amountSchema";
 import { optionalDate, optionalText, requiredDate, requiredId, requiredText, type IssueSink } from "./common";
+import { checkExpiryReminders, remindersSchema } from "./reminderSchema";
 import { schedulesSchema } from "./scheduleSchema";
 
 /** Fields of a subscription payload, without the checks between its dates. */
@@ -18,6 +19,7 @@ export const subscriptionFieldsSchema = z.object({
   amountPeriods: amountPeriodsSchema,
   note: optionalText("備註", 255),
   schedules: schedulesSchema,
+  reminders: remindersSchema,
 });
 
 /** The dates of a subscription that must not fall before its start date. */
@@ -29,7 +31,6 @@ interface SubscriptionDates {
 
 /**
  * Reports a contract end date or a past amount's end date that falls before the start date.
- * Used as a `superRefine` of every schema built on {@link subscriptionFieldsSchema}.
  *
  * @param data - The parsed subscription.
  * @param ctx - Where the issues are reported.
@@ -45,8 +46,20 @@ export function checkSubscriptionDates(data: SubscriptionDates, ctx: IssueSink):
   });
 }
 
+/**
+ * Runs every check between the fields of a subscription. Used as a `superRefine` of every schema
+ * built on {@link subscriptionFieldsSchema}.
+ *
+ * @param data - The parsed subscription.
+ * @param ctx - Where the issues are reported.
+ */
+export function checkSubscription(data: z.output<typeof subscriptionFieldsSchema>, ctx: IssueSink): void {
+  checkSubscriptionDates(data, ctx);
+  checkExpiryReminders(data, ctx);
+}
+
 /** Payload for creating or fully updating a subscription. */
-export const subscriptionInputSchema = subscriptionFieldsSchema.superRefine(checkSubscriptionDates);
+export const subscriptionInputSchema = subscriptionFieldsSchema.superRefine(checkSubscription);
 
 export type SubscriptionInput = z.input<typeof subscriptionInputSchema>;
 export type SubscriptionData = z.output<typeof subscriptionInputSchema>;

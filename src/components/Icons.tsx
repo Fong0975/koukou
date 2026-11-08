@@ -61,6 +61,15 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+/** Bell, for opening the notification settings. */
+export function BellIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16zM10 20.5a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
 /** Bulleted list, for opening the full subscription list. */
 export function ListIcon(props: IconProps) {
   return (

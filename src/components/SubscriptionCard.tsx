@@ -3,19 +3,22 @@ import { PAYMENT_TYPE_LABELS } from "@/lib/labels";
 import type { SubscriptionDto } from "@/types/dto";
 import { ContractEndNote } from "./ContractEndNote";
 import { CardIcon, PencilIcon, TrashIcon } from "./Icons";
+import { ReminderBadge } from "./ReminderBadge";
 
 interface SubscriptionCardProps {
   item: SubscriptionDto;
   onEdit: (item: SubscriptionDto) => void;
   onDelete: (item: SubscriptionDto) => void;
+  /** Whether LINE reminders go out; the bell is hidden otherwise, since nothing would be sent. */
+  remindersActive: boolean;
 }
 
 /**
- * Wide glass card for one recurring payment: name, billing days, payment method, contract end date and note on
- * the left, amount and edit/delete actions on the right. Stacks vertically on narrow screens.
- * The category is not shown, since cards are listed under their category heading.
+ * Wide glass card for one recurring payment: name (with a bell when it has active LINE reminders), billing days,
+ * payment method, contract end date and note on the left, amount and edit/delete actions on the right. Stacks
+ * vertically on narrow screens. The category is not shown, since cards are listed under their category heading.
  */
-export function SubscriptionCard({ item, onEdit, onDelete }: SubscriptionCardProps) {
+export function SubscriptionCard({ item, onEdit, onDelete, remindersActive }: SubscriptionCardProps) {
   const amount = formatAmount(item.currency, item.amount);
 
   return (
@@ -24,9 +27,12 @@ export function SubscriptionCard({ item, onEdit, onDelete }: SubscriptionCardPro
       aria-labelledby={`sub-${item.id}-name`}
     >
       <div className="min-w-0 flex-1">
-        <h4 id={`sub-${item.id}-name`} className="text-lg leading-snug break-words">
-          {item.name}
-        </h4>
+        <div className="flex items-center gap-1.5">
+          <h4 id={`sub-${item.id}-name`} className="min-w-0 text-lg leading-snug break-words">
+            {item.name}
+          </h4>
+          {remindersActive && <ReminderBadge reminders={item.reminders} />}
+        </div>
         <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="扣款日">
           {item.schedules.map((schedule) => (
             <li key={schedule.id} className="rounded-full bg-coin-100/90 px-2.5 py-0.5 text-sm text-coin-600">

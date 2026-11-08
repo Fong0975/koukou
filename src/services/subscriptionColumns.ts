@@ -34,3 +34,15 @@ export function toAmountPeriodRows(data: Pick<SubscriptionData, "amountPeriods">
     endDate: dateKeyToUtcDate(period.endDate),
   }));
 }
+
+/**
+ * Maps validated reminders to rows of the reminder table.
+ *
+ * @param data - Validated subscription data.
+ */
+export function toReminderRows(data: Pick<SubscriptionData, "reminders">) {
+  return [
+    ...data.reminders.chargeDaysBefore.map((daysBefore) => ({ kind: "CHARGE" as const, daysBefore })),
+    ...data.reminders.expiryDaysBefore.map((daysBefore) => ({ kind: "EXPIRY" as const, daysBefore })),
+  ];
+}

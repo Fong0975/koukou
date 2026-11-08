@@ -7,7 +7,18 @@ import { makeCategory, makePaymentMethod, makeSubscription } from "@/test/fixtur
 import type { SubscriptionDto } from "@/types/dto";
 import type { SubscriptionListProps } from "./SubscriptionList";
 
-const { INPUT, subscriptions, lookups, backup, formProps, calendarProps, listProps, reportProps } = vi.hoisted(() => ({
+const {
+  INPUT,
+  subscriptions,
+  lookups,
+  backup,
+  notification,
+  formProps,
+  calendarProps,
+  listProps,
+  reportProps,
+  settingsProps,
+} = vi.hoisted(() => ({
   INPUT: { name: "Netflix" } as SubscriptionInput,
   subscriptions: {
     items: [] as SubscriptionDto[],
@@ -26,15 +37,18 @@ const { INPUT, subscriptions, lookups, backup, formProps, calendarProps, listPro
     confirmImport: vi.fn(),
     closeImport: vi.fn(),
   },
+  notification: { remindersActive: true, reload: vi.fn(), apply: vi.fn() },
   formProps: vi.fn(),
   calendarProps: vi.fn(),
   listProps: vi.fn(),
   reportProps: vi.fn(),
+  settingsProps: vi.fn(),
 }));
 
 vi.mock("@/hooks/useSubscriptions", () => ({ useSubscriptions: () => subscriptions }));
 vi.mock("@/hooks/useLookups", () => ({ useLookups: () => lookups }));
 vi.mock("@/hooks/useBackup", () => ({ useBackup: () => backup }));
+vi.mock("@/hooks/useNotificationSetting", () => ({ useNotificationSetting: () => notification }));
 
 // The calendar, the list dialog, the form and the confirmations have their own tests;
 // stand-ins expose only the callbacks HomeView wires up.
@@ -113,6 +127,19 @@ vi.mock("./report/YearReportModal", () => ({
   },
 }));
 
+vi.mock("./NotificationSettingsModal", () => ({
+  NotificationSettingsModal: (props: { onClose: () => void; onSaved: unknown }) => {
+    settingsProps(props);
+    return (
+      <div role="dialog" aria-label="通知設定">
+        <button type="button" onClick={props.onClose}>
+          關閉通知設定
+        </button>
+      </div>
+    );
+  },
+}));
+
 vi.mock("./ConfirmImportDialog", () => ({
   ConfirmImportDialog: (props: { pending: PendingImport; onConfirm: () => Promise<void>; onClose: () => void }) => (
     <div role="dialog" aria-label={`確認匯入 ${props.pending.fileName}`}>
@@ -130,8 +157,11 @@ import { HomeView } from "./HomeView";
 
 const item = makeSubscription({ id: 1, name: "Netflix" });
 
+/** Clicks each named button, or menu item when no button has that name. */
 const click = (...names: string[]) => {
-  for (const name of names) fireEvent.click(screen.getByRole("button", { name }));
+  for (const name of names) {
+    fireEvent.click(screen.queryByRole("button", { name }) ?? screen.getByRole("menuitem", { name }));
+  }
 };
 
 describe("HomeView", () => {
@@ -194,6 +224,18 @@ describe("HomeView", () => {
     },
     { name: "closing the report removes it", clicks: ["年度報表", "關閉報表"], expectedDialogs: [], expectedCalls: {} },
     {
+      name: "the header menu opens the notification settings",
+      clicks: ["資料備份", "通知設定"],
+      expectedDialogs: ["通知設定"],
+      expectedCalls: {},
+    },
+    {
+      name: "closing the notification settings removes them",
+      clicks: ["資料備份", "通知設定", "關閉通知設定"],
+      expectedDialogs: [],
+      expectedCalls: {},
+    },
+    {
       name: "retrying from the list reloads",
       clicks: ["所有扣款", "重新讀取"],
       expectedDialogs: ["所有扣款"],
@@ -220,7 +262,12 @@ describe("HomeView", () => {
       expect(screen.getByRole("region", { name: "月曆" })).toBeInTheDocument();
       expect(calendarProps).toHaveBeenLastCalledWith({ ...data, onRetry: expect.any(Function) });
       if (listProps.mock.calls.length > 0) {
-        expect(listProps).toHaveBeenLastCalledWith(expect.objectContaining(data));
+        expect(listProps).toHaveBeenLastCalledWith(
+          expect.objectContaining({ ...data, remindersActive: notification.remindersActive }),
+        );
+      }
+      if (settingsProps.mock.calls.length > 0) {
+        expect(settingsProps).toHaveBeenLastCalledWith(expect.objectContaining({ onSaved: notification.apply }));
       }
       if (reportProps.mock.calls.length > 0) {
         expect(reportProps).toHaveBeenLastCalledWith(
@@ -234,6 +281,7 @@ describe("HomeView", () => {
             paymentMethods: lookups.paymentMethods,
             onAddCategory: lookups.addCategory,
             onAddPaymentMethod: lookups.addPaymentMethod,
+            remindersActive: notification.remindersActive,
           }),
         );
       }
@@ -289,7 +337,7 @@ describe("HomeView backup", () => {
       expectedCloses: 0,
     },
     {
-      name: "confirming imports and reloads the subscriptions and option lists",
+      name: "confirming imports and reloads the subscriptions, option lists and notification settings",
       pendingImport: pending,
       confirmImport: () => Promise.resolve(),
       steps: [() => fireEvent.click(screen.getByRole("button", { name: "確認匯入" }))],
@@ -342,6 +390,7 @@ describe("HomeView backup", () => {
       expect(backup.confirmImport).toHaveBeenCalledTimes(tt.expectedConfirms);
       expect(subscriptions.reload).toHaveBeenCalledTimes(tt.expectedReloads);
       expect(lookups.reload).toHaveBeenCalledTimes(tt.expectedReloads);
+      expect(notification.reload).toHaveBeenCalledTimes(tt.expectedReloads);
       expect(backup.closeImport).toHaveBeenCalledTimes(tt.expectedCloses);
     });
   }

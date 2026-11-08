@@ -2,8 +2,9 @@ import { z } from "zod";
 import { BACKUP_FORMAT, BACKUP_VERSION } from "@/lib/constants/backupFormat";
 import { categoryInputSchema } from "./categorySchema";
 import { MAX_INT_ID, type IssueSink } from "./common";
+import { notificationSettingInputSchema } from "./notificationSettingSchema";
 import { paymentMethodInputSchema } from "./paymentMethodSchema";
-import { checkSubscriptionDates, subscriptionFieldsSchema } from "./subscriptionSchema";
+import { checkSubscription, subscriptionFieldsSchema } from "./subscriptionSchema";
 
 /** Smallest value of the signed 32-bit INT columns. */
 const MIN_INT = -MAX_INT_ID - 1;
@@ -31,7 +32,7 @@ const backupPaymentMethodSchema = paymentMethodInputSchema.extend({ id: recordId
 
 const backupSubscriptionSchema = subscriptionFieldsSchema
   .extend({ id: recordId("扣款項目"), createdAt: z.iso.datetime({ error: "建立時間格式錯誤" }) })
-  .superRefine(checkSubscriptionDates);
+  .superRefine(checkSubscription);
 
 /**
  * Reports each item whose key was already used by an earlier item of the same list.
@@ -125,6 +126,7 @@ export const backupSchema = z
       categories: z.array(backupCategorySchema, { error: "類型資料格式錯誤" }),
       paymentMethods: z.array(backupPaymentMethodSchema, { error: "扣款方式資料格式錯誤" }),
       subscriptions: z.array(backupSubscriptionSchema, { error: "扣款項目資料格式錯誤" }),
+      notificationSetting: notificationSettingInputSchema.optional(),
     },
     { error: "這不是 KouKou 的備份檔" },
   )
