@@ -1,6 +1,19 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { formatChargeReminderDay, formatExpiryReminderDay, formatReminders } from "./reminderText";
+import { formatChargeReminderDay, formatExpiryReminderDay, formatReminderChip, formatReminders } from "./reminderText";
+
+describe("formatReminderChip", () => {
+  const tests = [
+    { name: "the charge day", day: 0, expected: "當天" },
+    { name: "days ahead", day: 3, expected: "3 天前" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatReminderChip(tt.day)).toBe(tt.expected);
+    });
+  }
+});
 
 describe("formatChargeReminderDay", () => {
   const tests = [

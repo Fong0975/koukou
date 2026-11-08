@@ -351,6 +351,10 @@ body {
     background: rgb(255 255 255 / 0.75);
     padding: 0.625rem 0.875rem;
   }
+  /* Lets the dialog show through, so inputs inside the box stand out from it. */
+  .option-box-clear {
+    background: transparent;
+  }
 }
 
 dialog::backdrop {

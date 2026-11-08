@@ -1,6 +1,19 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { isExpiryReminderDay, parseCustomReminderDay, toggleDay } from "./reminderDays";
+import { countDaysAhead, isExpiryReminderDay, parseCustomReminderDay, toggleDay } from "./reminderDays";
+
+describe("countDaysAhead", () => {
+  const tests = [
+    { name: "none", days: [], expected: 0 },
+    { name: "leaves out the charge day", days: [0, 3, 7], expected: 2 },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(countDaysAhead(tt.days)).toBe(tt.expected);
+    });
+  }
+});
 
 describe("toggleDay", () => {
   const tests = [
@@ -22,17 +35,20 @@ describe("parseCustomReminderDay", () => {
     { name: "accepts a day", text: " 7 ", days: [0], expected: { day: 7 } },
     { name: "accepts the largest day", text: "30", days: [], expected: { day: 30 } },
     { name: "rejects blank input", text: "  ", days: [], expected: { error: "請輸入天數" } },
-    { name: "rejects zero", text: "0", days: [], expected: { error: "天數需為 1–30 的整數" } },
-    { name: "rejects more than 30", text: "31", days: [], expected: { error: "天數需為 1–30 的整數" } },
-    { name: "rejects a fraction", text: "1.5", days: [], expected: { error: "天數需為 1–30 的整數" } },
+    { name: "accepts zero as the charge day", text: "0", days: [3], expected: { day: 0 } },
+    { name: "rejects more than 30", text: "31", days: [], expected: { error: "天數需為 0–30 的整數" } },
+    { name: "rejects a negative day", text: "-1", days: [], expected: { error: "天數需為 0–30 的整數" } },
+    { name: "rejects a fraction", text: "1.5", days: [], expected: { error: "天數需為 0–30 的整數" } },
     { name: "rejects a duplicate", text: "3", days: [0, 3], expected: { error: "已經有 3 天前的提醒" } },
+    { name: "rejects a second charge day", text: "0", days: [0, 3], expected: { error: "已經有當天的提醒" } },
     {
-      name: "rejects a sixth custom day",
+      name: "rejects a sixth day ahead",
       text: "9",
       days: [0, 1, 2, 3, 4, 5],
-      expected: { error: "自訂提醒最多 5 個" },
+      expected: { error: "提前提醒最多 5 個" },
     },
-    { name: "the charge day does not count as custom", text: "9", days: [0, 1, 2, 3, 4], expected: { day: 9 } },
+    { name: "the charge day does not count as ahead", text: "9", days: [0, 1, 2, 3, 4], expected: { day: 9 } },
+    { name: "the charge day is allowed past the cap", text: "0", days: [1, 2, 3, 4, 5], expected: { day: 0 } },
   ];
 
   for (const tt of tests) {

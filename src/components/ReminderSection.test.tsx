@@ -20,8 +20,8 @@ describe("ReminderSection", () => {
     {
       name: "updates the charge days",
       hasContractEnd: false,
-      click: "扣款當日",
-      expectedChange: { chargeDaysBefore: [0, 3], expiryDaysBefore: [1] },
+      click: "移除「3 天前」提醒",
+      expectedChange: { chargeDaysBefore: [], expiryDaysBefore: [1] },
       expectExpiry: false,
     },
     {
@@ -73,7 +73,7 @@ describe("ReminderSection", () => {
       if (tt.expectExpiry) expect(screen.getByRole("group", { name: "合約到期提醒" })).toBeInTheDocument();
       else expect(screen.queryByRole("group", { name: "合約到期提醒" })).not.toBeInTheDocument();
 
-      if (tt.click) fireEvent.click(screen.getByRole("checkbox", { name: tt.click }));
+      if (tt.click) fireEvent.click(screen.getByLabelText(tt.click));
       if (tt.expectedChange) expect(onChange).toHaveBeenCalledWith(tt.expectedChange);
       else expect(onChange).not.toHaveBeenCalled();
       for (const message of tt.expectedErrors ?? []) expect(screen.getByText(message)).toBeInTheDocument();

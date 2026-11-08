@@ -10,6 +10,15 @@ export function formatChargeReminderDay(day: number): string {
 }
 
 /**
+ * Names a chosen charge reminder day on its chip, e.g. "當天" or "3 天前".
+ *
+ * @param day - Days ahead of the charge.
+ */
+export function formatReminderChip(day: number): string {
+  return day === 0 ? "當天" : `${day} 天前`;
+}
+
+/**
  * Names an expiry reminder day, e.g. "到期當日" or "到期前 7 天".
  *
  * @param day - Days ahead of the contract end date.

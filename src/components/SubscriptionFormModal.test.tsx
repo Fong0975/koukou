@@ -270,9 +270,10 @@ describe("SubscriptionFormModal", () => {
       name: "charge reminders can be set for the charge day and days ahead",
       fill: true,
       act: () => {
-        fireEvent.click(screen.getByRole("checkbox", { name: "扣款當日" }));
-        fireEvent.change(screen.getByLabelText("提前"), { target: { value: "3" } });
-        fireEvent.click(screen.getByRole("button", { name: "新增" }));
+        for (const value of ["0", "3"]) {
+          fireEvent.change(screen.getByLabelText("提前"), { target: { value } });
+          fireEvent.click(screen.getByRole("button", { name: "新增" }));
+        }
       },
       click: "新增扣款",
       expectedTitle: "新增扣款",
@@ -360,7 +361,7 @@ describe("SubscriptionFormModal", () => {
       );
       expect(screen.getByRole("dialog", { name: tt.expectedTitle })).toBeInTheDocument();
       const remindersLocked = tt.remindersActive === false;
-      expect(screen.getByRole("checkbox", { name: "扣款當日" }).matches(":disabled")).toBe(remindersLocked);
+      expect(screen.getByLabelText("提前").matches(":disabled")).toBe(remindersLocked);
 
       if (tt.fill) fillForm();
       tt.act?.();

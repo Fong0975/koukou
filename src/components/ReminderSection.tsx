@@ -46,16 +46,18 @@ export function ReminderSection({
     // A disabled fieldset locks every control inside it; the tooltip sits on it so it covers the whole block.
     <fieldset disabled={disabled} title={disabled ? REMINDERS_DISABLED_HINT : undefined}>
       <legend className="field-label">LINE 提醒（選填）</legend>
-      <div className="option-box flex flex-col gap-4">
+      <div className="option-box option-box-clear flex flex-col gap-4">
         <div role="group" aria-labelledby={chargeId}>
           <p id={chargeId} className="mb-2 text-sm font-medium">
             扣款提醒
           </p>
-          <ChargeReminderDays
-            days={reminders.chargeDaysBefore}
-            onChange={(chargeDaysBefore) => onChange({ ...reminders, chargeDaysBefore })}
-          />
-          {chargeError && <p className="field-error">{chargeError}</p>}
+          <div className="pl-4">
+            <ChargeReminderDays
+              days={reminders.chargeDaysBefore}
+              onChange={(chargeDaysBefore) => onChange({ ...reminders, chargeDaysBefore })}
+            />
+            {chargeError && <p className="field-error">{chargeError}</p>}
+          </div>
         </div>
 
         {hasContractEnd && (
@@ -63,11 +65,13 @@ export function ReminderSection({
             <p id={expiryId} className="mb-2 text-sm font-medium">
               合約到期提醒
             </p>
-            <ExpiryReminderToggles
-              days={reminders.expiryDaysBefore}
-              onChange={(expiryDaysBefore) => onChange({ ...reminders, expiryDaysBefore })}
-            />
-            {expiryError && <p className="field-error">{expiryError}</p>}
+            <div className="pl-4">
+              <ExpiryReminderToggles
+                days={reminders.expiryDaysBefore}
+                onChange={(expiryDaysBefore) => onChange({ ...reminders, expiryDaysBefore })}
+              />
+              {expiryError && <p className="field-error">{expiryError}</p>}
+            </div>
           </div>
         )}
       </div>
