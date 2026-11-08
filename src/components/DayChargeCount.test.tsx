@@ -8,7 +8,11 @@ import { DayChargeCount } from "./DayChargeCount";
 
 const occurrences = [
   makeOccurrence(15, makeSubscription({ id: 1, name: "Netflix", category: makeCategory({ icon: "🎬" }) })),
-  makeOccurrence(15, makeSubscription({ id: 2, name: "記帳 App", category: makeCategory({ icon: null }) })),
+  makeOccurrence(
+    15,
+    makeSubscription({ id: 2, name: "記帳 App", currency: "USD", category: makeCategory({ icon: null }) }),
+    { amount: "4.99" },
+  ),
 ];
 const phone = makeSubscription({ id: 3, name: "中華電信", category: makeCategory({ icon: "📱" }) });
 const expiries: ContractExpiry[] = [{ day: 15, date: "2026-01-15", subscription: phone }];
@@ -55,7 +59,7 @@ describe("DayChargeCount", () => {
       open: (trigger) => fireEvent.click(trigger),
       expectedLabel: "15 日扣款項目（2 筆）",
       expectedTrigger: "2",
-      expectedCharges: ["扣款項目", "🎬 Netflix", "記帳 App"],
+      expectedCharges: ["扣款項目", "🎬 NetflixNT$ 390", "記帳 AppUS$ 4.99"],
       expectedExpiries: null,
     },
     {
@@ -65,7 +69,7 @@ describe("DayChargeCount", () => {
       open: (trigger) => movePointer(trigger, "enter", "mouse"),
       expectedLabel: "15 日扣款項目（2 筆）",
       expectedTrigger: "2",
-      expectedCharges: ["扣款項目", "🎬 Netflix", "記帳 App"],
+      expectedCharges: ["扣款項目", "🎬 NetflixNT$ 390", "記帳 AppUS$ 4.99"],
       expectedExpiries: null,
     },
     {
@@ -75,7 +79,7 @@ describe("DayChargeCount", () => {
       open: (trigger) => fireEvent.click(trigger),
       expectedLabel: "15 日扣款項目（2 筆）、合約到期（1 筆）",
       expectedTrigger: "21",
-      expectedCharges: ["扣款項目", "🎬 Netflix", "記帳 App"],
+      expectedCharges: ["扣款項目", "🎬 NetflixNT$ 390", "記帳 AppUS$ 4.99"],
       expectedExpiries: ["合約到期", "📱 中華電信"],
     },
     {

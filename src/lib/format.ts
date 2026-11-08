@@ -58,7 +58,18 @@ export function formatSchedule(
  * @returns The prefixed, grouped amount.
  */
 export function formatCents(currency: Currency, cents: number): string {
-  const { prefix, value } = formatAmount(currency, (cents / 100).toFixed(2));
+  return formatAmountText(currency, (cents / 100).toFixed(2));
+}
+
+/**
+ * Formats a decimal amount string as a single string, e.g. "NT$ 390" or "US$ 20.00".
+ *
+ * @param currency - The currency.
+ * @param amount - Decimal string such as "390.00".
+ * @returns The prefixed, grouped amount.
+ */
+export function formatAmountText(currency: Currency, amount: string): string {
+  const { prefix, value } = formatAmount(currency, amount);
   return `${prefix} ${value}`;
 }
 
