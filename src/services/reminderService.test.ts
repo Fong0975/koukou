@@ -71,7 +71,7 @@ describe("runDailyReminder", () => {
       name: "sends today's reminders",
       expected: "sent",
       saved: [{ status: "SENT", attempts: 1 }],
-      pushed: "・今天 11/8（日） Netflix NT$ 390",
+      pushed: "・Netflix NT$ 390",
     },
     {
       name: "catches up later the same day",
