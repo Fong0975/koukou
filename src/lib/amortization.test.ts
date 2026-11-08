@@ -117,6 +117,12 @@ describe("monthReserves", () => {
       expected: [reserveOf("5-50", [2027, 10, 11], 12500, 12500)],
     },
     {
+      name: "a zero-amount charge, e.g. a free trial year, is not saved for",
+      items: [{ ...domain, amountPeriods: [{ id: 1, amount: "0.00", endDate: "2026-10-11" }] }],
+      target: { year: 2026, month: 5 },
+      expected: [],
+    },
+    {
       name: "USD rounds up to a whole dollar",
       items: [{ ...domain, currency: "USD", amount: "99.99" }],
       target: { year: 2026, month: 5 },

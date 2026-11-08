@@ -64,7 +64,8 @@ export function isActiveOn(
 
 /**
  * Lists one subscription's charges in a month, skipping days outside its start and contract end dates
- * and pricing each charge with the amount that applied on that day.
+ * and pricing each charge with the amount that applied on that day. A day whose amount is zero (e.g. during
+ * a free trial) is not a charge and is skipped too.
  *
  * @param subscription - The subscription.
  * @param target - The month.
@@ -75,13 +76,16 @@ function subscriptionOccurrences(subscription: SubscriptionDto, target: YearMont
     scheduleDaysInMonth(schedule, target).flatMap((day) => {
       const dateKey = toDateKey({ ...target, day });
       if (!isActiveOn(subscription, dateKey)) return [];
-      return [{ day, date: dateKey, subscription, scheduleId: schedule.id, amount: amountOn(subscription, dateKey) }];
+      const amount = amountOn(subscription, dateKey);
+      if (Number(amount) === 0) return [];
+      return [{ day, date: dateKey, subscription, scheduleId: schedule.id, amount }];
     }),
   );
 }
 
 /**
- * Expands subscriptions into every charge they make in a month; each schedule charges separately.
+ * Expands subscriptions into every charge they make in a month; each schedule charges separately, and days
+ * with a zero amount are left out.
  *
  * @param items - The subscriptions.
  * @param target - The month.
