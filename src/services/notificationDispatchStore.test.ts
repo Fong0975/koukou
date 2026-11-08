@@ -7,7 +7,7 @@ const { prismaMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/db", () => ({ prisma: prismaMock }));
 
-import { findDispatch, saveDispatch } from "./notificationDispatchStore";
+import { findDispatch, saveDispatch, skipDayIfUntried } from "./notificationDispatchStore";
 
 const day = new Date("2026-11-08T00:00:00.000Z");
 
@@ -30,6 +30,21 @@ describe("findDispatch", () => {
       expect(prismaMock.notificationDispatch.findUnique).toHaveBeenCalledWith({
         where: { date: day },
         select: { status: true, attempts: true },
+      });
+    });
+  }
+});
+
+describe("skipDayIfUntried", () => {
+  const tests = [{ name: "creates a skipped day without touching an existing one", date: "2026-11-08" }];
+
+  for (const tt of tests) {
+    it(tt.name, async () => {
+      await skipDayIfUntried(tt.date);
+      expect(prismaMock.notificationDispatch.upsert).toHaveBeenCalledWith({
+        where: { date: day },
+        create: { date: day, status: "SKIPPED", attempts: 0 },
+        update: {},
       });
     });
   }

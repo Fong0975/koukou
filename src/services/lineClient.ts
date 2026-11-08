@@ -30,6 +30,19 @@ function readCredentials(): LineCredentials | null {
 }
 
 /**
+ * Tells whether the LINE channel token and user id are both configured. A secret file that cannot be
+ * read counts as not configured, so the settings page still loads.
+ */
+export function isLineConfigured(): boolean {
+  try {
+    return readCredentials() !== null;
+  } catch (error) {
+    logger.warn("LINE secret cannot be read", {}, error);
+    return false;
+  }
+}
+
+/**
  * Reads the reason LINE gives for a rejected request.
  *
  * @param response - The error response.

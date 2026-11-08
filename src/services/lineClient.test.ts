@@ -5,7 +5,7 @@ import { UpstreamError } from "@/lib/errors";
 vi.mock("@/lib/logger", () => import("@/test/logger"));
 
 import { loggerMock } from "@/test/logger";
-import { pushText } from "./lineClient";
+import { isLineConfigured, pushText } from "./lineClient";
 
 const TOKEN = "secret-channel-token";
 const USER_ID = "U0123456789abcdef";
@@ -93,6 +93,32 @@ describe("pushText", () => {
       }
       const logged = JSON.stringify(Object.values(loggerMock).map((method) => method.mock.calls));
       expect(logged).not.toContain(TOKEN);
+    });
+  }
+});
+
+describe("isLineConfigured", () => {
+  const tests: { name: string; env: Record<string, string>; expected: boolean; warns?: boolean }[] = [
+    {
+      name: "both secrets set",
+      env: { LINE_CHANNEL_ACCESS_TOKEN: TOKEN, LINE_USER_ID: USER_ID },
+      expected: true,
+    },
+    { name: "missing token", env: { LINE_CHANNEL_ACCESS_TOKEN: "", LINE_USER_ID: USER_ID }, expected: false },
+    { name: "missing user id", env: { LINE_CHANNEL_ACCESS_TOKEN: TOKEN, LINE_USER_ID: "" }, expected: false },
+    {
+      name: "unreadable secret file",
+      env: { LINE_CHANNEL_ACCESS_TOKEN_FILE: "/nonexistent/line_token", LINE_USER_ID: USER_ID },
+      expected: false,
+      warns: true,
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      for (const [key, value] of Object.entries(tt.env)) vi.stubEnv(key, value);
+      expect(isLineConfigured()).toBe(tt.expected);
+      expect(loggerMock.warn).toHaveBeenCalledTimes(tt.warns ? 1 : 0);
     });
   }
 });

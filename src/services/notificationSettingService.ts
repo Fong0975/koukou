@@ -1,8 +1,13 @@
+import { toCalendarDate } from "@/lib/calendarMonth";
 import { DEFAULT_SEND_TIME } from "@/lib/constants/reminders";
+import { toDateKey } from "@/lib/dateKey";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
+import { isSendTimeReached } from "@/lib/notification/sendTime";
 import type { NotificationSettingData } from "@/lib/validation/notificationSettingSchema";
 import type { NotificationSettingDto, NotificationSettingValuesDto } from "@/types/dto";
+import { isLineConfigured } from "./lineClient";
+import { skipDayIfUntried } from "./notificationDispatchStore";
 
 const logger = createLogger("notificationSettingService");
 
@@ -18,8 +23,17 @@ export const DEFAULT_NOTIFICATION_SETTING: NotificationSettingValuesDto = {
 
 const settingSelect = { enabled: true, monthlySummaryEnabled: true, sendTime: true } as const;
 
-/** IANA name of the time zone the server runs in, which `sendTime` is read in. */
-const serverTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+/**
+ * Adds what the client shows next to the stored settings: the server's time zone, which `sendTime`
+ * is read in, and whether LINE is configured.
+ *
+ * @param values - The stored settings.
+ */
+const toSettingDto = (values: NotificationSettingValuesDto): NotificationSettingDto => ({
+  ...values,
+  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  lineConfigured: isLineConfigured(),
+});
 
 /**
  * Builds the Prisma `upsert` arguments that store the settings in their single row.
@@ -46,22 +60,34 @@ export async function readNotificationSetting(): Promise<NotificationSettingValu
 }
 
 /**
- * Reads the settings together with the time zone their send time is read in.
+ * Reads the settings together with what the client shows next to them.
  *
  * @returns The settings as shown to the client.
  */
 export async function getNotificationSetting(): Promise<NotificationSettingDto> {
-  return { ...(await readNotificationSetting()), timeZone: serverTimeZone() };
+  return toSettingDto(await readNotificationSetting());
 }
 
 /**
- * Saves the settings.
+ * Saves the settings. Switching notifications on after today's send time has passed starts them
+ * tomorrow: today is marked as having nothing to send, so the scheduler does not send at once.
  *
  * @param data - Validated settings.
+ * @param now - The current time; dates and the send time are read in the server's time zone.
  * @returns The saved settings as shown to the client.
  */
-export async function updateNotificationSetting(data: NotificationSettingData): Promise<NotificationSettingDto> {
+export async function updateNotificationSetting(
+  data: NotificationSettingData,
+  now: Date = new Date(),
+): Promise<NotificationSettingDto> {
+  const previous = await readNotificationSetting();
   const setting = await prisma.notificationSetting.upsert(notificationSettingUpsert(data));
   logger.info("Notification settings updated", { ...setting });
-  return { ...setting, timeZone: serverTimeZone() };
+
+  if (!previous.enabled && setting.enabled && isSendTimeReached(now, setting.sendTime)) {
+    const today = toDateKey(toCalendarDate(now));
+    await skipDayIfUntried(today);
+    logger.info("Notifications switched on after today's send time; first message tomorrow", { date: today });
+  }
+  return toSettingDto(setting);
 }

@@ -130,4 +130,6 @@ export interface NotificationSettingValuesDto {
 export interface NotificationSettingDto extends NotificationSettingValuesDto {
   /** IANA name of the server's time zone that `sendTime` is read in, e.g. "Asia/Taipei". */
   timeZone: string;
+  /** Whether the LINE channel token and user id are configured on the server; their values are never sent. */
+  lineConfigured: boolean;
 }

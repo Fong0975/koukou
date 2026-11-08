@@ -26,6 +26,20 @@ export async function findDispatch(date: string): Promise<Dispatch | null> {
 }
 
 /**
+ * Marks a day as having nothing to send, unless something was already tried that day.
+ *
+ * @param date - The day, "YYYY-MM-DD".
+ */
+export async function skipDayIfUntried(date: string): Promise<void> {
+  const key = dateKeyToUtcDate(date);
+  await prisma.notificationDispatch.upsert({
+    where: { date: key },
+    create: { date: key, status: "SKIPPED", attempts: 0 },
+    update: {},
+  });
+}
+
+/**
  * Records the outcome of a day's reminder message, replacing an earlier one.
  *
  * @param date - The day, "YYYY-MM-DD".

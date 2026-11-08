@@ -32,7 +32,8 @@ export type ReminderRunResult =
 /**
  * Sends today's reminder message once its send time has come. Each day is sent at most once; a
  * server that was down at the send time catches up on its first run later that day, and a failed
- * send is retried on later runs up to {@link MAX_SEND_ATTEMPTS} tries.
+ * send is retried on later runs up to {@link MAX_SEND_ATTEMPTS} tries. Notifications switched on after
+ * the send time start the next day, since saving them marks today as skipped.
  *
  * @param now - The current time; dates and the send time are read in the server's time zone.
  * @returns What the run did.

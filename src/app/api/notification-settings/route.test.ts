@@ -10,7 +10,13 @@ vi.mock("@/services/notificationSettingService", () => serviceMock);
 
 import { GET, PUT } from "./route";
 
-const setting = { enabled: true, monthlySummaryEnabled: true, sendTime: "09:00", timeZone: "Asia/Taipei" };
+const setting = {
+  enabled: true,
+  monthlySummaryEnabled: true,
+  sendTime: "09:00",
+  timeZone: "Asia/Taipei",
+  lineConfigured: true,
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
