@@ -3,7 +3,7 @@ import type { SubscriptionCharges } from "@/lib/billingSummary";
 import { sumTwdCents } from "@/lib/currencyConversion";
 import { formatApproxTwd, formatCents } from "@/lib/format";
 import type { ExchangeRateDto } from "@/types/dto";
-import { CoinListItem } from "./CoinListItem";
+import { MoneyListItem } from "./MoneyListItem";
 
 interface MonthChargeItemProps {
   charge: SubscriptionCharges;
@@ -25,7 +25,7 @@ export function MonthChargeItem({ charge, subtitle, rates }: MonthChargeItemProp
   const { subscription, count, totalCents, unitCents, occurrences } = charge;
 
   return (
-    <CoinListItem currency={subscription.currency} title={subscription.name} subtitle={subtitle}>
+    <MoneyListItem title={subscription.name} subtitle={subtitle}>
       <p className="font-semibold">{formatCents(subscription.currency, totalCents)}</p>
       {rates && subscription.currency !== "TWD" && (
         <p className="text-xs text-ink-soft">{formatApproxTwd(sumTwdCents(occurrences, rates))}</p>
@@ -35,6 +35,6 @@ export function MonthChargeItem({ charge, subtitle, rates }: MonthChargeItemProp
           {unitCents === null ? `共 ${count} 次` : `${formatCents(subscription.currency, unitCents)} × ${count}`}
         </p>
       )}
-    </CoinListItem>
+    </MoneyListItem>
   );
 }

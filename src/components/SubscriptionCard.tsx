@@ -1,7 +1,6 @@
 import { formatAmount, formatSchedule } from "@/lib/format";
 import { PAYMENT_TYPE_LABELS } from "@/lib/labels";
 import type { SubscriptionDto } from "@/types/dto";
-import { CoinMark } from "./CoinMark";
 import { ContractEndNote } from "./ContractEndNote";
 import { CardIcon, PencilIcon, TrashIcon } from "./Icons";
 
@@ -46,7 +45,6 @@ export function SubscriptionCard({ item, onEdit, onDelete }: SubscriptionCardPro
 
       <div className="flex items-center justify-between gap-3 border-t border-leaf-500/15 pt-3 sm:justify-end sm:border-0 sm:pt-0">
         <p className="flex items-center gap-2">
-          <CoinMark currency={item.currency} />
           <span className="font-num text-sm font-medium text-ink-soft">{amount.prefix}</span>
           <span className="font-num text-2xl font-semibold tracking-tight tabular-nums">{amount.value}</span>
         </p>

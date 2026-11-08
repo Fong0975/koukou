@@ -1,9 +1,9 @@
 import { sumReserves, type Reserve } from "@/lib/amortization";
 import { formatReserve, formatReserveTerm } from "@/lib/format";
 import { CardFooter } from "./CardFooter";
-import { CoinListItem } from "./CoinListItem";
 import { CollapsibleCard } from "./CollapsibleCard";
 import { CurrencyAmounts } from "./CurrencyAmounts";
+import { MoneyListItem } from "./MoneyListItem";
 
 /**
  * Collapsible card listing what to set aside this month for upcoming amortized yearly charges, one row
@@ -29,15 +29,10 @@ export function MonthReserveList({ reserves }: { reserves: Reserve[] }) {
         {reserves.map(({ key, subscription, chargeDate, reserveCents, averageCents }) => {
           const { amount, average } = formatReserve(subscription.currency, reserveCents, averageCents);
           return (
-            <CoinListItem
-              key={key}
-              currency={subscription.currency}
-              title={subscription.name}
-              subtitle={formatReserveTerm(chargeDate)}
-            >
+            <MoneyListItem key={key} title={subscription.name} subtitle={formatReserveTerm(chargeDate)}>
               <p className="font-semibold">{amount}</p>
               {average && <p className="text-xs text-ink-soft">({average})</p>}
-            </CoinListItem>
+            </MoneyListItem>
           );
         })}
       </ul>
