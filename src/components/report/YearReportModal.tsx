@@ -35,6 +35,7 @@ export function YearReportModal({ items, initialYear, onClose }: YearReportModal
       title="年度報表"
       onClose={onClose}
       widthClass="max-w-4xl"
+      titleClassName="font-semibold"
       actions={<YearStepper year={year} onChange={setYear} />}
     >
       {highlights.chargeCount === 0 ? (

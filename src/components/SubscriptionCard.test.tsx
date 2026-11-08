@@ -74,6 +74,7 @@ describe("SubscriptionCard", () => {
           .getAllByRole("listitem")
           .map((li) => li.textContent),
       ).toEqual(tt.schedules);
+      expect(list.nextElementSibling).toHaveTextContent(tt.item.paymentMethod.name);
     });
   }
 

@@ -34,7 +34,7 @@ export function SubscriptionCard({ item, onEdit, onDelete }: SubscriptionCardPro
             </li>
           ))}
         </ul>
-        <p className="mt-2 flex items-center gap-2 text-sm text-ink-soft">
+        <p className="mt-2 flex items-center gap-2 px-2 text-sm text-ink-soft">
           <CardIcon className="shrink-0" />
           <span>{PAYMENT_TYPE_LABELS[item.paymentMethod.type]}</span>
           <span className="min-w-0 break-words text-ink">{item.paymentMethod.name}</span>

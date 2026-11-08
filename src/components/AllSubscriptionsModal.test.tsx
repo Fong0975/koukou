@@ -27,6 +27,7 @@ describe("AllSubscriptionsModal", () => {
       render(<AllSubscriptionsModal items={tt.items} status="ready" loadError={null} {...handlers} />);
 
       const dialog = screen.getByRole("dialog", { name: "所有扣款" });
+      expect(within(dialog).getByRole("heading", { level: 2, name: "所有扣款" })).toHaveClass("font-semibold");
       if (tt.click) fireEvent.click(within(dialog).getByRole("button", { name: tt.click }));
 
       expect(within(dialog).queryByRole("button", { name: "新增扣款" }) !== null).toBe(tt.expectedToolbarAdd);
