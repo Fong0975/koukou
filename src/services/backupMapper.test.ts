@@ -20,6 +20,7 @@ const record: BackupSubscriptionRecord = {
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   schedules: [{ cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
   amountPeriods: [{ amount: decimal(330), endDate: new Date("2026-03-31T00:00:00.000Z") }],
+  reminders: [{ kind: "CHARGE", daysBefore: 0 }],
 };
 
 describe("toBackupSubscriptionDto", () => {
@@ -65,12 +66,22 @@ describe("toImportRows", () => {
         ],
         schedules: [{ subscriptionId: 1, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
         amountPeriods: [{ subscriptionId: 1, amount: "330.00", endDate: new Date("2026-03-31T00:00:00.000Z") }],
+        reminders: [{ subscriptionId: 1, kind: "CHARGE", daysBefore: 0 }],
+        notificationSetting: backup.notificationSetting,
       },
     },
     {
-      name: "maps an empty backup to no rows",
-      backup: makeBackup({ categories: [], paymentMethods: [], subscriptions: [] }),
-      expected: { categories: [], paymentMethods: [], subscriptions: [], schedules: [], amountPeriods: [] },
+      name: "maps an empty backup without settings to no rows",
+      backup: makeBackup({ categories: [], paymentMethods: [], subscriptions: [], notificationSetting: undefined }),
+      expected: {
+        categories: [],
+        paymentMethods: [],
+        subscriptions: [],
+        schedules: [],
+        amountPeriods: [],
+        reminders: [],
+        notificationSetting: null,
+      },
     },
   ];
 

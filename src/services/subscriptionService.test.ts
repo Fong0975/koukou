@@ -51,6 +51,10 @@ const record: SubscriptionRecord = {
   amountPeriods: [
     { id: 20, amount: { toFixed: (d: number) => (330).toFixed(d) }, endDate: new Date("2026-03-31T00:00:00.000Z") },
   ],
+  reminders: [
+    { kind: "CHARGE", daysBefore: 0 },
+    { kind: "EXPIRY", daysBefore: 7 },
+  ],
 };
 
 const data: SubscriptionData = {
@@ -68,6 +72,7 @@ const data: SubscriptionData = {
     { cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null },
     { cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 15, month: null },
   ],
+  reminders: { chargeDaysBefore: [0], expiryDaysBefore: [7] },
 };
 
 const columns = {
@@ -83,6 +88,13 @@ const columns = {
 };
 
 const amountPeriodRows = [{ amount: "330.00", endDate: new Date("2026-03-31T00:00:00.000Z") }];
+
+const reminderRows = [
+  { kind: "CHARGE", daysBefore: 0 },
+  { kind: "EXPIRY", daysBefore: 7 },
+];
+
+const childCounts = { schedules: 2, amountPeriods: 1, reminders: 2 };
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -161,14 +173,16 @@ describe("createSubscription", () => {
         startDate: "2026-01-01",
         contractEndDate: "2027-03-31",
         amountPeriods: [{ id: 20, amount: "330.00", endDate: "2026-03-31" }],
+        reminders: { chargeDaysBefore: [0], expiryDaysBefore: [7] },
       });
-      expect(loggerMock.info).toHaveBeenCalledWith("Subscription created", { id: 1, schedules: 2, amountPeriods: 1 });
+      expect(loggerMock.info).toHaveBeenCalledWith("Subscription created", { id: 1, ...childCounts });
       expect(prismaMock.subscription.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: {
             ...(tt.expectedColumns ?? columns),
             schedules: { create: data.schedules },
             amountPeriods: { create: amountPeriodRows },
+            reminders: { create: reminderRows },
           },
         }),
       );
@@ -178,7 +192,7 @@ describe("createSubscription", () => {
 
 describe("updateSubscription", () => {
   const tests: { name: string; result: () => Promise<unknown>; error?: ErrorCtor }[] = [
-    { name: "replaces fields, all schedules and all past amounts", result: () => Promise.resolve(record) },
+    { name: "replaces fields, all schedules, past amounts and reminders", result: () => Promise.resolve(record) },
     {
       name: "missing subscription → NotFoundError",
       result: () => Promise.reject(prismaError("P2025")),
@@ -201,7 +215,7 @@ describe("updateSubscription", () => {
         return;
       }
       await expect(promise).resolves.toMatchObject({ id: 1 });
-      expect(loggerMock.info).toHaveBeenCalledWith("Subscription updated", { id: 1, schedules: 2, amountPeriods: 1 });
+      expect(loggerMock.info).toHaveBeenCalledWith("Subscription updated", { id: 1, ...childCounts });
       expect(prismaMock.subscription.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 1 },
@@ -209,6 +223,7 @@ describe("updateSubscription", () => {
             ...columns,
             schedules: { deleteMany: {}, create: data.schedules },
             amountPeriods: { deleteMany: {}, create: amountPeriodRows },
+            reminders: { deleteMany: {}, create: reminderRows },
           },
         }),
       );

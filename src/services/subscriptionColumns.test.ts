@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import type { SubscriptionData } from "@/lib/validation/subscriptionSchema";
-import { toAmountPeriodRows, toSubscriptionColumns } from "./subscriptionColumns";
+import { toAmountPeriodRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
 
 const data: SubscriptionData = {
   name: "Netflix",
@@ -15,6 +15,7 @@ const data: SubscriptionData = {
   amountPeriods: [{ amount: 12, endDate: "2026-03-31" }],
   note: "家庭方案",
   schedules: [{ cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
+  reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7] },
 };
 
 describe("toSubscriptionColumns", () => {
@@ -61,6 +62,31 @@ describe("toAmountPeriodRows", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(toAmountPeriodRows(tt.data)).toEqual(tt.expected);
+    });
+  }
+});
+
+describe("toReminderRows", () => {
+  const tests = [
+    {
+      name: "tags each day with its kind",
+      data,
+      expected: [
+        { kind: "CHARGE", daysBefore: 0 },
+        { kind: "CHARGE", daysBefore: 3 },
+        { kind: "EXPIRY", daysBefore: 7 },
+      ],
+    },
+    {
+      name: "returns no rows without reminders",
+      data: { ...data, reminders: { chargeDaysBefore: [], expiryDaysBefore: [] } },
+      expected: [],
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(toReminderRows(tt.data)).toEqual(tt.expected);
     });
   }
 });

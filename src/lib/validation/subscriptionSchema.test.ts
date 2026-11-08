@@ -34,7 +34,27 @@ describe("subscriptionInputSchema", () => {
         contractEndDate: null,
         amountPeriods: [],
         note: null,
+        reminders: { chargeDaysBefore: [], expiryDaysBefore: [] },
       },
+    },
+    {
+      name: "keeps charge and expiry reminders",
+      input: {
+        ...valid,
+        contractEndDate: "2027-01-14",
+        reminders: { chargeDaysBefore: [3, 0], expiryDaysBefore: [7, 0] },
+      },
+      expected: { reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [0, 7] } },
+    },
+    {
+      name: "rejects expiry reminders without a contract end date",
+      input: { ...valid, reminders: { expiryDaysBefore: [7] } },
+      errorPath: "reminders.expiryDaysBefore",
+    },
+    {
+      name: "rejects invalid reminder days",
+      input: { ...valid, reminders: { chargeDaysBefore: [31] } },
+      errorPath: "reminders.chargeDaysBefore.0",
     },
     {
       name: "keeps a contract end date on or after the start date",

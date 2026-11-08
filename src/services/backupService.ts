@@ -7,21 +7,23 @@ import type { BackupData } from "@/lib/validation/backupSchema";
 import type { BackupCountsDto, BackupDto } from "@/types/dto";
 import { backupSubscriptionSelect, toBackupSubscriptionDto, toImportRows } from "./backupMapper";
 import { categorySelect } from "./categoryService";
+import { notificationSettingUpsert, readNotificationSetting } from "./notificationSettingService";
 import { paymentMethodSelect } from "./paymentMethodService";
 import { rethrowPrismaError } from "./prismaErrors";
 
 const logger = createLogger("backupService");
 
 /**
- * Reads every category, payment method and subscription into a backup.
+ * Reads every category, payment method and subscription, and the notification settings, into a backup.
  *
  * @returns The backup, ready to be saved as a JSON file.
  */
 export async function exportBackup(): Promise<BackupDto> {
-  const [categories, paymentMethods, subscriptions] = await Promise.all([
+  const [categories, paymentMethods, subscriptions, notificationSetting] = await Promise.all([
     prisma.category.findMany({ select: categorySelect, orderBy: { id: "asc" } }),
     prisma.paymentMethod.findMany({ select: paymentMethodSelect, orderBy: { id: "asc" } }),
     prisma.subscription.findMany({ select: backupSubscriptionSelect, orderBy: { id: "asc" } }),
+    readNotificationSetting(),
   ]);
   const backup: BackupDto = {
     format: BACKUP_FORMAT,
@@ -31,15 +33,18 @@ export async function exportBackup(): Promise<BackupDto> {
     categories,
     paymentMethods,
     subscriptions: subscriptions.map(toBackupSubscriptionDto),
+    notificationSetting,
   };
   logger.info("Backup exported", { ...countBackupRecords(backup) });
   return backup;
 }
 
 /**
- * Replaces all categories, payment methods and subscriptions with those of a backup. Everything
- * runs in one transaction, so a failure leaves the current data untouched. Stored exchange rates
- * are a cache of public data, so they are neither backed up nor cleared.
+ * Replaces all categories, payment methods and subscriptions with those of a backup, and the
+ * notification settings when the backup has them (older backups do not, and keep the current ones).
+ * Everything runs in one transaction, so a failure leaves the current data untouched. Stored exchange
+ * rates are a cache of public data and the dispatch log is a record of sent messages, so neither is
+ * backed up nor cleared.
  *
  * @param data - The validated backup.
  * @returns How many records of each kind were restored.
@@ -48,7 +53,7 @@ export async function exportBackup(): Promise<BackupDto> {
 export async function importBackup(data: BackupData): Promise<BackupCountsDto> {
   const rows = toImportRows(data);
   try {
-    // Subscriptions go first: their schedules and past amounts cascade with them, and categories
+    // Subscriptions go first: their schedules, past amounts and reminders cascade with them, and categories
     // and payment methods cannot be deleted while still referenced.
     await prisma.$transaction([
       prisma.subscription.deleteMany(),
@@ -59,6 +64,10 @@ export async function importBackup(data: BackupData): Promise<BackupCountsDto> {
       prisma.subscription.createMany({ data: rows.subscriptions }),
       prisma.billingSchedule.createMany({ data: rows.schedules }),
       prisma.subscriptionAmountPeriod.createMany({ data: rows.amountPeriods }),
+      prisma.subscriptionReminder.createMany({ data: rows.reminders }),
+      ...(rows.notificationSetting
+        ? [prisma.notificationSetting.upsert(notificationSettingUpsert(rows.notificationSetting))]
+        : []),
     ]);
   } catch (error) {
     rethrowPrismaError(error, {

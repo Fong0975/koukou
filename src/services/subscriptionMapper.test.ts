@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { toSubscriptionDto, type SubscriptionRecord } from "./subscriptionMapper";
+import { toRemindersDto, toSubscriptionDto, type SubscriptionRecord } from "./subscriptionMapper";
 
 const decimal = (value: number) => ({ toFixed: (digits: number) => value.toFixed(digits) });
 
@@ -19,6 +19,7 @@ const baseRecord: SubscriptionRecord = {
   paymentMethod: { id: 3, type: "CREDIT_CARD", name: "國泰 CUBE", note: null },
   schedules: [{ id: 4, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
   amountPeriods: [],
+  reminders: [],
 };
 
 describe("toSubscriptionDto", () => {
@@ -80,9 +81,32 @@ describe("toSubscriptionDto", () => {
         category: baseRecord.category,
         paymentMethod: baseRecord.paymentMethod,
         schedules: baseRecord.schedules,
+        reminders: { chargeDaysBefore: [], expiryDaysBefore: [] },
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-02T00:00:00.000Z",
       });
+    });
+  }
+});
+
+describe("toRemindersDto", () => {
+  const tests: { name: string; rows: SubscriptionRecord["reminders"]; expected: unknown }[] = [
+    { name: "maps no rows to empty lists", rows: [], expected: { chargeDaysBefore: [], expiryDaysBefore: [] } },
+    {
+      name: "groups by kind in ascending order",
+      rows: [
+        { kind: "EXPIRY", daysBefore: 7 },
+        { kind: "CHARGE", daysBefore: 3 },
+        { kind: "EXPIRY", daysBefore: 0 },
+        { kind: "CHARGE", daysBefore: 0 },
+      ],
+      expected: { chargeDaysBefore: [0, 3], expiryDaysBefore: [0, 7] },
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(toRemindersDto(tt.rows)).toEqual(tt.expected);
     });
   }
 });

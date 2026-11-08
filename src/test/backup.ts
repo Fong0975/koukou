@@ -1,8 +1,8 @@
 import type { BackupDto } from "@/types/dto";
 
 /**
- * Builds a valid backup for tests: one category, one payment method and one monthly
- * subscription with a past amount that references both.
+ * Builds a valid backup for tests: one category, one payment method, one monthly subscription
+ * with a past amount and a charge-day reminder that references both, and notification settings.
  *
  * @param overrides - Fields replacing the defaults.
  */
@@ -29,8 +29,10 @@ export function makeBackup(overrides: Partial<BackupDto> = {}): BackupDto {
         createdAt: "2026-01-01T00:00:00.000Z",
         schedules: [{ cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
         amountPeriods: [{ amount: "330.00", endDate: "2026-03-31" }],
+        reminders: { chargeDaysBefore: [0], expiryDaysBefore: [] },
       },
     ],
+    notificationSetting: { enabled: true, monthlySummaryEnabled: false, sendTime: "08:30" },
     ...overrides,
   };
 }

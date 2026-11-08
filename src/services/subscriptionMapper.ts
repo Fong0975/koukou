@@ -1,6 +1,6 @@
-import type { BillingCycle, Currency, PaymentType } from "@/generated/prisma/enums";
+import type { BillingCycle, Currency, PaymentType, ReminderKind } from "@/generated/prisma/enums";
 import { utcDateToDateKey } from "@/lib/dateKey";
-import type { SubscriptionDto } from "@/types/dto";
+import type { RemindersDto, SubscriptionDto } from "@/types/dto";
 
 /** Structural shape of a Prisma Decimal, enough to serialize it. */
 interface DecimalLike {
@@ -29,7 +29,20 @@ export interface SubscriptionRecord {
     month: number | null;
   }[];
   amountPeriods: { id: number; amount: DecimalLike; endDate: Date }[];
+  reminders: ReminderRecord[];
 }
+
+/** Structural shape of a reminder row loaded with {@link reminderInclude}. */
+export interface ReminderRecord {
+  kind: ReminderKind;
+  daysBefore: number;
+}
+
+/** Prisma relation query that loads a subscription's reminders for {@link toRemindersDto}. */
+export const reminderInclude = {
+  select: { kind: true, daysBefore: true },
+  orderBy: { daysBefore: "asc" },
+} as const;
 
 /** Prisma `include` that loads everything {@link toSubscriptionDto} needs. */
 export const subscriptionInclude = {
@@ -43,6 +56,7 @@ export const subscriptionInclude = {
     select: { id: true, amount: true, endDate: true },
     orderBy: { endDate: "asc" },
   },
+  reminders: reminderInclude,
 } as const;
 
 /** Serializes a DECIMAL(12, 2) value as a fixed 2-decimal string. */
@@ -75,6 +89,20 @@ export function serializeSubscriptionColumns(record: SubscriptionColumnsRecord) 
 }
 
 /**
+ * Groups reminder rows by kind into ascending day lists.
+ *
+ * @param rows - The subscription's reminder rows.
+ */
+export function toRemindersDto(rows: ReminderRecord[]): RemindersDto {
+  const daysOf = (kind: ReminderKind) =>
+    rows
+      .filter((row) => row.kind === kind)
+      .map((row) => row.daysBefore)
+      .sort((a, b) => a - b);
+  return { chargeDaysBefore: daysOf("CHARGE"), expiryDaysBefore: daysOf("EXPIRY") };
+}
+
+/**
  * Converts a DB record into a JSON-safe DTO.
  *
  * @param record - Subscription loaded with {@link subscriptionInclude}.
@@ -91,6 +119,7 @@ export function toSubscriptionDto(record: SubscriptionRecord): SubscriptionDto {
     category: record.category,
     paymentMethod: record.paymentMethod,
     schedules: record.schedules,
+    reminders: toRemindersDto(record.reminders),
     updatedAt: record.updatedAt.toISOString(),
   };
 }

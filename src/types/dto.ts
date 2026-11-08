@@ -34,6 +34,15 @@ export interface AmountPeriodDto {
 }
 
 /**
+ * LINE reminders of a subscription, as days ahead of the event (0 = on the day), sorted ascending.
+ * `chargeDaysBefore` fire before each charge day; `expiryDaysBefore` before the contract end date.
+ */
+export interface RemindersDto {
+  chargeDaysBefore: number[];
+  expiryDaysBefore: number[];
+}
+
+/**
  * Subscription with its relations, serialized for JSON (amounts as fixed 2-decimal strings,
  * dates as "YYYY-MM-DD"). `amount` is the current amount; `amountPeriods` hold the past ones,
  * ordered by end date. `amortize` spreads each YEARLY charge over the 12 months before it.
@@ -52,6 +61,7 @@ export interface SubscriptionDto {
   category: CategoryDto;
   paymentMethod: PaymentMethodDto;
   schedules: BillingScheduleDto[];
+  reminders: RemindersDto;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,6 +84,7 @@ export interface BackupSubscriptionDto {
   createdAt: string;
   schedules: Omit<BillingScheduleDto, "id">[];
   amountPeriods: Omit<AmountPeriodDto, "id">[];
+  reminders: RemindersDto;
 }
 
 /** Every stored record, as written to a backup file. */
@@ -87,6 +98,8 @@ export interface BackupDto {
   categories: CategoryDto[];
   paymentMethods: PaymentMethodDto[];
   subscriptions: BackupSubscriptionDto[];
+  /** Absent in backups written before notifications existed. */
+  notificationSetting?: NotificationSettingValuesDto;
 }
 
 /** How many records of each kind a backup holds, or an import restored. */
@@ -101,4 +114,20 @@ export interface ExchangeRateDto {
   /** "YYYY-MM-DD". */
   date: string;
   rate: number;
+}
+
+/** The stored LINE notification settings. */
+export interface NotificationSettingValuesDto {
+  /** Whether any LINE message is sent. */
+  enabled: boolean;
+  /** Whether the 1st of each month carries the month's summary. */
+  monthlySummaryEnabled: boolean;
+  /** "HH:mm" at which the day's message is sent, in the server's time zone. */
+  sendTime: string;
+}
+
+/** LINE notification settings as returned by the API. */
+export interface NotificationSettingDto extends NotificationSettingValuesDto {
+  /** IANA name of the server's time zone that `sendTime` is read in, e.g. "Asia/Taipei". */
+  timeZone: string;
 }
