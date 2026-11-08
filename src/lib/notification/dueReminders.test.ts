@@ -73,6 +73,11 @@ describe("collectDailyReminders", () => {
       charges: [{ name: "Netflix", date: "2026-11-10", daysBefore: 0, amount: "330.00" }],
     },
     {
+      name: "skips a zero-amount charge, e.g. during a free trial",
+      items: [charged({ amountPeriods: [{ id: 1, amount: "0.00", endDate: "2026-11-30" }] })],
+      today: "2026-11-10",
+    },
+    {
       name: "orders charges by date, then name",
       items: [
         charged({ id: 1, name: "Spotify", schedules: monthlyOn(10) }),
@@ -180,6 +185,16 @@ describe("buildMonthlySummary", () => {
         expiries: [],
         reserve: { totals: {}, names: [] },
         charge: { totals: { TWD: 78000 }, names: ["Netflix"] },
+      },
+    },
+    {
+      name: "leaves zero-amount charges and reserves out",
+      items: [netflix, { ...chatGpt, amount: "0.00" }, { ...domain, amount: "0.00" }],
+      expected: {
+        month: { year: 2026, month: 11 },
+        expiries: [],
+        reserve: { totals: {}, names: [] },
+        charge: { totals: { TWD: 39000 }, names: ["Netflix"] },
       },
     },
     {

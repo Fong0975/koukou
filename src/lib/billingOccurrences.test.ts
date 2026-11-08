@@ -183,6 +183,18 @@ describe("monthOccurrences", () => {
       month: { year: 2026, month: 7 },
       expected: [],
     },
+    {
+      name: "skips days of a zero-amount trial and charges the regular amount after it",
+      items: [{ ...gym, amountPeriods: [{ id: 1, amount: "0.00", endDate: "2026-06-20" }] }],
+      month: { year: 2026, month: 6 },
+      expected: [{ day: 27, name: "Gym", scheduleId: 30, amount: "150.00" }],
+    },
+    {
+      name: "a zero current amount has no charges",
+      items: [{ ...netflix, amount: "0.00" }],
+      month: { year: 2026, month: 4 },
+      expected: [],
+    },
   ];
 
   for (const tt of tests) {

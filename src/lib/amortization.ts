@@ -39,7 +39,7 @@ function upcomingChargeDate(schedule: BillingScheduleDto, target: YearMonth): Ca
 
 /**
  * Builds the reserve of one yearly schedule for a month, or none when that charge falls
- * before the subscription starts or after its contract ends.
+ * before the subscription starts or after its contract ends, or its amount is zero (e.g. a free trial).
  *
  * @param subscription - An amortized subscription.
  * @param schedule - One of its YEARLY billing rules.
@@ -51,6 +51,7 @@ function scheduleReserve(subscription: SubscriptionDto, schedule: BillingSchedul
   if (!isActiveOn(subscription, dateKey)) return [];
 
   const averageCents = toCents(amountOn(subscription, dateKey)) / AMORTIZATION_MONTHS;
+  if (averageCents === 0) return [];
   return [
     {
       key: `${subscription.id}-${schedule.id}`,

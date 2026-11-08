@@ -61,13 +61,13 @@ describe("AmountPeriodEditor", () => {
     {
       name: "errors follow the row's position in the data, not on screen",
       periods,
-      errors: { "amountPeriods.1.endDate": "到期日不可早於起始日", "amountPeriods.0.amount": "金額必須大於 0" },
+      errors: { "amountPeriods.1.endDate": "到期日不可早於起始日", "amountPeriods.0.amount": "金額不可小於 0" },
       expectDom: () => {
         expect(screen.getByLabelText(`${SECOND}的到期日`)).toHaveAttribute("aria-invalid", "true");
         expect(screen.getByLabelText(`${FIRST}的金額`)).toHaveAttribute("aria-invalid", "true");
         expect(screen.getByLabelText(`${FIRST}的到期日`)).toHaveAttribute("aria-invalid", "false");
         expect(screen.getByText("到期日不可早於起始日")).toBeInTheDocument();
-        expect(screen.getByText("金額必須大於 0")).toBeInTheDocument();
+        expect(screen.getByText("金額不可小於 0")).toBeInTheDocument();
       },
     },
   ];

@@ -32,7 +32,17 @@ describe("amountPeriodsSchema", () => {
       errorPath: "1.endDate",
       errorMessage: "到期日不可重複",
     },
-    { name: "rejects invalid amount", input: [{ amount: 0, endDate: "2026-05-31" }], errorPath: "0.amount" },
+    {
+      name: "accepts a zero amount, e.g. a free trial",
+      input: [{ amount: "0", endDate: "2026-05-31" }],
+      expected: [{ amount: 0, endDate: "2026-05-31" }],
+    },
+    {
+      name: "rejects a negative amount",
+      input: [{ amount: -1, endDate: "2026-05-31" }],
+      errorPath: "0.amount",
+      errorMessage: "金額不可小於 0",
+    },
     {
       name: "rejects missing end date",
       input: [{ amount: 100, endDate: "" }],
