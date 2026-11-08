@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CurrencyTotals } from "./billingSummary";
 import {
   formatAmount,
+  formatAmountText,
   formatApproxTwd,
   formatCents,
   formatChargeDate,
@@ -83,6 +84,21 @@ describe("formatCents", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatCents(tt.currency, tt.cents)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatAmountText", () => {
+  const tests = [
+    { name: "TWD whole amount hides cents", currency: "TWD", amount: "390.00", expected: "NT$ 390" },
+    { name: "TWD with cents", currency: "TWD", amount: "99.50", expected: "NT$ 99.50" },
+    { name: "TWD grouped", currency: "TWD", amount: "1290.00", expected: "NT$ 1,290" },
+    { name: "USD keeps cents", currency: "USD", amount: "20.00", expected: "US$ 20.00" },
+  ] as const;
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatAmountText(tt.currency, tt.amount)).toBe(tt.expected);
     });
   }
 });

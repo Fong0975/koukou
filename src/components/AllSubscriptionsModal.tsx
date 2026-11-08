@@ -23,6 +23,7 @@ export function AllSubscriptionsModal({ onClose, ...listProps }: AllSubscription
       title="所有扣款"
       onClose={onClose}
       widthClass="max-w-3xl"
+      titleClassName="font-semibold"
       actions={
         showAdd && (
           <button type="button" className="btn btn-primary" onClick={listProps.onAdd}>

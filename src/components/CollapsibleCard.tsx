@@ -22,7 +22,7 @@ interface CollapsibleCardProps {
 
 /**
  * Glass card whose body folds away, leaving only the header and footer. It starts collapsed. The title is the
- * toggle unless a separate `toggle` line is given.
+ * toggle unless a separate `toggle` line is given. The body is indented slightly past the header.
  *
  * @param props.title - The card's heading.
  * @param props.header - More header content under the title.
@@ -59,7 +59,7 @@ export function CollapsibleCard({ title, header, toggle, footer, collapsible = t
         {toggle && <div className="mt-1">{collapsible ? toggleButton(toggle) : toggle}</div>}
       </div>
       {children && (
-        <div id={bodyId} hidden={collapsible && !expanded}>
+        <div id={bodyId} hidden={collapsible && !expanded} className="pr-0.5 pl-1.5">
           {children}
         </div>
       )}

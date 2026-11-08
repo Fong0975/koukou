@@ -1,8 +1,8 @@
 import type { Occurrence } from "@/lib/billingOccurrences";
 import type { ContractExpiry } from "@/lib/contractExpiries";
+import { formatAmountText } from "@/lib/format";
 import type { SubscriptionDto } from "@/types/dto";
 import { HoverTapPopup, type PopupAlign } from "./HoverTapPopup";
-import { IconLabel } from "./IconLabel";
 
 interface DayChargeCountProps {
   day: number;
@@ -29,12 +29,12 @@ interface NameSectionProps {
   /** The list's accessible name. */
   label: string;
   /** The entries, keyed for React. */
-  items: { key: string; subscription: SubscriptionDto }[];
+  items: { key: string; subscription: SubscriptionDto; amount?: string }[];
 }
 
 /**
  * Popup section: a heading tinted like its dot, over the subscription names indented beneath it, each with its
- * category icon.
+ * category icon and, for charges, its amount on the right. A wrapped name stays indented past the icon.
  *
  * @param props.heading - The section's title.
  * @param props.headingClassName - The heading's colour class.
@@ -46,9 +46,13 @@ function NameSection({ heading, headingClassName, label, items }: NameSectionPro
     <div className="flex flex-col gap-1">
       <p className={`font-semibold ${headingClassName}`}>{heading}</p>
       <ul aria-label={label} className="flex flex-col gap-1 pl-3">
-        {items.map(({ key, subscription }) => (
-          <li key={key} className="break-words">
-            <IconLabel icon={subscription.category.icon} label={subscription.name} />
+        {items.map(({ key, subscription, amount }) => (
+          <li key={key} className="flex items-baseline justify-between gap-5">
+            <span className="flex min-w-0 gap-1">
+              {subscription.category.icon && <span aria-hidden="true">{subscription.category.icon} </span>}
+              <span className="min-w-0 break-words">{subscription.name}</span>
+            </span>
+            {amount && <span className="shrink-0 font-num tabular-nums">{amount}</span>}
           </li>
         ))}
       </ul>
@@ -95,9 +99,10 @@ export function DayChargeCount({ day, occurrences, expiries, align }: DayChargeC
             heading="扣款項目"
             headingClassName="text-coin-600"
             label={`${day} 日扣款項目`}
-            items={occurrences.map(({ subscription, scheduleId }) => ({
+            items={occurrences.map(({ subscription, scheduleId, amount }) => ({
               key: `${subscription.id}-${scheduleId}`,
               subscription,
+              amount: formatAmountText(subscription.currency, amount),
             }))}
           />
         )}

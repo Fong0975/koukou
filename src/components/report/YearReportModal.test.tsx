@@ -31,6 +31,7 @@ describe("YearReportModal", () => {
       if (tt.click) fireEvent.click(screen.getByRole("button", { name: tt.click }));
 
       expect(screen.getByRole("dialog", { name: "年度報表" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2, name: "年度報表" })).toHaveClass("font-semibold");
       const headings = SECTIONS.map((name) => screen.queryByRole("heading", { name }) !== null);
       if (tt.expectedEmpty === null) {
         expect(headings).toEqual(SECTIONS.map(() => true));

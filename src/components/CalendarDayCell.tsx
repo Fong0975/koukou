@@ -1,8 +1,8 @@
 import type { Occurrence } from "@/lib/billingOccurrences";
 import type { ContractExpiry } from "@/lib/contractExpiries";
+import { formatAmountText } from "@/lib/format";
 import { DayChargeCount } from "./DayChargeCount";
 import type { PopupAlign } from "./HoverTapPopup";
-import { IconLabel } from "./IconLabel";
 
 interface CalendarDayCellProps {
   day: number;
@@ -24,6 +24,8 @@ interface Chip {
   icon: string | null;
   label: string;
   title: string;
+  /** Formatted charge amount; null for an expiry. */
+  amount: string | null;
 }
 
 /**
@@ -37,14 +39,19 @@ function dayChips(occurrences: Occurrence[], expiries: ContractExpiry[]): Chip[]
       icon: subscription.category.icon,
       label: `${subscription.name} 到期`,
       title: `${subscription.name} 合約到期`,
+      amount: null,
     })),
-    ...occurrences.map(({ subscription, scheduleId }): Chip => ({
-      key: `${subscription.id}-${scheduleId}`,
-      variant: "charge",
-      icon: subscription.category.icon,
-      label: subscription.name,
-      title: subscription.name,
-    })),
+    ...occurrences.map(({ subscription, scheduleId, amount }): Chip => {
+      const formatted = formatAmountText(subscription.currency, amount);
+      return {
+        key: `${subscription.id}-${scheduleId}`,
+        variant: "charge",
+        icon: subscription.category.icon,
+        label: subscription.name,
+        title: `${subscription.name} ${formatted}`,
+        amount: formatted,
+      };
+    }),
   ];
 }
 
@@ -92,7 +99,9 @@ export function CalendarDayCell({ day, isToday, occurrences, expiries, popupAlig
           <ul className="mt-1 hidden flex-col gap-0.5 sm:flex">
             {chips.slice(0, MAX_CHIPS).map((chip) => (
               <li key={chip.key} title={chip.title} className={`cal-chip cal-chip-${chip.variant}`}>
-                <IconLabel icon={chip.icon} label={chip.label} />
+                {chip.icon && <span aria-hidden="true">{chip.icon} </span>}
+                <span className={chip.icon ? "pl-1" : undefined}>{chip.label}</span>
+                {chip.amount && <span className="self-end font-num tabular-nums">{chip.amount}</span>}
               </li>
             ))}
             {hidden > 0 && <li className="px-1.5 text-xs text-ink-soft">+{hidden}</li>}

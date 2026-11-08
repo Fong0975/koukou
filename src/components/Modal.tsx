@@ -11,6 +11,8 @@ interface ModalProps {
   actions?: ReactNode;
   /** Max width utility for the panel. */
   widthClass?: string;
+  /** Extra utility classes for the title, e.g. a heavier weight. */
+  titleClassName?: string;
 }
 
 /**
@@ -24,8 +26,9 @@ interface ModalProps {
  * @param props.onClose - Called on the close button, Esc or a backdrop click.
  * @param props.actions - Extra header controls placed before the close button.
  * @param props.widthClass - Max width utility for the panel.
+ * @param props.titleClassName - Extra utility classes for the title.
  */
-export function Modal({ title, onClose, children, actions, widthClass = "max-w-lg" }: ModalProps) {
+export function Modal({ title, onClose, children, actions, widthClass = "max-w-lg", titleClassName = "" }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -50,7 +53,7 @@ export function Modal({ title, onClose, children, actions, widthClass = "max-w-l
     >
       <div className="dialog-panel glass flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-[1.75rem] bg-white/80">
         <div className="flex shrink-0 items-center justify-between gap-4 px-6 pt-6 pb-5 sm:px-7 sm:pt-7">
-          <h2 id={titleId} className="text-xl">
+          <h2 id={titleId} className={`text-xl ${titleClassName}`}>
             {title}
           </h2>
           <div className="flex items-center gap-2">
