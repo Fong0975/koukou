@@ -59,7 +59,7 @@ export function NotificationSettingsForm({ setting, onSave, onSendTest, onClose 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
       {!setting.lineConfigured && (
-        <p role="alert" className="option-box text-sm text-berry">
+        <p role="alert" className="text-sm text-berry">
           伺服器尚未設定 LINE（LINE_CHANNEL_ACCESS_TOKEN、LINE_USER_ID），設定完成並重新啟動前不會送出任何通知。
         </p>
       )}
@@ -96,7 +96,7 @@ export function NotificationSettingsForm({ setting, onSave, onSendTest, onClose 
         )}
       </div>
 
-      <TestMessageButton onSendTest={onSendTest} />
+      <TestMessageButton onSendTest={onSendTest} disabled={!setting.lineConfigured} />
 
       {formError && (
         <p role="alert" className="field-error mt-0">

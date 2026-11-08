@@ -73,10 +73,11 @@ describe("NotificationSettingsForm", () => {
       expectedStatus: "已送出，請到 LINE 查看",
     },
     {
-      name: "warns when LINE is not configured",
+      name: "warns and disables the test button when LINE is not configured",
       setting: { ...setting, lineConfigured: false },
-      click: "取消",
-      expectedCloses: 1,
+      click: "傳送測試訊息",
+      expectedTests: 0,
+      expectedCloses: 0,
       expectedAlerts: ["伺服器尚未設定 LINE"],
     },
   ];
@@ -102,6 +103,9 @@ describe("NotificationSettingsForm", () => {
         await flushPromises();
       });
 
+      expect(screen.getByRole("button", { name: "傳送測試訊息" }).hasAttribute("disabled")).toBe(
+        !(tt.setting ?? setting).lineConfigured,
+      );
       if (tt.expectedSave) expect(onSave).toHaveBeenCalledWith(tt.expectedSave);
       else expect(onSave).not.toHaveBeenCalled();
       expect(onSendTest).toHaveBeenCalledTimes(tt.expectedTests ?? 0);

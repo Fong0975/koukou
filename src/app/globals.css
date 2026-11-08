@@ -160,6 +160,20 @@ body {
   .btn-ghost:hover:not(:disabled) {
     background: rgb(255 255 255 / 0.9);
   }
+  /* Tinted secondary action, so it reads as a button on white panels without competing with the primary one. */
+  .btn-soft {
+    background: var(--color-leaf-100);
+    color: var(--color-leaf-800);
+    border: 1px solid rgb(78 154 74 / 0.35);
+  }
+  .btn-soft:hover:not(:disabled) {
+    background: var(--color-leaf-300);
+  }
+  .btn-soft:disabled {
+    background: rgb(0 0 0 / 0.06);
+    color: var(--color-ink-soft);
+    border-color: transparent;
+  }
   /* Compact variants for controls that sit beside a heading rather than being the main action. */
   .btn-sm {
     min-height: 2rem;

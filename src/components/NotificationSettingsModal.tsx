@@ -18,7 +18,7 @@ export function NotificationSettingsModal({ onClose }: NotificationSettingsModal
   const { setting, loadError, reload, save, sendTest } = useNotificationSetting();
 
   return (
-    <Modal title="通知設定" onClose={onClose}>
+    <Modal title="通知設定" onClose={onClose} titleClassName="font-semibold">
       {setting ? (
         <NotificationSettingsForm setting={setting} onSave={save} onSendTest={sendTest} onClose={onClose} />
       ) : loadError ? (
