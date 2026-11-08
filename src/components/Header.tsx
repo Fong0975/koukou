@@ -6,6 +6,7 @@ import { ChartIcon, ListIcon } from "./Icons";
 interface HeaderProps {
   onOpenList: () => void;
   onOpenReport: () => void;
+  onOpenSettings: () => void;
   /** Saves all data to a backup file. */
   onExport: () => Promise<void>;
   /** Reads a chosen backup file, ahead of confirming its import. */
@@ -15,11 +16,12 @@ interface HeaderProps {
 }
 
 /**
- * Top bar with the KouKou brand, the app version, the backup menu and the buttons that open the annual report
- * (in the menu on narrow screens) and the full subscription list.
+ * Top bar with the KouKou brand, the app version, the menu (notification settings and backups) and the
+ * buttons that open the annual report (in the menu on narrow screens) and the full subscription list.
  *
  * @param props.onOpenList - Opens the subscription list dialog.
  * @param props.onOpenReport - Opens the annual report dialog.
+ * @param props.onOpenSettings - Opens the notification settings dialog.
  * @param props.onExport - Saves all data to a backup file.
  * @param props.onImportFile - Reads a chosen backup file.
  * @param props.versionLabel - Overrides the displayed version (used by tests).
@@ -27,6 +29,7 @@ interface HeaderProps {
 export function Header({
   onOpenList,
   onOpenReport,
+  onOpenSettings,
   onExport,
   onImportFile,
   versionLabel = APP_VERSION_LABEL,
@@ -50,7 +53,12 @@ export function Header({
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <DataMenu onOpenReport={onOpenReport} onExport={onExport} onImportFile={onImportFile} />
+        <DataMenu
+          onOpenReport={onOpenReport}
+          onOpenSettings={onOpenSettings}
+          onExport={onExport}
+          onImportFile={onImportFile}
+        />
         {/* Narrow screens have no room for a third button, so the report moves into the menu there. */}
         <button type="button" className="btn btn-ghost hidden sm:inline-flex" onClick={onOpenReport}>
           <ChartIcon />

@@ -11,12 +11,14 @@ import { CalendarSection } from "./CalendarSection";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { ConfirmImportDialog } from "./ConfirmImportDialog";
 import { Header } from "./Header";
+import { NotificationSettingsModal } from "./NotificationSettingsModal";
 import { YearReportModal } from "./report/YearReportModal";
 import { SubscriptionFormModal } from "./SubscriptionFormModal";
 
 /**
  * Client-side home screen: wires the data hooks to the calendar, the subscription list dialog,
- * the add/edit form, the delete dialog, the annual report and the backup menu with its import confirmation.
+ * the add/edit form, the delete dialog, the annual report, the notification settings and the backup menu with
+ * its import confirmation.
  */
 export function HomeView() {
   const subscriptions = useSubscriptions();
@@ -42,6 +44,7 @@ export function HomeView() {
       <Header
         onOpenList={dialogs.openList}
         onOpenReport={dialogs.openReport}
+        onOpenSettings={dialogs.openSettings}
         onExport={backup.exportBackup}
         onImportFile={backup.selectFile}
       />
@@ -72,6 +75,8 @@ export function HomeView() {
       {dialogs.reportOpen && today && (
         <YearReportModal items={subscriptions.items} initialYear={today.year} onClose={dialogs.closeReport} />
       )}
+
+      {dialogs.settingsOpen && <NotificationSettingsModal onClose={dialogs.closeSettings} />}
 
       {dialogs.formOpen && (
         <SubscriptionFormModal

@@ -18,6 +18,7 @@ describe("useHomeDialogs", () => {
       editing?: SubscriptionDto;
       deleting: SubscriptionDto | null;
       reportOpen?: boolean;
+      settingsOpen?: boolean;
     };
   }[] = [
     {
@@ -70,6 +71,16 @@ describe("useHomeDialogs", () => {
       actions: [(d) => d.openReport(), (d) => d.closeReport()],
       expected: { listOpen: false, formOpen: false, deleting: null, reportOpen: false },
     },
+    {
+      name: "opening the notification settings",
+      actions: [(d) => d.openSettings()],
+      expected: { listOpen: false, formOpen: false, deleting: null, settingsOpen: true },
+    },
+    {
+      name: "closing the notification settings",
+      actions: [(d) => d.openSettings(), (d) => d.closeSettings()],
+      expected: { listOpen: false, formOpen: false, deleting: null, settingsOpen: false },
+    },
   ];
 
   for (const tt of tests) {
@@ -83,6 +94,7 @@ describe("useHomeDialogs", () => {
       expect(result.current.editing).toBe(tt.expected.editing);
       expect(result.current.deleting).toBe(tt.expected.deleting);
       expect(result.current.reportOpen).toBe(tt.expected.reportOpen ?? false);
+      expect(result.current.settingsOpen).toBe(tt.expected.settingsOpen ?? false);
     });
   }
 });

@@ -320,6 +320,14 @@ body {
     font-size: 0.8125rem;
     color: var(--color-berry);
   }
+
+  /* Bordered box grouping a form option with its explanation, e.g. a checkbox and its hint. */
+  .option-box {
+    border: 1px solid rgb(78 154 74 / 0.3);
+    border-radius: 0.875rem;
+    background: rgb(255 255 255 / 0.75);
+    padding: 0.625rem 0.875rem;
+  }
 }
 
 dialog::backdrop {

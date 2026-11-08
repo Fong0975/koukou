@@ -113,6 +113,16 @@ vi.mock("./report/YearReportModal", () => ({
   },
 }));
 
+vi.mock("./NotificationSettingsModal", () => ({
+  NotificationSettingsModal: (props: { onClose: () => void }) => (
+    <div role="dialog" aria-label="通知設定">
+      <button type="button" onClick={props.onClose}>
+        關閉通知設定
+      </button>
+    </div>
+  ),
+}));
+
 vi.mock("./ConfirmImportDialog", () => ({
   ConfirmImportDialog: (props: { pending: PendingImport; onConfirm: () => Promise<void>; onClose: () => void }) => (
     <div role="dialog" aria-label={`確認匯入 ${props.pending.fileName}`}>
@@ -130,8 +140,11 @@ import { HomeView } from "./HomeView";
 
 const item = makeSubscription({ id: 1, name: "Netflix" });
 
+/** Clicks each named button, or menu item when no button has that name. */
 const click = (...names: string[]) => {
-  for (const name of names) fireEvent.click(screen.getByRole("button", { name }));
+  for (const name of names) {
+    fireEvent.click(screen.queryByRole("button", { name }) ?? screen.getByRole("menuitem", { name }));
+  }
 };
 
 describe("HomeView", () => {
@@ -193,6 +206,18 @@ describe("HomeView", () => {
       expectedCalls: {},
     },
     { name: "closing the report removes it", clicks: ["年度報表", "關閉報表"], expectedDialogs: [], expectedCalls: {} },
+    {
+      name: "the header menu opens the notification settings",
+      clicks: ["資料備份", "通知設定"],
+      expectedDialogs: ["通知設定"],
+      expectedCalls: {},
+    },
+    {
+      name: "closing the notification settings removes them",
+      clicks: ["資料備份", "通知設定", "關閉通知設定"],
+      expectedDialogs: [],
+      expectedCalls: {},
+    },
     {
       name: "retrying from the list reloads",
       clicks: ["所有扣款", "重新讀取"],

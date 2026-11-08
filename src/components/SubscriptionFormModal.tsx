@@ -23,6 +23,7 @@ import { CategoryQuickAdd } from "./CategoryQuickAdd";
 import { DateField } from "./DateField";
 import { Modal } from "./Modal";
 import { PaymentMethodQuickAdd } from "./PaymentMethodQuickAdd";
+import { ReminderSection } from "./ReminderSection";
 import { ScheduleEditor } from "./ScheduleEditor";
 import { SelectWithQuickAdd } from "./SelectWithQuickAdd";
 
@@ -155,6 +156,13 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
           error={fieldErrors.paymentMethodId}
           addLabel="新增扣款方式"
           renderAddForm={(done) => <PaymentMethodQuickAdd onCreate={onAddPaymentMethod} onDone={done} />}
+        />
+
+        <ReminderSection
+          reminders={draft.reminders}
+          hasContractEnd={draft.contractEndDate !== ""}
+          onChange={(reminders) => set("reminders", reminders)}
+          errors={fieldErrors}
         />
 
         <div>

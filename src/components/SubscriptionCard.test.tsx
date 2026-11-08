@@ -18,6 +18,8 @@ describe("SubscriptionCard", () => {
     texts: string[];
     absentTexts?: string[];
     schedules: string[];
+    /** Accessible name of the reminder bell, or undefined when there should be none. */
+    bell?: string;
   }[] = [
     {
       name: "renders name, amount, schedules and card",
@@ -60,6 +62,17 @@ describe("SubscriptionCard", () => {
       absentTexts: ["影音串流", "🎬"],
       schedules: ["每月 1 日", "每月 15 日"],
     },
+    {
+      name: "shows a bell describing the reminders",
+      item: {
+        ...item,
+        contractEndDate: "2099-12-31",
+        reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7] },
+      },
+      texts: ["Netflix"],
+      schedules: ["每月 1 日", "每月 15 日"],
+      bell: "LINE 提醒：扣款當日、扣款前 3 天、到期前 7 天",
+    },
   ];
 
   for (const tt of tests) {
@@ -75,6 +88,12 @@ describe("SubscriptionCard", () => {
           .map((li) => li.textContent),
       ).toEqual(tt.schedules);
       expect(list.nextElementSibling).toHaveTextContent(tt.item.paymentMethod.name);
+      if (tt.bell) {
+        expect(screen.getByRole("img", { name: tt.bell })).toHaveAttribute("title", tt.bell);
+      } else {
+        expect(screen.queryByRole("img", { name: /LINE 提醒/ })).not.toBeInTheDocument();
+      }
+      expect(screen.getByRole("article", { name: tt.item.name })).toBeInTheDocument();
     });
   }
 
