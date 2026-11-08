@@ -19,8 +19,18 @@ async function fetchSetting(): Promise<FetchResult> {
 }
 
 /**
+ * Whether LINE reminders actually go out: the main switch is on and LINE is set up on the server.
+ *
+ * @param setting - The loaded settings, or null while they are loading or failed to load.
+ */
+export function areRemindersActive(setting: NotificationSettingDto | null): boolean {
+  return Boolean(setting?.enabled && setting.lineConfigured);
+}
+
+/**
  * Loads the LINE notification settings when mounted, saves them and sends a test message.
- * `save` and `sendTest` throw ApiClientError so callers can show field errors.
+ * `save` and `sendTest` throw ApiClientError so callers can show field errors; `apply` takes settings
+ * saved elsewhere, e.g. by the settings dialog's own instance of this hook.
  */
 export function useNotificationSetting() {
   const [setting, setSetting] = useState<NotificationSettingDto | null>(null);
@@ -56,5 +66,13 @@ export function useNotificationSetting() {
     await apiRequest<{ sent: boolean }>(`${SETTINGS_PATH}/test`, { method: "POST" });
   }, []);
 
-  return { setting, loadError, reload, save, sendTest };
+  return {
+    setting,
+    loadError,
+    reload,
+    save,
+    sendTest,
+    apply: setSetting,
+    remindersActive: areRemindersActive(setting),
+  };
 }

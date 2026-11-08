@@ -55,6 +55,8 @@ export function NotificationSettingsForm({ setting, onSave, onSendTest, onClose 
 
   const sendTimeError = errors.sendTime ?? toFieldErrors(saving.apiError?.details ?? []).sendTime;
   const formError = saving.error && !sendTimeError ? saving.error : null;
+  // The main switch gates every reminder, so its options are locked while it is off or LINE is not set up.
+  const optionsLocked = !setting.lineConfigured || !values.enabled;
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
@@ -68,12 +70,14 @@ export function NotificationSettingsForm({ setting, onSave, onSendTest, onClose 
         label="啟用 LINE 通知"
         hint="每天在傳送時間把當日的提醒整合成一則訊息；在傳送時間過後才開啟時，從隔天開始傳送"
         checked={values.enabled}
+        disabled={!setting.lineConfigured}
         onChange={(checked) => set("enabled", checked)}
       />
       <CheckboxCard
         label="每月摘要"
         hint="每月 1 日附上本月到期項目、預扣總額與扣款總額"
         checked={values.monthlySummaryEnabled}
+        disabled={optionsLocked}
         onChange={(checked) => set("monthlySummaryEnabled", checked)}
       />
 
@@ -86,6 +90,7 @@ export function NotificationSettingsForm({ setting, onSave, onSendTest, onClose 
           type="time"
           className="field font-num"
           value={values.sendTime}
+          disabled={optionsLocked}
           aria-invalid={Boolean(sendTimeError)}
           onChange={(event) => set("sendTime", event.target.value)}
         />

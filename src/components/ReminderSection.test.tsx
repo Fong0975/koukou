@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { FieldErrors } from "@/lib/subscriptionDraft";
 import type { RemindersDto } from "@/types/dto";
-import { ReminderSection } from "./ReminderSection";
+import { REMINDERS_DISABLED_HINT, ReminderSection } from "./ReminderSection";
 
 const reminders: RemindersDto = { chargeDaysBefore: [3], expiryDaysBefore: [1] };
 
@@ -10,6 +10,7 @@ describe("ReminderSection", () => {
   const tests: {
     name: string;
     hasContractEnd: boolean;
+    disabled?: boolean;
     errors?: FieldErrors;
     click?: string;
     expectedChange?: RemindersDto;
@@ -40,6 +41,12 @@ describe("ReminderSection", () => {
       expectExpiry: true,
       expectedErrors: ["扣款提醒需介於 0–30 天前", "未設定合約到期日，無法設定到期提醒"],
     },
+    {
+      name: "locks every control with a hint when disabled",
+      hasContractEnd: true,
+      disabled: true,
+      expectExpiry: true,
+    },
   ];
 
   for (const tt of tests) {
@@ -49,12 +56,19 @@ describe("ReminderSection", () => {
         <ReminderSection
           reminders={reminders}
           hasContractEnd={tt.hasContractEnd}
+          disabled={tt.disabled}
           onChange={onChange}
           errors={tt.errors ?? {}}
         />,
       );
 
-      expect(screen.getByRole("group", { name: "LINE 提醒（選填）" })).toBeInTheDocument();
+      const section = screen.getByRole("group", { name: "LINE 提醒（選填）" });
+      if (tt.disabled) expect(section).toHaveAttribute("title", REMINDERS_DISABLED_HINT);
+      else expect(section).not.toHaveAttribute("title");
+      for (const control of [...screen.queryAllByRole("checkbox"), ...screen.queryAllByRole("button")]) {
+        if (tt.disabled) expect(control).toBeDisabled();
+        else expect(control).toBeEnabled();
+      }
       expect(screen.getByRole("group", { name: "扣款提醒" })).toBeInTheDocument();
       if (tt.expectExpiry) expect(screen.getByRole("group", { name: "合約到期提醒" })).toBeInTheDocument();
       else expect(screen.queryByRole("group", { name: "合約到期提醒" })).not.toBeInTheDocument();

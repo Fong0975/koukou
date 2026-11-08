@@ -41,6 +41,7 @@ describe("NotificationSettingsForm", () => {
     },
     {
       name: "catches a missing send time before saving",
+      setting: { ...setting, enabled: true },
       act: () => fireEvent.change(screen.getByLabelText("傳送時間"), { target: { value: "" } }),
       click: "儲存設定",
       expectedCloses: 0,
@@ -96,6 +97,11 @@ describe("NotificationSettingsForm", () => {
         />,
       );
       expect(screen.getByText("時區：Asia/Taipei")).toBeInTheDocument();
+      const { lineConfigured, enabled } = tt.setting ?? setting;
+      expect(screen.getByRole("checkbox", { name: "啟用 LINE 通知" }).hasAttribute("disabled")).toBe(!lineConfigured);
+      for (const option of [screen.getByRole("checkbox", { name: "每月摘要" }), screen.getByLabelText("傳送時間")]) {
+        expect(option.hasAttribute("disabled")).toBe(!lineConfigured || !enabled);
+      }
 
       tt.act?.();
       await act(async () => {

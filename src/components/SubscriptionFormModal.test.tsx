@@ -46,6 +46,8 @@ describe("SubscriptionFormModal", () => {
     /** Extra interaction after filling and before clicking. */
     act?: () => void;
     click: string;
+    /** Whether LINE reminders go out; defaults to true. */
+    remindersActive?: boolean;
     expectedTitle: string;
     expectedInput?: SubscriptionInput;
     expectedCloses: number;
@@ -331,6 +333,13 @@ describe("SubscriptionFormModal", () => {
       expectedTitle: "新增扣款",
       expectedCloses: 1,
     },
+    {
+      name: "the reminder block is locked while LINE reminders are off",
+      remindersActive: false,
+      click: "取消",
+      expectedTitle: "新增扣款",
+      expectedCloses: 1,
+    },
   ];
 
   for (const tt of tests) {
@@ -346,9 +355,12 @@ describe("SubscriptionFormModal", () => {
           onAddPaymentMethod={vi.fn()}
           onSubmit={onSubmit}
           onClose={onClose}
+          remindersActive={tt.remindersActive ?? true}
         />,
       );
       expect(screen.getByRole("dialog", { name: tt.expectedTitle })).toBeInTheDocument();
+      const remindersLocked = tt.remindersActive === false;
+      expect(screen.getByRole("checkbox", { name: "扣款當日" }).matches(":disabled")).toBe(remindersLocked);
 
       if (tt.fill) fillForm();
       tt.act?.();

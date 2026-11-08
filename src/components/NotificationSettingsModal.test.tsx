@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { flushPromises } from "@/test/async";
 import type { NotificationSettingDto } from "@/types/dto";
 
 const { hook } = vi.hoisted(() => ({
@@ -23,6 +24,7 @@ const setting: NotificationSettingDto = {
   timeZone: "Asia/Taipei",
   lineConfigured: true,
 };
+const saved: NotificationSettingDto = { ...setting, sendTime: "08:30" };
 
 describe("NotificationSettingsModal", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -34,6 +36,8 @@ describe("NotificationSettingsModal", () => {
     expectedText: string;
     expectForm: boolean;
     retry?: boolean;
+    /** Saves the form, which closes the dialog, instead of closing it with the close button. */
+    submit?: boolean;
   }[] = [
     {
       name: "shows loading until the settings arrive",
@@ -57,13 +61,23 @@ describe("NotificationSettingsModal", () => {
       expectForm: false,
       retry: true,
     },
+    {
+      name: "reports the saved settings to the page",
+      setting,
+      loadError: null,
+      expectedText: "時區：Asia/Taipei",
+      expectForm: true,
+      submit: true,
+    },
   ];
 
   for (const tt of tests) {
     it(tt.name, async () => {
       Object.assign(hook, { setting: tt.setting, loadError: tt.loadError });
+      hook.save.mockResolvedValue(saved);
       const onClose = vi.fn();
-      render(<NotificationSettingsModal onClose={onClose} />);
+      const onSaved = vi.fn();
+      render(<NotificationSettingsModal onClose={onClose} onSaved={onSaved} />);
 
       expect(screen.getByRole("dialog", { name: "通知設定" })).toBeInTheDocument();
       expect(screen.getByText(tt.expectedText)).toBeInTheDocument();
@@ -75,8 +89,13 @@ describe("NotificationSettingsModal", () => {
         expect(hook.reload).toHaveBeenCalledTimes(1);
       }
 
-      fireEvent.click(screen.getByRole("button", { name: "關閉" }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: tt.submit ? "儲存設定" : "關閉" }));
+        await flushPromises();
+      });
       expect(onClose).toHaveBeenCalledTimes(1);
+      if (tt.submit) expect(onSaved).toHaveBeenCalledWith(saved);
+      else expect(onSaved).not.toHaveBeenCalled();
     });
   }
 });

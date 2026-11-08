@@ -6,7 +6,7 @@ import type { NotificationSettingDto } from "@/types/dto";
 const { apiRequest } = vi.hoisted(() => ({ apiRequest: vi.fn() }));
 vi.mock("@/lib/apiClient", () => ({ apiRequest }));
 
-import { useNotificationSetting } from "./useNotificationSetting";
+import { areRemindersActive, useNotificationSetting } from "./useNotificationSetting";
 
 type Hook = ReturnType<typeof useNotificationSetting>;
 
@@ -83,6 +83,14 @@ describe("useNotificationSetting", () => {
       expectedError: null,
       expectedRequests: [["/api/notification-settings"], ["/api/notification-settings/test", { method: "POST" }]],
     },
+    {
+      name: "apply takes settings saved elsewhere without a request",
+      load: () => Promise.resolve(setting),
+      act: async (hook) => hook.apply(saved),
+      expectedSetting: saved,
+      expectedError: null,
+      expectedRequests: [["/api/notification-settings"]],
+    },
   ];
 
   for (const tt of tests) {
@@ -99,8 +107,28 @@ describe("useNotificationSetting", () => {
       }
 
       expect(result.current.setting).toEqual(tt.expectedSetting);
+      expect(result.current.remindersActive).toBe(areRemindersActive(tt.expectedSetting));
       expect(result.current.loadError).toBe(tt.expectedError);
       expect(apiRequest.mock.calls).toEqual(tt.expectedRequests);
+    });
+  }
+});
+
+describe("areRemindersActive", () => {
+  const tests: { name: string; setting: NotificationSettingDto | null; expected: boolean }[] = [
+    { name: "not loaded", setting: null, expected: false },
+    { name: "switched off", setting, expected: false },
+    { name: "switched on", setting: { ...setting, enabled: true }, expected: true },
+    {
+      name: "switched on without LINE set up",
+      setting: { ...setting, enabled: true, lineConfigured: false },
+      expected: false,
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(areRemindersActive(tt.setting)).toBe(tt.expected);
     });
   }
 });

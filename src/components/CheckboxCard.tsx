@@ -8,6 +8,8 @@ interface CheckboxCardProps {
   hint: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  /** Locks the checkbox; the box is greyed out by `.option-box:has(:disabled)`. */
+  disabled?: boolean;
 }
 
 /**
@@ -17,8 +19,9 @@ interface CheckboxCardProps {
  * @param props.hint - What turning it on does.
  * @param props.checked - Whether it is on.
  * @param props.onChange - Called with the new state.
+ * @param props.disabled - Whether it can be changed.
  */
-export function CheckboxCard({ label, hint, checked, onChange }: CheckboxCardProps) {
+export function CheckboxCard({ label, hint, checked, onChange, disabled = false }: CheckboxCardProps) {
   const labelId = useId();
   const hintId = useId();
 
@@ -28,6 +31,7 @@ export function CheckboxCard({ label, hint, checked, onChange }: CheckboxCardPro
         type="checkbox"
         className="mt-1 size-4 accent-leaf-600"
         checked={checked}
+        disabled={disabled}
         aria-labelledby={labelId}
         aria-describedby={hintId}
         onChange={(event) => onChange(event.target.checked)}

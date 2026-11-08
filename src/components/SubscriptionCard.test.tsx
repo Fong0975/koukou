@@ -18,6 +18,8 @@ describe("SubscriptionCard", () => {
     texts: string[];
     absentTexts?: string[];
     schedules: string[];
+    /** Whether LINE reminders go out; defaults to true. */
+    remindersActive?: boolean;
     /** Accessible name of the reminder bell, or undefined when there should be none. */
     bell?: string;
   }[] = [
@@ -73,11 +75,25 @@ describe("SubscriptionCard", () => {
       schedules: ["每月 1 日", "每月 15 日"],
       bell: "LINE 提醒：扣款當日、扣款前 3 天、到期前 7 天",
     },
+    {
+      name: "hides the bell while LINE reminders are off",
+      item: { ...item, reminders: { chargeDaysBefore: [0], expiryDaysBefore: [] } },
+      remindersActive: false,
+      texts: ["Netflix"],
+      schedules: ["每月 1 日", "每月 15 日"],
+    },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      render(<SubscriptionCard item={tt.item} onEdit={vi.fn()} onDelete={vi.fn()} />);
+      render(
+        <SubscriptionCard
+          item={tt.item}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          remindersActive={tt.remindersActive ?? true}
+        />,
+      );
 
       for (const text of tt.texts) expect(screen.getByText(text)).toBeInTheDocument();
       for (const text of tt.absentTexts ?? []) expect(screen.queryByText(text)).not.toBeInTheDocument();
@@ -105,7 +121,7 @@ describe("SubscriptionCard", () => {
   for (const tt of actionTests) {
     it(tt.name, () => {
       const handlers = { onEdit: vi.fn(), onDelete: vi.fn() };
-      render(<SubscriptionCard item={item} {...handlers} />);
+      render(<SubscriptionCard item={item} {...handlers} remindersActive />);
 
       fireEvent.click(screen.getByRole("button", { name: tt.label }));
 

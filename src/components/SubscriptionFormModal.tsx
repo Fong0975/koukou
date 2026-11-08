@@ -36,6 +36,8 @@ interface SubscriptionFormModalProps {
   onAddPaymentMethod: (input: PaymentMethodInput) => Promise<PaymentMethodDto>;
   onSubmit: (input: SubscriptionInput) => Promise<unknown>;
   onClose: () => void;
+  /** Whether LINE reminders go out; the reminder block is locked otherwise. */
+  remindersActive: boolean;
 }
 
 /**
@@ -43,7 +45,8 @@ interface SubscriptionFormModalProps {
  * then maps any server-side field errors back onto the inputs.
  */
 export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
-  const { initial, categories, paymentMethods, onAddCategory, onAddPaymentMethod, onSubmit, onClose } = props;
+  const { initial, categories, paymentMethods, onAddCategory, onAddPaymentMethod, onSubmit, onClose, remindersActive } =
+    props;
   const [draft, setDraft] = useState<SubscriptionDraft>(() =>
     initial ? draftFromDto(initial) : emptyDraft(todayKey()),
   );
@@ -161,6 +164,7 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
         <ReminderSection
           reminders={draft.reminders}
           hasContractEnd={draft.contractEndDate !== ""}
+          disabled={!remindersActive}
           onChange={(reminders) => set("reminders", reminders)}
           errors={fieldErrors}
         />

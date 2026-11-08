@@ -3,6 +3,7 @@
 import { useBackup } from "@/hooks/useBackup";
 import { useHomeDialogs } from "@/hooks/useHomeDialogs";
 import { useLookups } from "@/hooks/useLookups";
+import { useNotificationSetting } from "@/hooks/useNotificationSetting";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useToday } from "@/hooks/useToday";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
@@ -26,6 +27,7 @@ export function HomeView() {
   const dialogs = useHomeDialogs();
   const backup = useBackup();
   const today = useToday();
+  const notification = useNotificationSetting();
   const { editing } = dialogs;
 
   const retry = () => void subscriptions.reload();
@@ -37,6 +39,7 @@ export function HomeView() {
     await backup.confirmImport();
     void subscriptions.reload();
     void lookups.reload();
+    void notification.reload();
   };
 
   return (
@@ -68,6 +71,7 @@ export function HomeView() {
           onAdd={dialogs.openNew}
           onEdit={dialogs.openEdit}
           onDelete={dialogs.openDelete}
+          remindersActive={notification.remindersActive}
           onClose={dialogs.closeList}
         />
       )}
@@ -76,7 +80,9 @@ export function HomeView() {
         <YearReportModal items={subscriptions.items} initialYear={today.year} onClose={dialogs.closeReport} />
       )}
 
-      {dialogs.settingsOpen && <NotificationSettingsModal onClose={dialogs.closeSettings} />}
+      {dialogs.settingsOpen && (
+        <NotificationSettingsModal onClose={dialogs.closeSettings} onSaved={notification.apply} />
+      )}
 
       {dialogs.formOpen && (
         <SubscriptionFormModal
@@ -86,6 +92,7 @@ export function HomeView() {
           paymentMethods={lookups.paymentMethods}
           onAddCategory={lookups.addCategory}
           onAddPaymentMethod={lookups.addPaymentMethod}
+          remindersActive={notification.remindersActive}
           onSubmit={handleSubmit}
           onClose={dialogs.closeForm}
         />

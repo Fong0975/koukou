@@ -9,14 +9,16 @@ interface SubscriptionCardProps {
   item: SubscriptionDto;
   onEdit: (item: SubscriptionDto) => void;
   onDelete: (item: SubscriptionDto) => void;
+  /** Whether LINE reminders go out; the bell is hidden otherwise, since nothing would be sent. */
+  remindersActive: boolean;
 }
 
 /**
- * Wide glass card for one recurring payment: name (with a bell when it has LINE reminders), billing days,
+ * Wide glass card for one recurring payment: name (with a bell when it has active LINE reminders), billing days,
  * payment method, contract end date and note on the left, amount and edit/delete actions on the right. Stacks
  * vertically on narrow screens. The category is not shown, since cards are listed under their category heading.
  */
-export function SubscriptionCard({ item, onEdit, onDelete }: SubscriptionCardProps) {
+export function SubscriptionCard({ item, onEdit, onDelete, remindersActive }: SubscriptionCardProps) {
   const amount = formatAmount(item.currency, item.amount);
 
   return (
@@ -29,7 +31,7 @@ export function SubscriptionCard({ item, onEdit, onDelete }: SubscriptionCardPro
           <h4 id={`sub-${item.id}-name`} className="min-w-0 text-lg leading-snug break-words">
             {item.name}
           </h4>
-          <ReminderBadge reminders={item.reminders} />
+          {remindersActive && <ReminderBadge reminders={item.reminders} />}
         </div>
         <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="扣款日">
           {item.schedules.map((schedule) => (

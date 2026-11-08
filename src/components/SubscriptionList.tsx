@@ -14,6 +14,8 @@ export interface SubscriptionListProps {
   onAdd: () => void;
   onEdit: (item: SubscriptionDto) => void;
   onDelete: (item: SubscriptionDto) => void;
+  /** Whether LINE reminders go out; the cards hide their reminder bell otherwise. */
+  remindersActive: boolean;
 }
 
 /**
@@ -27,6 +29,7 @@ export function SubscriptionList({
   onAdd,
   onEdit,
   onDelete,
+  remindersActive,
 }: SubscriptionListProps) {
   const idPrefix = useId();
 
@@ -57,7 +60,7 @@ export function SubscriptionList({
             <ul className="flex flex-col gap-3">
               {grouped.map((item) => (
                 <li key={item.id}>
-                  <SubscriptionCard item={item} onEdit={onEdit} onDelete={onDelete} />
+                  <SubscriptionCard item={item} onEdit={onEdit} onDelete={onDelete} remindersActive={remindersActive} />
                 </li>
               ))}
             </ul>

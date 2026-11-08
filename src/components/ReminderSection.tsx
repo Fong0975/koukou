@@ -13,7 +13,12 @@ interface ReminderSectionProps {
   onChange: (reminders: RemindersDto) => void;
   /** Field errors of the whole form, keyed by dotted path. */
   errors: FieldErrors;
+  /** Locks every control, e.g. while LINE notifications are turned off. */
+  disabled?: boolean;
 }
+
+/** Tooltip on the locked block, telling how to unlock it. */
+export const REMINDERS_DISABLED_HINT = "請先在「通知設定」啟用 LINE 通知";
 
 /**
  * The "提醒" block of the subscription form: when LINE reminds of each charge and, for a
@@ -23,15 +28,23 @@ interface ReminderSectionProps {
  * @param props.hasContractEnd - Whether to offer expiry reminders.
  * @param props.onChange - Called with the updated reminders.
  * @param props.errors - Field errors of the whole form.
+ * @param props.disabled - Whether the block is locked; it then shows {@link REMINDERS_DISABLED_HINT} on hover.
  */
-export function ReminderSection({ reminders, hasContractEnd, onChange, errors }: ReminderSectionProps) {
+export function ReminderSection({
+  reminders,
+  hasContractEnd,
+  onChange,
+  errors,
+  disabled = false,
+}: ReminderSectionProps) {
   const chargeId = useId();
   const expiryId = useId();
   const chargeError = errorUnder(errors, "reminders.chargeDaysBefore");
   const expiryError = errorUnder(errors, "reminders.expiryDaysBefore");
 
   return (
-    <fieldset>
+    // A disabled fieldset locks every control inside it; the tooltip sits on it so it covers the whole block.
+    <fieldset disabled={disabled} title={disabled ? REMINDERS_DISABLED_HINT : undefined}>
       <legend className="field-label">LINE 提醒（選填）</legend>
       <div className="option-box flex flex-col gap-4">
         <div role="group" aria-labelledby={chargeId}>
