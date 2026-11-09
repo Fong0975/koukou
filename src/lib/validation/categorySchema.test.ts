@@ -14,6 +14,19 @@ describe("categoryInputSchema", () => {
     { name: "rejects blank name", input: { name: "" }, errorPath: "name" },
     { name: "rejects name over 50 chars", input: { name: "a".repeat(51) }, errorPath: "name" },
     { name: "rejects icon over 16 chars", input: { name: "x", icon: "a".repeat(17) }, errorPath: "icon" },
+    { name: "keeps a plain emoji", input: { name: "x", icon: "💪" }, expected: { name: "x", icon: "💪" } },
+    { name: "keeps a flag", input: { name: "x", icon: "🇹🇼" }, expected: { name: "x", icon: "🇹🇼" } },
+    {
+      name: "keeps a ZWJ sequence",
+      input: { name: "x", icon: "👨‍👩‍👧" },
+      expected: { name: "x", icon: "👨‍👩‍👧" },
+    },
+    { name: "keeps an emoji with a skin tone", input: { name: "x", icon: "👍🏽" }, expected: { name: "x", icon: "👍🏽" } },
+    { name: "rejects plain letters", input: { name: "x", icon: "aaaaaaa" }, errorPath: "icon" },
+    { name: "rejects a digit", input: { name: "x", icon: "1" }, errorPath: "icon" },
+    { name: "rejects CJK text", input: { name: "x", icon: "健身" }, errorPath: "icon" },
+    { name: "rejects several emoji", input: { name: "x", icon: "💪🏋️" }, errorPath: "icon" },
+    { name: "rejects an emoji followed by text", input: { name: "x", icon: "💪a" }, errorPath: "icon" },
   ];
 
   for (const tt of tests) {
