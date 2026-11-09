@@ -34,6 +34,17 @@ describe("backupSchema", () => {
     },
     { name: "accepts an empty backup", input: makeBackup({ categories: [], paymentMethods: [], subscriptions: [] }) },
     {
+      name: "accepts payment methods written before they could be reordered",
+      input: makeBackup({
+        paymentMethods: [{ ...paymentMethod, sortOrder: undefined } as unknown as typeof paymentMethod],
+      }),
+    },
+    {
+      name: "rejects a payment method sortOrder that is not an integer",
+      input: makeBackup({ paymentMethods: [{ ...paymentMethod, sortOrder: 1.5 }] }),
+      error: { path: "paymentMethods.0.sortOrder", message: "扣款方式排序格式錯誤" },
+    },
+    {
       name: "keeps reminders and notification settings",
       input: backup,
       expected: {

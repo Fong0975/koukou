@@ -91,3 +91,52 @@ describe("toImportRows", () => {
     });
   }
 });
+
+describe("toImportRows payment method order", () => {
+  const card = { id: 3, type: "CREDIT_CARD", name: "國泰 CUBE", note: null } as const;
+  const amex = { id: 6, type: "CREDIT_CARD", name: "Amex", note: null } as const;
+  const richart = { id: 4, type: "BANK_ACCOUNT", name: "台新 Richart", note: null } as const;
+  const sortOrders = (backup: unknown) =>
+    toImportRows(backupSchema.parse(backup)).paymentMethods.map(({ id, sortOrder }) => [id, sortOrder]);
+  const withoutSubscriptions = (paymentMethods: unknown[]) => ({
+    ...makeBackup({ subscriptions: [] }),
+    paymentMethods,
+  });
+
+  const tests: { name: string; paymentMethods: unknown[]; expected: [number, number][] }[] = [
+    {
+      name: "keeps the sortOrder written in the backup",
+      paymentMethods: [
+        { ...card, sortOrder: 30 },
+        { ...amex, sortOrder: 20 },
+      ],
+      expected: [
+        [3, 30],
+        [6, 20],
+      ],
+    },
+    {
+      name: "a backup without sortOrder is numbered by type, then name",
+      paymentMethods: [richart, card, amex],
+      expected: [
+        [4, 30],
+        [3, 20],
+        [6, 10],
+      ],
+    },
+    {
+      name: "a method without sortOrder is numbered by the legacy order while others keep theirs",
+      paymentMethods: [{ ...card, sortOrder: 500 }, amex],
+      expected: [
+        [3, 500],
+        [6, 10],
+      ],
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(sortOrders(withoutSubscriptions(tt.paymentMethods))).toEqual(tt.expected);
+    });
+  }
+});

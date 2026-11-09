@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "@/lib/apiClient";
 import { moveId } from "@/lib/moveId";
-import { sortPaymentMethods } from "@/lib/paymentMethodOrder";
+import { movePaymentMethodWithinType, sortPaymentMethods } from "@/lib/paymentMethodOrder";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import type { CategoryDto, PaymentMethodDto } from "@/types/dto";
@@ -17,7 +17,7 @@ const logLoadError = (error: unknown) => console.error("[koukou] Failed to load 
 /**
  * Loads the category and payment method option lists used by the subscription form,
  * and lets the form add new entries on the fly. Categories can also be renamed, deleted and reordered.
- * Payment methods stay ordered by type, then name.
+ * Payment methods can be edited, deleted and reordered within their type too, and stay ordered by type, then sortOrder.
  * `reload` fetches both lists again, e.g. after a backup replaced them.
  */
 export function useLookups() {
@@ -79,6 +79,30 @@ export function useLookups() {
     return created;
   }, []);
 
+  const updatePaymentMethod = useCallback(async (id: number, input: PaymentMethodInput) => {
+    const updated = await apiRequest<PaymentMethodDto>(`/api/payment-methods/${id}`, { method: "PUT", body: input });
+    setPaymentMethods((prev) => sortPaymentMethods(prev.map((method) => (method.id === id ? updated : method))));
+    return updated;
+  }, []);
+
+  const removePaymentMethod = useCallback(async (id: number) => {
+    await apiRequest<void>(`/api/payment-methods/${id}`, { method: "DELETE" });
+    setPaymentMethods((prev) => prev.filter((method) => method.id !== id));
+  }, []);
+
+  const movePaymentMethod = useCallback(
+    async (id: number, offset: -1 | 1) => {
+      const ids = movePaymentMethodWithinType(paymentMethods, id, offset);
+      if (!ids) return;
+      const saved = await apiRequest<PaymentMethodDto[]>("/api/payment-methods/order", {
+        method: "PUT",
+        body: { ids },
+      });
+      setPaymentMethods(sortPaymentMethods(saved));
+    },
+    [paymentMethods],
+  );
+
   return {
     categories,
     paymentMethods,
@@ -88,5 +112,8 @@ export function useLookups() {
     removeCategory,
     moveCategory,
     addPaymentMethod,
+    updatePaymentMethod,
+    removePaymentMethod,
+    movePaymentMethod,
   };
 }

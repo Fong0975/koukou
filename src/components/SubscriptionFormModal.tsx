@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { todayKey } from "@/lib/dateKey";
-import { PAYMENT_TYPE_LABELS } from "@/lib/labels";
+import { paymentMethodOptionLabel } from "@/lib/paymentMethodLabel";
 import {
   draftFromDto,
   draftToInput,
@@ -154,7 +154,7 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
           onChange={(value) => set("paymentMethodId", value)}
           options={paymentMethods.map((method) => ({
             value: String(method.id),
-            label: `${PAYMENT_TYPE_LABELS[method.type]}｜${method.name}`,
+            label: paymentMethodOptionLabel(method),
           }))}
           error={fieldErrors.paymentMethodId}
           addLabel="新增扣款方式"

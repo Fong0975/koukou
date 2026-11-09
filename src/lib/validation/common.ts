@@ -43,6 +43,13 @@ export const requiredId = (label: string) =>
     .positive(`請選擇${label}`)
     .max(MAX_INT_ID, `${label}不存在`);
 
+/**
+ * A non-empty list of record ids in their desired display order, for reorder requests.
+ *
+ * @param label - Name of the records, used in error messages.
+ */
+export const orderedIds = (label: string) => z.array(requiredId(label)).min(1, `請提供${label}排序`);
+
 /** Message shown when a date field holds something other than a real "YYYY-MM-DD" date. */
 const invalidDateMessage = (label: string) => `${label}不是有效的日期`;
 

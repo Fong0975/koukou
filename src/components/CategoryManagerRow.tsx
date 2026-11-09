@@ -1,5 +1,6 @@
 import type { CategoryDto } from "@/types/dto";
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, TrashIcon } from "./Icons";
+import { EditDeleteButtons } from "./EditDeleteButtons";
+import { MoveButtons } from "./MoveButtons";
 
 interface CategoryManagerRowProps {
   category: CategoryDto;
@@ -34,37 +35,20 @@ export function CategoryManagerRow({
       <span className="min-w-0 flex-1 font-medium break-words">{name}</span>
       {inUse && <span className="shrink-0 text-xs text-ink-soft">使用中</span>}
       <div className="flex shrink-0">
-        <button
-          type="button"
-          className="icon-btn icon-btn-sm"
-          onClick={onMoveUp}
-          disabled={!canMoveUp}
-          aria-label={`上移「${name}」`}
-        >
-          <ChevronUpIcon />
-        </button>
-        <button
-          type="button"
-          className="icon-btn icon-btn-sm"
-          onClick={onMoveDown}
-          disabled={!canMoveDown}
-          aria-label={`下移「${name}」`}
-        >
-          <ChevronDownIcon />
-        </button>
-        <button type="button" className="icon-btn icon-btn-sm" onClick={onEdit} aria-label={`編輯「${name}」`}>
-          <PencilIcon />
-        </button>
-        <button
-          type="button"
-          className="icon-btn icon-btn-sm"
-          onClick={onDelete}
-          disabled={inUse}
-          title={inUse ? "使用中的類型無法刪除" : undefined}
-          aria-label={`刪除「${name}」`}
-        >
-          <TrashIcon />
-        </button>
+        <MoveButtons
+          name={name}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+        />
+        <EditDeleteButtons
+          name={name}
+          inUse={inUse}
+          inUseHint="使用中的類型無法刪除"
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       </div>
     </div>
   );

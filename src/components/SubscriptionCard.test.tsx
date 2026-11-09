@@ -36,7 +36,7 @@ describe("SubscriptionCard", () => {
         currency: "USD",
         amount: "15.49",
         note: "家庭方案",
-        paymentMethod: { id: 4, type: "BANK_ACCOUNT", name: "台新 Richart", note: null },
+        paymentMethod: { id: 4, type: "BANK_ACCOUNT", name: "台新 Richart", note: null, sortOrder: 10 },
         schedules: [{ id: 12, cycle: "YEARLY", dayOfWeek: null, dayOfMonth: 1, month: 3 }],
       },
       texts: ["US$", "15.49", "帳戶扣款", "台新 Richart", "家庭方案"],

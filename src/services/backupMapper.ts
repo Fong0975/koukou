@@ -1,6 +1,8 @@
 import { utcDateToDateKey } from "@/lib/dateKey";
+import { paymentTypeRank } from "@/lib/paymentMethodOrder";
 import type { BackupData } from "@/lib/validation/backupSchema";
 import type { BackupSubscriptionDto } from "@/types/dto";
+import { sortOrderAt } from "./reorderIds";
 import { toAmountPeriodRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
 import {
   reminderInclude,
@@ -63,6 +65,25 @@ export function toBackupSubscriptionDto(record: BackupSubscriptionRecord): Backu
   };
 }
 
+/** Compares names by UTF-16 code units so the result does not depend on the runtime's locale. */
+function compareNames(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
+ * Gives every backed-up payment method a sortOrder. Backups written before payment methods could be
+ * reordered lack it, so those get the order they used to be shown in: by type, then name.
+ *
+ * @param methods - The payment methods of a validated backup.
+ */
+export function withPaymentMethodSortOrder(methods: BackupData["paymentMethods"]) {
+  const legacyOrder = [...methods].sort(
+    (a, b) => paymentTypeRank(a.type) - paymentTypeRank(b.type) || compareNames(a.name, b.name) || a.id - b.id,
+  );
+  const legacyPositions = new Map(legacyOrder.map((method, index) => [method.id, sortOrderAt(index)]));
+  return methods.map((method) => ({ ...method, sortOrder: method.sortOrder ?? legacyPositions.get(method.id) ?? 0 }));
+}
+
 /**
  * Maps a validated backup to the rows written to each table on import. Categories, payment
  * methods and subscriptions keep their ids so the references between them stay intact.
@@ -72,7 +93,7 @@ export function toBackupSubscriptionDto(record: BackupSubscriptionRecord): Backu
 export function toImportRows(data: BackupData) {
   return {
     categories: data.categories,
-    paymentMethods: data.paymentMethods,
+    paymentMethods: withPaymentMethodSortOrder(data.paymentMethods),
     subscriptions: data.subscriptions.map((subscription) => ({
       id: subscription.id,
       createdAt: new Date(subscription.createdAt),

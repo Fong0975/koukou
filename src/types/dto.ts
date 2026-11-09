@@ -15,6 +15,8 @@ export interface PaymentMethodDto {
   type: PaymentType;
   name: string;
   note: string | null;
+  /** Position among the payment methods of the same type; lower comes first. */
+  sortOrder: number;
 }
 
 /** Billing rule as returned by the API; unused day fields are null. */

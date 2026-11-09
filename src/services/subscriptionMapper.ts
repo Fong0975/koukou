@@ -20,7 +20,7 @@ export interface SubscriptionRecord {
   createdAt: Date;
   updatedAt: Date;
   category: { id: number; name: string; icon: string | null; sortOrder: number };
-  paymentMethod: { id: number; type: PaymentType; name: string; note: string | null };
+  paymentMethod: { id: number; type: PaymentType; name: string; note: string | null; sortOrder: number };
   schedules: {
     id: number;
     cycle: BillingCycle;
@@ -47,7 +47,7 @@ export const reminderInclude = {
 /** Prisma `include` that loads everything {@link toSubscriptionDto} needs. */
 export const subscriptionInclude = {
   category: { select: { id: true, name: true, icon: true, sortOrder: true } },
-  paymentMethod: { select: { id: true, type: true, name: true, note: true } },
+  paymentMethod: { select: { id: true, type: true, name: true, note: true, sortOrder: true } },
   schedules: {
     select: { id: true, cycle: true, dayOfWeek: true, dayOfMonth: true, month: true },
     orderBy: { id: "asc" },

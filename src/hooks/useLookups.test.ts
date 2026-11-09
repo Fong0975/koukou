@@ -10,8 +10,9 @@ import { useLookups } from "./useLookups";
 
 const streaming = makeCategory({ id: 2, name: "影音串流", sortOrder: 20 });
 const telecom = makeCategory({ id: 5, name: "電信", sortOrder: 40 });
-const card = makePaymentMethod({ id: 3, name: "國泰 CUBE" });
-const account = makePaymentMethod({ id: 4, type: "BANK_ACCOUNT", name: "台新 Richart" });
+const card = makePaymentMethod({ id: 3, name: "國泰 CUBE", sortOrder: 10 });
+const secondCard = makePaymentMethod({ id: 6, name: "玉山 Pi", sortOrder: 20 });
+const account = makePaymentMethod({ id: 4, type: "BANK_ACCOUNT", name: "台新 Richart", sortOrder: 10 });
 
 /** Answers the two initial list requests by path. */
 function respondWith(categories: () => Promise<unknown>, paymentMethods: () => Promise<unknown>) {
@@ -41,7 +42,7 @@ describe("useLookups", () => {
       expectedPaymentMethods: ["國泰 CUBE"],
     },
     {
-      name: "orders loaded payment methods by type, then name",
+      name: "orders loaded payment methods by type, then sortOrder",
       paymentMethods: [account, card],
       expectedCategories: ["影音串流", "電信"],
       expectedPaymentMethods: ["國泰 CUBE", "台新 Richart"],
@@ -129,6 +130,23 @@ describe("useLookups", () => {
       notRequested: "/api/categories/order",
     },
     {
+      name: "updatePaymentMethod replaces it and re-sorts by type",
+      act: (hook) => hook.updatePaymentMethod(3, { type: "BANK_ACCOUNT", name: "國泰帳戶" }),
+      created: makePaymentMethod({ id: 3, type: "BANK_ACCOUNT", name: "國泰帳戶", sortOrder: 20 }),
+      paymentMethods: [card, account],
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["台新 Richart", "國泰帳戶"],
+      expectedRequest: ["/api/payment-methods/3", { method: "PUT", body: { type: "BANK_ACCOUNT", name: "國泰帳戶" } }],
+    },
+    {
+      name: "removePaymentMethod drops that payment method",
+      act: (hook) => hook.removePaymentMethod(3),
+      paymentMethods: [card, account],
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["台新 Richart"],
+      expectedRequest: ["/api/payment-methods/3", { method: "DELETE" }],
+    },
+    {
       name: "addPaymentMethod inserts by type",
       act: (hook) => hook.addPaymentMethod({ type: "BANK_ACCOUNT", name: "台新 Richart" }),
       created: account,
@@ -136,11 +154,44 @@ describe("useLookups", () => {
       expectedPaymentMethods: ["國泰 CUBE", "台新 Richart"],
     },
     {
-      name: "addPaymentMethod inserts by name within its type",
+      name: "addPaymentMethod inserts by sortOrder within its type",
       act: (hook) => hook.addPaymentMethod({ type: "CREDIT_CARD", name: "國泰 Amex" }),
-      created: makePaymentMethod({ id: 9, name: "國泰 Amex" }),
+      created: makePaymentMethod({ id: 9, name: "國泰 Amex", sortOrder: 5 }),
       expectedCategories: ["影音串流", "電信"],
       expectedPaymentMethods: ["國泰 Amex", "國泰 CUBE"],
+    },
+    {
+      name: "addPaymentMethod puts a new method after the existing ones of its type",
+      act: (hook) => hook.addPaymentMethod({ type: "CREDIT_CARD", name: "國泰 Amex" }),
+      created: makePaymentMethod({ id: 9, name: "國泰 Amex", sortOrder: 500 }),
+      paymentMethods: [secondCard, card],
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["國泰 CUBE", "玉山 Pi", "國泰 Amex"],
+    },
+    {
+      name: "movePaymentMethod saves the swapped order within the type and shows the saved list",
+      act: (hook) => hook.movePaymentMethod(6, -1),
+      created: [{ ...secondCard, sortOrder: 10 }, { ...card, sortOrder: 20 }, account],
+      paymentMethods: [card, secondCard, account],
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["玉山 Pi", "國泰 CUBE", "台新 Richart"],
+      expectedRequest: ["/api/payment-methods/order", { method: "PUT", body: { ids: [6, 3, 4] } }],
+    },
+    {
+      name: "movePaymentMethod does nothing at the edge of its type",
+      act: (hook) => hook.movePaymentMethod(3, -1),
+      paymentMethods: [card, secondCard, account],
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["國泰 CUBE", "玉山 Pi", "台新 Richart"],
+      notRequested: "/api/payment-methods/order",
+    },
+    {
+      name: "movePaymentMethod never crosses into another type",
+      act: (hook) => hook.movePaymentMethod(6, 1),
+      paymentMethods: [card, secondCard, account],
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["國泰 CUBE", "玉山 Pi", "台新 Richart"],
+      notRequested: "/api/payment-methods/order",
     },
   ];
 

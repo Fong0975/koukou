@@ -13,8 +13,22 @@ describe("AllSubscriptionsModal", () => {
     items: SubscriptionDto[];
     click?: string;
     expectedToolbarAdd: boolean;
-    expectedHandler?: "onAdd" | "onClose" | "onManageCategories";
+    expectedHandler?: "onAdd" | "onClose" | "onManageCategories" | "onManagePaymentMethods";
   }[] = [
+    {
+      name: "the payment method button opens its manager",
+      items,
+      click: "管理扣款方式",
+      expectedToolbarAdd: true,
+      expectedHandler: "onManagePaymentMethods",
+    },
+    {
+      name: "the payment method button is available even when the list is empty",
+      items: [],
+      click: "管理扣款方式",
+      expectedToolbarAdd: false,
+      expectedHandler: "onManagePaymentMethods",
+    },
     { name: "shows the list inside a titled dialog", items, expectedToolbarAdd: true },
     {
       name: "the category button opens the manager",
@@ -43,6 +57,7 @@ describe("AllSubscriptionsModal", () => {
         onEdit: vi.fn(),
         onDelete: vi.fn(),
         onManageCategories: vi.fn(),
+        onManagePaymentMethods: vi.fn(),
         onClose: vi.fn(),
       };
       render(<AllSubscriptionsModal items={tt.items} status="ready" loadError={null} {...handlers} remindersActive />);
@@ -56,6 +71,9 @@ describe("AllSubscriptionsModal", () => {
       expect(handlers.onAdd).toHaveBeenCalledTimes(tt.expectedHandler === "onAdd" ? 1 : 0);
       expect(handlers.onClose).toHaveBeenCalledTimes(tt.expectedHandler === "onClose" ? 1 : 0);
       expect(handlers.onManageCategories).toHaveBeenCalledTimes(tt.expectedHandler === "onManageCategories" ? 1 : 0);
+      expect(handlers.onManagePaymentMethods).toHaveBeenCalledTimes(
+        tt.expectedHandler === "onManagePaymentMethods" ? 1 : 0,
+      );
     });
   }
 });

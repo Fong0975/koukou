@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/db";
-import { ValidationError } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import type { CategoryData } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
 import { rethrowPrismaError } from "./prismaErrors";
+import { assertSameIds, sortOrderAt } from "./reorderIds";
 
 const logger = createLogger("categoryService");
 
@@ -86,13 +86,14 @@ export async function deleteCategory(id: number): Promise<void> {
  */
 export async function reorderCategories(ids: number[]): Promise<CategoryDto[]> {
   const existing = await prisma.category.findMany({ select: { id: true } });
-  const existingIds = new Set(existing.map((category) => category.id));
-  const isExactSet =
-    ids.length === existingIds.size && new Set(ids).size === ids.length && ids.every((id) => existingIds.has(id));
-  if (!isExactSet) throw new ValidationError("類型排序與目前的類型不一致，請重新整理後再試");
+  assertSameIds(
+    ids,
+    existing.map((category) => category.id),
+    "類型排序與目前的類型不一致，請重新整理後再試",
+  );
 
   await prisma.$transaction(
-    ids.map((id, index) => prisma.category.update({ where: { id }, data: { sortOrder: (index + 1) * 10 } })),
+    ids.map((id, index) => prisma.category.update({ where: { id }, data: { sortOrder: sortOrderAt(index) } })),
   );
   logger.info("Categories reordered", { count: ids.length });
   return listCategories();

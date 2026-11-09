@@ -19,16 +19,26 @@ const recordId = (label: string) => {
   return z.number({ error: message }).int(message).positive(message).max(MAX_INT_ID, message);
 };
 
+/**
+ * The stored display position of a backed-up record.
+ *
+ * @param label - Name of the record kind, used in error messages.
+ */
+const sortOrder = (label: string) => {
+  const message = `${label}排序格式錯誤`;
+  return z.number({ error: message }).int(message).min(MIN_INT, message).max(MAX_INT_ID, message);
+};
+
 const backupCategorySchema = categoryInputSchema.extend({
   id: recordId("類型"),
-  sortOrder: z
-    .number({ error: "類型排序格式錯誤" })
-    .int("類型排序格式錯誤")
-    .min(MIN_INT, "類型排序格式錯誤")
-    .max(MAX_INT_ID, "類型排序格式錯誤"),
+  sortOrder: sortOrder("類型"),
 });
 
-const backupPaymentMethodSchema = paymentMethodInputSchema.extend({ id: recordId("扣款方式") });
+/** Backups written before payment methods could be reordered have no sortOrder; the import numbers them. */
+const backupPaymentMethodSchema = paymentMethodInputSchema.extend({
+  id: recordId("扣款方式"),
+  sortOrder: sortOrder("扣款方式").optional(),
+});
 
 const backupSubscriptionSchema = subscriptionFieldsSchema
   .extend({ id: recordId("扣款項目"), createdAt: z.iso.datetime({ error: "建立時間格式錯誤" }) })

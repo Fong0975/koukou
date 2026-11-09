@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { PaymentType } from "@/generated/prisma/enums";
-import { optionalText, requiredText } from "./common";
+import { optionalText, orderedIds, requiredText } from "./common";
 
 /** Payload for creating a payment method, e.g. a credit card named "國泰 CUBE". */
 export const paymentMethodInputSchema = z.object({
@@ -9,5 +9,9 @@ export const paymentMethodInputSchema = z.object({
   note: optionalText("備註", 255),
 });
 
+/** Payload for reordering payment methods: every payment method id, first to last. */
+export const paymentMethodOrderSchema = z.object({ ids: orderedIds("扣款方式") });
+
 export type PaymentMethodInput = z.input<typeof paymentMethodInputSchema>;
 export type PaymentMethodData = z.output<typeof paymentMethodInputSchema>;
+export type PaymentMethodOrderData = z.output<typeof paymentMethodOrderSchema>;

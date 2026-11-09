@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
 import { useBackup } from "@/hooks/useBackup";
 import { useHomeDialogs } from "@/hooks/useHomeDialogs";
+import { useLookupManagement } from "@/hooks/useLookupManagement";
 import { useLookups } from "@/hooks/useLookups";
 import { useNotificationSetting } from "@/hooks/useNotificationSetting";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useToday } from "@/hooks/useToday";
-import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import { AllSubscriptionsModal } from "./AllSubscriptionsModal";
 import { CalendarSection } from "./CalendarSection";
@@ -16,13 +15,14 @@ import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { ConfirmImportDialog } from "./ConfirmImportDialog";
 import { Header } from "./Header";
 import { NotificationSettingsModal } from "./NotificationSettingsModal";
+import { PaymentMethodManagerModal } from "./PaymentMethodManagerModal";
 import { YearReportModal } from "./report/YearReportModal";
 import { SubscriptionFormModal } from "./SubscriptionFormModal";
 
 /**
  * Client-side home screen: wires the data hooks to the calendar, the subscription list dialog,
- * the add/edit form, the delete dialog, the category manager, the annual report, the notification settings and the backup menu with
- * its import confirmation.
+ * the add/edit form, the delete dialog, the category and payment method managers, the annual report, the
+ * notification settings and the backup menu with its import confirmation.
  */
 export function HomeView() {
   const subscriptions = useSubscriptions();
@@ -38,17 +38,7 @@ export function HomeView() {
   const handleSubmit = (input: SubscriptionInput) =>
     editing ? subscriptions.update(editing.id, input) : subscriptions.create(input);
 
-  const usedCategoryIds = useMemo(
-    () => new Set(subscriptions.items.map((item) => item.category.id)),
-    [subscriptions.items],
-  );
-
-  // Subscriptions embed their category, so they are reloaded to show the new name or icon.
-  const updateCategory = async (id: number, input: CategoryInput) => {
-    const updated = await lookups.updateCategory(id, input);
-    void subscriptions.reload();
-    return updated;
-  };
+  const management = useLookupManagement(subscriptions.items, subscriptions.reload, lookups);
 
   const confirmImport = async () => {
     await backup.confirmImport();
@@ -88,6 +78,7 @@ export function HomeView() {
           onDelete={dialogs.openDelete}
           remindersActive={notification.remindersActive}
           onManageCategories={dialogs.openCategories}
+          onManagePaymentMethods={dialogs.openPaymentMethods}
           onClose={dialogs.closeList}
         />
       )}
@@ -95,12 +86,24 @@ export function HomeView() {
       {dialogs.categoriesOpen && (
         <CategoryManagerModal
           categories={lookups.categories}
-          usedCategoryIds={usedCategoryIds}
+          usedCategoryIds={management.usedCategoryIds}
           onCreate={lookups.addCategory}
-          onUpdate={updateCategory}
+          onUpdate={management.saveCategory}
           onDelete={lookups.removeCategory}
           onMove={lookups.moveCategory}
           onClose={dialogs.closeCategories}
+        />
+      )}
+
+      {dialogs.paymentMethodsOpen && (
+        <PaymentMethodManagerModal
+          paymentMethods={lookups.paymentMethods}
+          usedPaymentMethodIds={management.usedPaymentMethodIds}
+          onCreate={lookups.addPaymentMethod}
+          onUpdate={management.savePaymentMethod}
+          onDelete={lookups.removePaymentMethod}
+          onMove={lookups.movePaymentMethod}
+          onClose={dialogs.closePaymentMethods}
         />
       )}
 

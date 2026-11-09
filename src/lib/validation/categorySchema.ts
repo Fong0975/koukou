@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalText, requiredId, requiredText } from "./common";
+import { optionalText, orderedIds, requiredText } from "./common";
 
 /** Payload for creating or editing a category. */
 export const categoryInputSchema = z.object({
@@ -8,9 +8,7 @@ export const categoryInputSchema = z.object({
 });
 
 /** Payload for reordering categories: every category id, first to last. */
-export const categoryOrderSchema = z.object({
-  ids: z.array(requiredId("類型")).min(1, "請提供類型排序"),
-});
+export const categoryOrderSchema = z.object({ ids: orderedIds("類型") });
 
 export type CategoryInput = z.input<typeof categoryInputSchema>;
 export type CategoryData = z.output<typeof categoryInputSchema>;
