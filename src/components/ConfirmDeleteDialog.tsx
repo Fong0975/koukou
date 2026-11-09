@@ -1,19 +1,20 @@
 "use client";
 
 import { useAsyncAction } from "@/hooks/useAsyncAction";
-import type { SubscriptionDto } from "@/types/dto";
 import { Modal } from "./Modal";
 
 interface ConfirmDeleteDialogProps {
-  item: SubscriptionDto;
+  item: { id: number; name: string };
+  /** Explains what deleting the item removes. */
+  message: string;
   onConfirm: (id: number) => Promise<void>;
   onClose: () => void;
 }
 
 /**
- * Asks before deleting a subscription; stays open and shows the reason if deletion fails.
+ * Asks before deleting an item; stays open and shows the reason if deletion fails.
  */
-export function ConfirmDeleteDialog({ item, onConfirm, onClose }: ConfirmDeleteDialogProps) {
+export function ConfirmDeleteDialog({ item, message, onConfirm, onClose }: ConfirmDeleteDialogProps) {
   const { pending, error, run } = useAsyncAction(async () => {
     await onConfirm(item.id);
     onClose();
@@ -21,7 +22,7 @@ export function ConfirmDeleteDialog({ item, onConfirm, onClose }: ConfirmDeleteD
 
   return (
     <Modal title={`刪除「${item.name}」？`} onClose={onClose} widthClass="max-w-sm">
-      <p className="text-ink-soft">刪除後，這筆扣款和它的所有扣款日都會一起移除，無法復原。</p>
+      <p className="text-ink-soft">{message}</p>
       {error && (
         <p role="alert" className="field-error">
           {error}

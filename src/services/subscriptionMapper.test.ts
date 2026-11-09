@@ -16,7 +16,7 @@ const baseRecord: SubscriptionRecord = {
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-02T00:00:00.000Z"),
   category: { id: 2, name: "影音串流", icon: "🎬", sortOrder: 20 },
-  paymentMethod: { id: 3, type: "CREDIT_CARD", name: "國泰 CUBE", note: null },
+  paymentMethod: { id: 3, type: "CREDIT_CARD", name: "國泰 CUBE", note: null, sortOrder: 10 },
   schedules: [{ id: 4, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
   amountPeriods: [],
   reminders: [],

@@ -2,6 +2,7 @@
 
 import { useBackup } from "@/hooks/useBackup";
 import { useHomeDialogs } from "@/hooks/useHomeDialogs";
+import { useLookupManagement } from "@/hooks/useLookupManagement";
 import { useLookups } from "@/hooks/useLookups";
 import { useNotificationSetting } from "@/hooks/useNotificationSetting";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
@@ -9,17 +10,19 @@ import { useToday } from "@/hooks/useToday";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import { AllSubscriptionsModal } from "./AllSubscriptionsModal";
 import { CalendarSection } from "./CalendarSection";
+import { CategoryManagerModal } from "./CategoryManagerModal";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { ConfirmImportDialog } from "./ConfirmImportDialog";
 import { Header } from "./Header";
 import { NotificationSettingsModal } from "./NotificationSettingsModal";
+import { PaymentMethodManagerModal } from "./PaymentMethodManagerModal";
 import { YearReportModal } from "./report/YearReportModal";
 import { SubscriptionFormModal } from "./SubscriptionFormModal";
 
 /**
  * Client-side home screen: wires the data hooks to the calendar, the subscription list dialog,
- * the add/edit form, the delete dialog, the annual report, the notification settings and the backup menu with
- * its import confirmation.
+ * the add/edit form, the delete dialog, the category and payment method managers, the annual report, the
+ * notification settings and the backup menu with its import confirmation.
  */
 export function HomeView() {
   const subscriptions = useSubscriptions();
@@ -34,6 +37,8 @@ export function HomeView() {
 
   const handleSubmit = (input: SubscriptionInput) =>
     editing ? subscriptions.update(editing.id, input) : subscriptions.create(input);
+
+  const management = useLookupManagement(subscriptions.items, subscriptions.reload, lookups);
 
   const confirmImport = async () => {
     await backup.confirmImport();
@@ -72,7 +77,33 @@ export function HomeView() {
           onEdit={dialogs.openEdit}
           onDelete={dialogs.openDelete}
           remindersActive={notification.remindersActive}
+          onManageCategories={dialogs.openCategories}
+          onManagePaymentMethods={dialogs.openPaymentMethods}
           onClose={dialogs.closeList}
+        />
+      )}
+
+      {dialogs.categoriesOpen && (
+        <CategoryManagerModal
+          categories={lookups.categories}
+          usedCategoryIds={management.usedCategoryIds}
+          onCreate={lookups.addCategory}
+          onUpdate={management.saveCategory}
+          onDelete={lookups.removeCategory}
+          onMove={lookups.moveCategory}
+          onClose={dialogs.closeCategories}
+        />
+      )}
+
+      {dialogs.paymentMethodsOpen && (
+        <PaymentMethodManagerModal
+          paymentMethods={lookups.paymentMethods}
+          usedPaymentMethodIds={management.usedPaymentMethodIds}
+          onCreate={lookups.addPaymentMethod}
+          onUpdate={management.savePaymentMethod}
+          onDelete={lookups.removePaymentMethod}
+          onMove={lookups.movePaymentMethod}
+          onClose={dialogs.closePaymentMethods}
         />
       )}
 
@@ -99,7 +130,12 @@ export function HomeView() {
       )}
 
       {dialogs.deleting && (
-        <ConfirmDeleteDialog item={dialogs.deleting} onConfirm={subscriptions.remove} onClose={dialogs.closeDelete} />
+        <ConfirmDeleteDialog
+          item={dialogs.deleting}
+          message="刪除後，這筆扣款和它的所有扣款日都會一起移除，無法復原。"
+          onConfirm={subscriptions.remove}
+          onClose={dialogs.closeDelete}
+        />
       )}
 
       {backup.pendingImport && (

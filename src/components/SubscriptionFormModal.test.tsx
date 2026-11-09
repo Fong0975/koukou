@@ -360,6 +360,7 @@ describe("SubscriptionFormModal", () => {
         />,
       );
       expect(screen.getByRole("dialog", { name: tt.expectedTitle })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2, name: tt.expectedTitle })).toHaveClass("font-semibold");
       const remindersLocked = tt.remindersActive === false;
       expect(screen.getByLabelText("提前").matches(":disabled")).toBe(remindersLocked);
 

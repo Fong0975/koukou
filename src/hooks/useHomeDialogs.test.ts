@@ -19,6 +19,8 @@ describe("useHomeDialogs", () => {
       deleting: SubscriptionDto | null;
       reportOpen?: boolean;
       settingsOpen?: boolean;
+      categoriesOpen?: boolean;
+      paymentMethodsOpen?: boolean;
     };
   }[] = [
     {
@@ -62,6 +64,31 @@ describe("useHomeDialogs", () => {
       expected: { listOpen: false, formOpen: false, deleting: null },
     },
     {
+      name: "the category manager opens above the list",
+      actions: [(d) => d.openList(), (d) => d.openCategories()],
+      expected: { listOpen: true, formOpen: false, deleting: null, categoriesOpen: true },
+    },
+    {
+      name: "closing the category manager returns to the list",
+      actions: [(d) => d.openList(), (d) => d.openCategories(), (d) => d.closeCategories()],
+      expected: { listOpen: true, formOpen: false, deleting: null, categoriesOpen: false },
+    },
+    {
+      name: "the payment method manager opens above the list",
+      actions: [(d) => d.openList(), (d) => d.openPaymentMethods()],
+      expected: { listOpen: true, formOpen: false, deleting: null, paymentMethodsOpen: true },
+    },
+    {
+      name: "closing the payment method manager returns to the list",
+      actions: [(d) => d.openList(), (d) => d.openPaymentMethods(), (d) => d.closePaymentMethods()],
+      expected: { listOpen: true, formOpen: false, deleting: null, paymentMethodsOpen: false },
+    },
+    {
+      name: "the two managers are independent",
+      actions: [(d) => d.openCategories(), (d) => d.openPaymentMethods(), (d) => d.closeCategories()],
+      expected: { listOpen: false, formOpen: false, deleting: null, paymentMethodsOpen: true, categoriesOpen: false },
+    },
+    {
       name: "opening the report",
       actions: [(d) => d.openReport()],
       expected: { listOpen: false, formOpen: false, deleting: null, reportOpen: true },
@@ -95,6 +122,8 @@ describe("useHomeDialogs", () => {
       expect(result.current.deleting).toBe(tt.expected.deleting);
       expect(result.current.reportOpen).toBe(tt.expected.reportOpen ?? false);
       expect(result.current.settingsOpen).toBe(tt.expected.settingsOpen ?? false);
+      expect(result.current.categoriesOpen).toBe(tt.expected.categoriesOpen ?? false);
+      expect(result.current.paymentMethodsOpen).toBe(tt.expected.paymentMethodsOpen ?? false);
     });
   }
 });

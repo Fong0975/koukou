@@ -17,7 +17,7 @@ export function makeCategory(overrides: Partial<CategoryDto> = {}): CategoryDto 
  * @param overrides - Fields replacing the defaults.
  */
 export function makePaymentMethod(overrides: Partial<PaymentMethodDto> = {}): PaymentMethodDto {
-  return { id: 3, type: "CREDIT_CARD", name: "國泰 CUBE", note: null, ...overrides };
+  return { id: 3, type: "CREDIT_CARD", name: "國泰 CUBE", note: null, sortOrder: 10, ...overrides };
 }
 
 /**

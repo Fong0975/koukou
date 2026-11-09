@@ -43,6 +43,7 @@ model PaymentMethod {
   type          PaymentType
   name          String         @db.VarChar(100)
   note          String?        @db.VarChar(255)
+  sortOrder     Int            @default(0) @map("sort_order")
   createdAt     DateTime       @default(now()) @map("created_at")
   subscriptions Subscription[]
 

@@ -43,8 +43,9 @@ describe("ConfirmDeleteDialog", () => {
     it(tt.name, async () => {
       const onConfirm = vi.fn(tt.onConfirm);
       const onClose = vi.fn();
-      render(<ConfirmDeleteDialog item={item} onConfirm={onConfirm} onClose={onClose} />);
+      render(<ConfirmDeleteDialog item={item} message="刪除後無法復原。" onConfirm={onConfirm} onClose={onClose} />);
       expect(screen.getByRole("dialog", { name: "刪除「Netflix」？" })).toBeInTheDocument();
+      expect(screen.getByText("刪除後無法復原。")).toBeInTheDocument();
 
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: tt.click }));

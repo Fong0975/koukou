@@ -59,7 +59,7 @@ KouKou is a small web app for keeping track of recurring payments — membership
    npm run dev
    ```
 
-   Open <http://localhost:3000>. On start-up the server creates or updates the tables from `prisma/migrations/` and seeds the default categories; check the terminal for `Database migrations applied.`
+   Open <http://localhost:3000>. On start-up the server creates or updates the tables from `prisma/migrations/`, including the default categories; check the terminal for `Database migrations applied.`
 
 ## Scripts
 
@@ -79,7 +79,6 @@ KouKou is a small web app for keeping track of recurring payments — membership
 | `npm run db:generate`   | Regenerate the Prisma client                              |
 | `npm run db:migrate`    | Create and apply a new migration after editing the schema |
 | `npm run db:deploy`     | Apply pending migrations                                  |
-| `npm run db:seed`       | Insert default data (safe to run repeatedly)              |
 
 ## Changing the database schema
 
@@ -91,7 +90,7 @@ KouKou is a small web app for keeping track of recurring payments — membership
 
 ```
 koukou/
-├── prisma/              # Database schema and seed entry
+├── prisma/              # Database schema
 │   └── migrations/      # Generated migrations, applied on start-up
 ├── public/              # Static assets (logo)
 └── src/

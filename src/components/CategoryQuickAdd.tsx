@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
+import { CategoryFields } from "./CategoryFields";
 import { QuickAddActions, saveOnEnter } from "./QuickAddActions";
 
 interface CategoryQuickAddProps {
@@ -22,31 +23,18 @@ export function CategoryQuickAdd({ onCreate, onDone }: CategoryQuickAddProps) {
     const created = await run({ name, icon });
     if (created) onDone(String(created.id));
   };
-  const onKeyDown = saveOnEnter(() => void save());
 
   return (
     <div>
-      <div className="flex gap-2">
-        <input
-          className="field w-16 text-center"
-          placeholder="🏷️"
-          aria-label="類型圖示（可留空）"
-          value={icon}
-          maxLength={16}
-          onChange={(event) => setIcon(event.target.value)}
-          onKeyDown={onKeyDown}
-        />
-        <input
-          className="field"
-          placeholder="新的類型名稱，例如：健身房"
-          aria-label="新的類型名稱"
-          value={name}
-          maxLength={50}
-          autoFocus
-          onChange={(event) => setName(event.target.value)}
-          onKeyDown={onKeyDown}
-        />
-      </div>
+      <CategoryFields
+        icon={icon}
+        name={name}
+        onIconChange={setIcon}
+        onNameChange={setName}
+        onKeyDown={saveOnEnter(() => void save())}
+        nameLabel="新的類型名稱"
+        namePlaceholder="新的類型名稱，例如：健身房"
+      />
       <QuickAddActions pending={pending} error={error} onSave={() => void save()} onCancel={() => onDone()} />
     </div>
   );

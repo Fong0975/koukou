@@ -13,7 +13,7 @@ export function makeBackup(overrides: Partial<BackupDto> = {}): BackupDto {
     appVersion: "v1.0.12",
     exportedAt: "2026-10-19T08:00:00.000Z",
     categories: [{ id: 2, name: "影音串流", icon: "🎬", sortOrder: 20 }],
-    paymentMethods: [{ id: 3, type: "CREDIT_CARD", name: "國泰 CUBE", note: null }],
+    paymentMethods: [{ id: 3, type: "CREDIT_CARD", name: "國泰 CUBE", note: null, sortOrder: 10 }],
     subscriptions: [
       {
         id: 1,

@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { todayKey } from "@/lib/dateKey";
-import { PAYMENT_TYPE_LABELS } from "@/lib/labels";
+import { paymentMethodOptionLabel } from "@/lib/paymentMethodLabel";
 import {
   draftFromDto,
   draftToInput,
@@ -77,7 +77,7 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
   const showFormError = submission.error && Object.keys(serverErrors).length === 0;
 
   return (
-    <Modal title={initial ? "編輯扣款" : "新增扣款"} onClose={onClose}>
+    <Modal title={initial ? "編輯扣款" : "新增扣款"} onClose={onClose} titleClassName="font-semibold">
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <div>
           <label htmlFor="sub-name" className="field-label">
@@ -154,7 +154,7 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
           onChange={(value) => set("paymentMethodId", value)}
           options={paymentMethods.map((method) => ({
             value: String(method.id),
-            label: `${PAYMENT_TYPE_LABELS[method.type]}｜${method.name}`,
+            label: paymentMethodOptionLabel(method),
           }))}
           error={fieldErrors.paymentMethodId}
           addLabel="新增扣款方式"

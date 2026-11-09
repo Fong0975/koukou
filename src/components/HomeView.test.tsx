@@ -16,6 +16,8 @@ const {
   formProps,
   calendarProps,
   listProps,
+  managerProps,
+  paymentManagerProps,
   reportProps,
   settingsProps,
 } = vi.hoisted(() => ({
@@ -29,7 +31,19 @@ const {
     update: vi.fn(),
     remove: vi.fn(),
   },
-  lookups: { categories: [], paymentMethods: [], reload: vi.fn(), addCategory: vi.fn(), addPaymentMethod: vi.fn() },
+  lookups: {
+    categories: [],
+    paymentMethods: [],
+    reload: vi.fn(),
+    addCategory: vi.fn(),
+    updateCategory: vi.fn(),
+    removeCategory: vi.fn(),
+    moveCategory: vi.fn(),
+    addPaymentMethod: vi.fn(),
+    updatePaymentMethod: vi.fn(),
+    removePaymentMethod: vi.fn(),
+    movePaymentMethod: vi.fn(),
+  },
   backup: {
     pendingImport: null as PendingImport | null,
     exportBackup: vi.fn(),
@@ -41,6 +55,8 @@ const {
   formProps: vi.fn(),
   calendarProps: vi.fn(),
   listProps: vi.fn(),
+  managerProps: vi.fn(),
+  paymentManagerProps: vi.fn(),
   reportProps: vi.fn(),
   settingsProps: vi.fn(),
 }));
@@ -59,10 +75,22 @@ vi.mock("./CalendarSection", () => ({
   },
 }));
 vi.mock("./AllSubscriptionsModal", () => ({
-  AllSubscriptionsModal: (props: SubscriptionListProps & { onClose: () => void }) => {
+  AllSubscriptionsModal: (
+    props: SubscriptionListProps & {
+      onManageCategories: () => void;
+      onManagePaymentMethods: () => void;
+      onClose: () => void;
+    },
+  ) => {
     listProps(props);
     return (
       <div role="dialog" aria-label="所有扣款">
+        <button type="button" onClick={props.onManageCategories}>
+          管理類型
+        </button>
+        <button type="button" onClick={props.onManagePaymentMethods}>
+          管理扣款方式
+        </button>
         <button type="button" onClick={props.onAdd}>
           新增
         </button>
@@ -77,6 +105,42 @@ vi.mock("./AllSubscriptionsModal", () => ({
         </button>
         <button type="button" onClick={props.onClose}>
           關閉清單
+        </button>
+      </div>
+    );
+  },
+}));
+vi.mock("./CategoryManagerModal", () => ({
+  CategoryManagerModal: (props: {
+    onUpdate: (id: number, input: unknown) => Promise<unknown>;
+    onClose: () => void;
+  }) => {
+    managerProps(props);
+    return (
+      <div role="dialog" aria-label="類型管理">
+        <button type="button" onClick={() => void props.onUpdate(1, { name: "新名稱" }).catch(() => {})}>
+          儲存類型
+        </button>
+        <button type="button" onClick={props.onClose}>
+          關閉類型管理
+        </button>
+      </div>
+    );
+  },
+}));
+vi.mock("./PaymentMethodManagerModal", () => ({
+  PaymentMethodManagerModal: (props: {
+    onUpdate: (id: number, input: unknown) => Promise<unknown>;
+    onClose: () => void;
+  }) => {
+    paymentManagerProps(props);
+    return (
+      <div role="dialog" aria-label="扣款方式管理">
+        <button type="button" onClick={() => void props.onUpdate(3, { name: "新卡片" }).catch(() => {})}>
+          儲存扣款方式
+        </button>
+        <button type="button" onClick={props.onClose}>
+          關閉扣款方式管理
         </button>
       </div>
     );
@@ -217,6 +281,30 @@ describe("HomeView", () => {
     },
     { name: "closing the list removes it", clicks: ["所有扣款", "關閉清單"], expectedDialogs: [], expectedCalls: {} },
     {
+      name: "the list's category button opens the manager above it",
+      clicks: ["所有扣款", "管理類型"],
+      expectedDialogs: ["所有扣款", "類型管理"],
+      expectedCalls: {},
+    },
+    {
+      name: "closing the manager returns to the list",
+      clicks: ["所有扣款", "管理類型", "關閉類型管理"],
+      expectedDialogs: ["所有扣款"],
+      expectedCalls: {},
+    },
+    {
+      name: "the list's payment method button opens its manager above it",
+      clicks: ["所有扣款", "管理扣款方式"],
+      expectedDialogs: ["所有扣款", "扣款方式管理"],
+      expectedCalls: {},
+    },
+    {
+      name: "closing the payment method manager returns to the list",
+      clicks: ["所有扣款", "管理扣款方式", "關閉扣款方式管理"],
+      expectedDialogs: ["所有扣款"],
+      expectedCalls: {},
+    },
+    {
       name: "the header button opens the annual report",
       clicks: ["年度報表"],
       expectedDialogs: ["年度報表"],
@@ -266,6 +354,28 @@ describe("HomeView", () => {
           expect.objectContaining({ ...data, remindersActive: notification.remindersActive }),
         );
       }
+      if (managerProps.mock.calls.length > 0) {
+        expect(managerProps).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            categories: lookups.categories,
+            usedCategoryIds: new Set([item.category.id]),
+            onCreate: lookups.addCategory,
+            onDelete: lookups.removeCategory,
+            onMove: lookups.moveCategory,
+          }),
+        );
+      }
+      if (paymentManagerProps.mock.calls.length > 0) {
+        expect(paymentManagerProps).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            paymentMethods: lookups.paymentMethods,
+            usedPaymentMethodIds: new Set([item.paymentMethod.id]),
+            onCreate: lookups.addPaymentMethod,
+            onDelete: lookups.removePaymentMethod,
+            onMove: lookups.movePaymentMethod,
+          }),
+        );
+      }
       if (settingsProps.mock.calls.length > 0) {
         expect(settingsProps).toHaveBeenLastCalledWith(expect.objectContaining({ onSaved: notification.apply }));
       }
@@ -285,6 +395,77 @@ describe("HomeView", () => {
           }),
         );
       }
+    });
+  }
+});
+
+describe("HomeView managers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Object.assign(subscriptions, { items: [item], status: "ready", loadError: null });
+  });
+
+  const tests: {
+    name: string;
+    open: string;
+    save: string;
+    updater: "updateCategory" | "updatePaymentMethod";
+    update: () => Promise<unknown>;
+    expectedArgs: unknown[];
+    expectedReloads: number;
+  }[] = [
+    {
+      name: "saving a category reloads the subscriptions so they show its new name",
+      open: "管理類型",
+      save: "儲存類型",
+      updater: "updateCategory",
+      update: () => Promise.resolve({ id: 1 }),
+      expectedArgs: [1, { name: "新名稱" }],
+      expectedReloads: 1,
+    },
+    {
+      name: "a failed category save does not reload the subscriptions",
+      open: "管理類型",
+      save: "儲存類型",
+      updater: "updateCategory",
+      update: () => Promise.reject(new Error("類型「其他」已存在")),
+      expectedArgs: [1, { name: "新名稱" }],
+      expectedReloads: 0,
+    },
+    {
+      name: "saving a payment method reloads the subscriptions so they show its new name",
+      open: "管理扣款方式",
+      save: "儲存扣款方式",
+      updater: "updatePaymentMethod",
+      update: () => Promise.resolve({ id: 3 }),
+      expectedArgs: [3, { name: "新卡片" }],
+      expectedReloads: 1,
+    },
+    {
+      name: "a failed payment method save does not reload the subscriptions",
+      open: "管理扣款方式",
+      save: "儲存扣款方式",
+      updater: "updatePaymentMethod",
+      update: () => Promise.reject(new Error("扣款方式「國泰 CUBE」已存在")),
+      expectedArgs: [3, { name: "新卡片" }],
+      expectedReloads: 0,
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, async () => {
+      lookups[tt.updater].mockImplementation(tt.update);
+      render(<HomeView />);
+
+      fireEvent.click(screen.getByRole("button", { name: "所有扣款" }));
+      fireEvent.click(screen.getByRole("button", { name: tt.open }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: tt.save }));
+        await flushPromises();
+      });
+
+      expect(lookups[tt.updater]).toHaveBeenCalledWith(...tt.expectedArgs);
+      expect(subscriptions.reload).toHaveBeenCalledTimes(tt.expectedReloads);
     });
   }
 });
