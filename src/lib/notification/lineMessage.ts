@@ -21,13 +21,3 @@ export interface FlexMessage {
 
 /** A message the LINE push API accepts. */
 export type LineMessage = TextMessage | FlexMessage;
-
-/**
- * Wraps text as a message.
- *
- * @param text - The text, or null when there is nothing to send.
- * @returns The message, or null when `text` is null.
- */
-export function toTextMessage(text: string | null): TextMessage | null {
-  return text === null ? null : { type: "text", text };
-}

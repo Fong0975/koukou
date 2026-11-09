@@ -4,8 +4,8 @@ import { dateKeyToYearMonth, toDateKey } from "@/lib/dateKey";
 import { formatTimestamp } from "@/lib/format";
 import { createLogger } from "@/lib/logger";
 import { buildMonthlySummary, collectDailyReminders, isFirstOfMonth } from "@/lib/notification/dueReminders";
-import { toTextMessage } from "@/lib/notification/lineMessage";
-import { buildReminderMessage, buildTestMessage } from "@/lib/notification/messageText";
+import { buildTestMessage } from "@/lib/notification/messageText";
+import { buildReminderCard } from "@/lib/notification/reminderCard";
 import { isSendTimeReached } from "@/lib/notification/sendTime";
 import { buildSummaryMessage } from "@/lib/notification/summaryMessage";
 import { pushMessage } from "./lineClient";
@@ -68,7 +68,7 @@ export async function runDailyReminder(now: Date = new Date()): Promise<Reminder
     results.push(await deliverMessage(today, "SUMMARY", summary, summaryPrevious));
   }
   if (isPending(dailyPrevious)) {
-    const reminders = toTextMessage(buildReminderMessage(collectDailyReminders(items, today)));
+    const reminders = buildReminderCard(collectDailyReminders(items, today));
     results.push(await deliverMessage(today, "DAILY", reminders, dailyPrevious));
   }
   return summarize(results);

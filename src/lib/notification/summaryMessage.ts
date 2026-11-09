@@ -1,20 +1,22 @@
 import { currencyEntries, type CurrencyTotals } from "../billingSummary";
 import { formatCents } from "../format";
-import type { MonthlySummary, NamedTotal } from "./dueReminders";
-import type { FlexMessage, FlexNode } from "./lineMessage";
-import { formatMessageDate } from "./messageDate";
-import { capList, moreText } from "./messageLayout";
 import {
   amountPill,
+  cardHeader,
   CARD_COLORS,
-  expiryList,
   expiryRow,
+  LEAF_HEADER,
   moreRow,
   namesBlock,
   pill,
   pillRow,
+  rowList,
   sectionCard,
-} from "./summaryCards";
+} from "./cardParts";
+import type { MonthlySummary, NamedTotal } from "./dueReminders";
+import type { FlexMessage, FlexNode } from "./lineMessage";
+import { formatMessageDate } from "./messageDate";
+import { capList, moreText } from "./messageLayout";
 
 /** Most rows or names a list shows before it ends with "…另 N 項", keeping the card well below LINE's size limit. */
 const MAX_LISTED = 30;
@@ -27,47 +29,6 @@ function totalsText(totals: CurrencyTotals): string {
   const entries = currencyEntries(totals);
   if (entries.length === 0) return formatCents("TWD", 0);
   return entries.map(([currency, cents]) => formatCents(currency, cents)).join(" + ");
-}
-
-/** The card's header: the month with a calendar icon. */
-function header(month: number): FlexNode {
-  return {
-    type: "box",
-    layout: "horizontal",
-    alignItems: "center",
-    spacing: "md",
-    paddingAll: "16px",
-    background: {
-      type: "linearGradient",
-      angle: "135deg",
-      startColor: CARD_COLORS.leaf,
-      endColor: CARD_COLORS.leafDark,
-    },
-    contents: [
-      {
-        type: "box",
-        layout: "vertical",
-        width: "48px",
-        height: "48px",
-        cornerRadius: "24px",
-        backgroundColor: "#FFFFFF33",
-        justifyContent: "center",
-        alignItems: "center",
-        flex: 0,
-        contents: [{ type: "text", text: "📅", size: "xl", align: "center" }],
-      },
-      {
-        type: "box",
-        layout: "vertical",
-        spacing: "xs",
-        flex: 1,
-        contents: [
-          { type: "text", text: `${month} 月摘要`, weight: "bold", size: "xxl", color: "#FFFFFF" },
-          { type: "text", text: SUBTITLE, size: "xs", color: CARD_COLORS.card },
-        ],
-      },
-    ],
-  };
 }
 
 /**
@@ -93,7 +54,7 @@ function expirySection(expiries: MonthlySummary["expiries"]): FlexNode {
     expiryRow(formatMessageDate(date), subscription.name, index),
   );
   return sectionCard("⏰", "本月到期", pill(`${expiries.length} 項`, CARD_COLORS.berryBackground, CARD_COLORS.berry), [
-    expiryList(rows),
+    rowList(rows),
     ...(hidden ? [moreRow(moreText(hidden))] : []),
   ]);
 }
@@ -139,8 +100,8 @@ export function buildSummaryMessage(summary: MonthlySummary, imageToken: string)
     contents: {
       type: "bubble",
       size: "mega",
-      styles: { body: { backgroundColor: CARD_COLORS.page } },
-      header: header(month.month),
+      styles: { body: { backgroundColor: CARD_COLORS.leaf.page } },
+      header: cardHeader("📅", `${month.month} 月摘要`, SUBTITLE, LEAF_HEADER),
       hero: hero(imageToken),
       body: { type: "box", layout: "vertical", spacing: "md", paddingAll: "12px", contents: sections },
     },

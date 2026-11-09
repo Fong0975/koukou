@@ -45,7 +45,7 @@ const dueFirst = makeSubscription({ schedules: monthlyOn(1), reminders: chargeTo
 const quiet = makeSubscription({ id: 2, name: "Quiet" });
 
 const SUMMARY_TEXT = "📅 11 月摘要";
-const REMINDER_TEXT = "💳 扣款提醒";
+const REMINDER_TEXT = "扣款提醒";
 const REJECTION = "LINE 拒絕傳送訊息（HTTP 400）";
 /** Everything a sent message shows, whether it is text or a card. */
 const textOf = (message: unknown) => JSON.stringify(message);
@@ -98,7 +98,7 @@ describe("runDailyReminder", () => {
       name: "sends today's reminders",
       expected: "sent",
       saved: [["DAILY", { status: "SENT", attempts: 1 }]],
-      pushed: [{ has: "・Netflix NT$ 390", lacks: "月摘要" }],
+      pushed: [{ has: "NT$ 390", lacks: "月摘要" }],
     },
     {
       name: "catches up later the same day",

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import type { FlexNode } from "./lineMessage";
-import { expiryRow, pill, pillRow, sectionCard } from "./summaryCards";
+import { cardHeader, COIN_HEADER, expiryRow, pill, pillRow, rowBackground, sectionCard } from "./cardParts";
 
 describe("pill", () => {
   const tests = [
@@ -61,6 +61,39 @@ describe("expiryRow", () => {
       const row = expiryRow("11/8 (日)", "中華電信", tt.index);
       expect(row.backgroundColor).toBe(tt.background);
       expect((row.contents as FlexNode[]).map((node) => node.text)).toEqual(["11/8 (日)", "｜", "中華電信"]);
+    });
+  }
+});
+
+describe("rowBackground", () => {
+  const rows = ["#111111", "#222222"] as const;
+  const tests = [
+    { name: "uses the first shade on even rows", index: 0, expected: "#111111" },
+    { name: "uses the second shade on odd rows", index: 3, expected: "#222222" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(rowBackground(rows, tt.index)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("cardHeader", () => {
+  const tests = [{ name: "shows the icon, title and subtitle in the style's colors" }];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const header = cardHeader("🔔", "今日提醒", "扣款 1 筆", COIN_HEADER);
+      const [icon, titles] = header.contents as FlexNode[];
+
+      expect(header.background).toMatchObject({ startColor: COIN_HEADER.startColor, endColor: COIN_HEADER.endColor });
+      expect(icon.backgroundColor).toBe(COIN_HEADER.iconBackground);
+      expect(icon.contents).toMatchObject([{ text: "🔔" }]);
+      expect(titles.contents).toMatchObject([
+        { text: "今日提醒", color: COIN_HEADER.titleColor },
+        { text: "扣款 1 筆", color: COIN_HEADER.subtitleColor },
+      ]);
     });
   }
 });

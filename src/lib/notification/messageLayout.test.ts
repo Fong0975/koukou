@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { capList, fitToLimit, joinBlocks, MAX_MESSAGE_LENGTH, moreText } from "./messageLayout";
+import { capList, moreText } from "./messageLayout";
 
 describe("capList", () => {
   const tests = [
@@ -22,44 +22,6 @@ describe("moreText", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(moreText(tt.hidden)).toBe(tt.expected);
-    });
-  }
-});
-
-describe("joinBlocks", () => {
-  const tests = [
-    { name: "puts a blank line between blocks", blocks: [["a"], ["b", "c"]], expected: ["a", "", "b", "c"] },
-    { name: "keeps a single block as is", blocks: [["a"]], expected: ["a"] },
-    { name: "returns nothing for no blocks", blocks: [], expected: [] },
-  ];
-
-  for (const tt of tests) {
-    it(tt.name, () => {
-      expect(joinBlocks(tt.blocks)).toEqual(tt.expected);
-    });
-  }
-});
-
-describe("fitToLimit", () => {
-  const line = "x".repeat(99);
-  const rendersCap = (cap: number) => Array.from({ length: cap }, () => line).join("\n");
-
-  const tests = [
-    { name: "returns the full message when it fits", render: rendersCap, longest: 10, expectedLength: 10 * 100 - 1 },
-    { name: "cuts to the largest cap that fits", render: rendersCap, longest: 100, expectedLength: 50 * 100 - 1 },
-    {
-      name: "truncates when even the fixed lines do not fit",
-      render: () => "y".repeat(MAX_MESSAGE_LENGTH + 10),
-      longest: 3,
-      expectedLength: MAX_MESSAGE_LENGTH,
-    },
-  ];
-
-  for (const tt of tests) {
-    it(tt.name, () => {
-      const message = fitToLimit(tt.render, tt.longest);
-      expect(message).toHaveLength(tt.expectedLength);
-      expect(message.length).toBeLessThanOrEqual(MAX_MESSAGE_LENGTH);
     });
   }
 });

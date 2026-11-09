@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { makeSubscription } from "@/test/fixtures";
+import { sectionsOf, textsOf, titleRowOf } from "@/test/flex";
 import type { MonthlySummary } from "./dueReminders";
-import type { FlexNode } from "./lineMessage";
 import { buildSummaryMessage } from "./summaryMessage";
 
 const telecom = makeSubscription({ id: 2, name: "中華電信", amount: "599.00" });
@@ -20,22 +20,6 @@ const quiet: MonthlySummary = {
   reserve: { totals: {}, names: [] },
   charge: { totals: {}, names: [] },
 };
-
-/** Every text in a component, in reading order. */
-function textsOf(node: unknown): string[] {
-  if (Array.isArray(node)) return node.flatMap(textsOf);
-  if (typeof node !== "object" || node === null) return [];
-  const { type, text, contents } = node as FlexNode;
-  return [...(type === "text" ? [String(text)] : []), ...textsOf(contents)];
-}
-
-/** The section cards in the card's body. */
-function sectionsOf(contents: FlexNode): FlexNode[] {
-  return (contents.body as { contents: FlexNode[] }).contents;
-}
-
-/** The title row of a section card: icon, title and, when the amount sits there, a pill. */
-const titleRowOf = (section: FlexNode) => (section.contents as FlexNode[])[0].contents as FlexNode[];
 
 describe("buildSummaryMessage", () => {
   const tests: {
