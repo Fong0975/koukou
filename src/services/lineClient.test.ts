@@ -1,11 +1,12 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UpstreamError } from "@/lib/errors";
+import type { LineMessage } from "@/lib/notification/lineMessage";
 
 vi.mock("@/lib/logger", () => import("@/test/logger"));
 
 import { loggerMock } from "@/test/logger";
-import { isLineConfigured, pushText } from "./lineClient";
+import { isLineConfigured, pushMessage } from "./lineClient";
 
 const TOKEN = "secret-channel-token";
 const USER_ID = "U0123456789abcdef";
@@ -29,9 +30,17 @@ const json =
   () =>
     Promise.resolve(Response.json(body, { status }));
 
-describe("pushText", () => {
+const textMessage: LineMessage = { type: "text", text: "提醒內容" };
+const flexMessage: LineMessage = {
+  type: "flex",
+  altText: "📅 11 月摘要",
+  contents: { type: "bubble", body: { type: "box", layout: "vertical", contents: [] } },
+};
+
+describe("pushMessage", () => {
   const tests: {
     name: string;
+    message?: LineMessage;
     token?: string;
     userId?: string;
     respond?: () => Promise<Response>;
@@ -39,6 +48,7 @@ describe("pushText", () => {
     error?: string;
   }[] = [
     { name: "pushes the text to the configured user", respond: json({}) },
+    { name: "pushes a Flex message to the configured user", message: flexMessage, respond: json({}) },
     {
       name: "missing token",
       token: "",
@@ -72,7 +82,8 @@ describe("pushText", () => {
       vi.stubEnv("LINE_USER_ID", tt.userId ?? USER_ID);
       if (tt.respond) fetchMock.mockImplementation(tt.respond);
 
-      const result = pushText("提醒內容");
+      const message = tt.message ?? textMessage;
+      const result = pushMessage(message);
 
       if (tt.error) await expect(result).rejects.toThrow(new UpstreamError(tt.error));
       else await expect(result).resolves.toBeUndefined();
@@ -85,7 +96,7 @@ describe("pushText", () => {
             "Content-Type": "application/json",
             "X-Line-Retry-Key": expect.stringMatching(/^[0-9a-f-]{36}$/),
           },
-          body: JSON.stringify({ to: USER_ID, messages: [{ type: "text", text: "提醒內容" }] }),
+          body: JSON.stringify({ to: USER_ID, messages: [message] }),
           cache: "no-store",
         });
       } else {

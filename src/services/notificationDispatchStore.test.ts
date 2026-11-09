@@ -17,18 +17,25 @@ describe("findDispatch", () => {
   const tests = [
     {
       name: "returns the day's outcome",
+      kind: "DAILY",
       row: { status: "SENT", attempts: 1 },
       expected: { status: "SENT", attempts: 1 },
     },
-    { name: "returns null for a day not tried yet", row: null, expected: null },
-  ];
+    {
+      name: "looks up the summary on its own",
+      kind: "SUMMARY",
+      row: { status: "FAILED", attempts: 2 },
+      expected: { status: "FAILED", attempts: 2 },
+    },
+    { name: "returns null for a message not tried yet", kind: "DAILY", row: null, expected: null },
+  ] as const;
 
   for (const tt of tests) {
     it(tt.name, async () => {
       prismaMock.notificationDispatch.findUnique.mockResolvedValue(tt.row);
-      await expect(findDispatch("2026-11-08")).resolves.toEqual(tt.expected);
+      await expect(findDispatch("2026-11-08", tt.kind)).resolves.toEqual(tt.expected);
       expect(prismaMock.notificationDispatch.findUnique).toHaveBeenCalledWith({
-        where: { date: day },
+        where: { date_kind: { date: day, kind: tt.kind } },
         select: { status: true, attempts: true },
       });
     });
@@ -36,16 +43,19 @@ describe("findDispatch", () => {
 });
 
 describe("skipDayIfUntried", () => {
-  const tests = [{ name: "creates a skipped day without touching an existing one", date: "2026-11-08" }];
+  const tests = [{ name: "skips both messages without touching existing ones", date: "2026-11-08" }];
 
   for (const tt of tests) {
     it(tt.name, async () => {
       await skipDayIfUntried(tt.date);
-      expect(prismaMock.notificationDispatch.upsert).toHaveBeenCalledWith({
-        where: { date: day },
-        create: { date: day, status: "SKIPPED", attempts: 0 },
-        update: {},
-      });
+      expect(prismaMock.notificationDispatch.upsert).toHaveBeenCalledTimes(2);
+      for (const kind of ["SUMMARY", "DAILY"]) {
+        expect(prismaMock.notificationDispatch.upsert).toHaveBeenCalledWith({
+          where: { date_kind: { date: day, kind } },
+          create: { date: day, kind, status: "SKIPPED", attempts: 0 },
+          update: {},
+        });
+      }
     });
   }
 });
@@ -59,11 +69,11 @@ describe("saveDispatch", () => {
 
   for (const tt of tests) {
     it(tt.name, async () => {
-      await saveDispatch("2026-11-08", { status: "FAILED", attempts: 2 }, tt.lastError);
+      await saveDispatch("2026-11-08", "SUMMARY", { status: "FAILED", attempts: 2 }, tt.lastError);
       const data = { status: "FAILED", attempts: 2, lastError: tt.expectedError };
       expect(prismaMock.notificationDispatch.upsert).toHaveBeenCalledWith({
-        where: { date: day },
-        create: { date: day, ...data },
+        where: { date_kind: { date: day, kind: "SUMMARY" } },
+        create: { date: day, kind: "SUMMARY", ...data },
         update: data,
       });
     });

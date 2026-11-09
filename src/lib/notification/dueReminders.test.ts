@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
-import { buildMonthlySummary, collectDailyReminders, hasNoReminders } from "./dueReminders";
+import { buildMonthlySummary, collectDailyReminders, hasNoReminders, isFirstOfMonth } from "./dueReminders";
 
 const monthlyOn = (dayOfMonth: number) => [
   { id: 10, cycle: "MONTHLY" as const, dayOfWeek: null, dayOfMonth, month: null },
@@ -21,10 +21,8 @@ describe("collectDailyReminders", () => {
     name: string;
     items: SubscriptionDto[];
     today: string;
-    monthlySummary?: boolean;
     charges?: { name: string; date: string; daysBefore: number; amount: string }[];
     expiries?: { name: string; date: string; daysBefore: number }[];
-    hasSummary?: boolean;
   }[] = [
     {
       name: "reminds of a charge days ahead",
@@ -106,30 +104,11 @@ describe("collectDailyReminders", () => {
       items: [makeSubscription({ contractEndDate: "2026-11-15", reminders: reminders([], [7, 1, 0]) })],
       today: "2026-11-10",
     },
-    {
-      name: "adds the monthly summary on the 1st",
-      items: [makeSubscription()],
-      today: "2026-11-01",
-      monthlySummary: true,
-      hasSummary: true,
-    },
-    {
-      name: "leaves the summary out when switched off",
-      items: [makeSubscription()],
-      today: "2026-11-01",
-      monthlySummary: false,
-    },
-    {
-      name: "leaves the summary out on other days",
-      items: [makeSubscription()],
-      today: "2026-11-02",
-      monthlySummary: true,
-    },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      const result = collectDailyReminders(tt.items, tt.today, { monthlySummary: tt.monthlySummary ?? false });
+      const result = collectDailyReminders(tt.items, tt.today);
       expect(result.today).toBe(tt.today);
       expect(
         result.charges.map(({ subscription, date, daysBefore, amount }) => ({
@@ -142,7 +121,6 @@ describe("collectDailyReminders", () => {
       expect(
         result.expiries.map(({ subscription, date, daysBefore }) => ({ name: subscription.name, date, daysBefore })),
       ).toEqual(tt.expiries ?? []);
-      expect(result.monthlySummary !== null).toBe(tt.hasSummary ?? false);
     });
   }
 });
@@ -165,6 +143,12 @@ describe("buildMonthlySummary", () => {
   });
   const telecom = makeSubscription({ id: 4, name: "中華電信", amount: "599.00", contractEndDate: "2026-11-20" });
   const notAmortized = { ...domain, amortize: false };
+  const emptyMonth = {
+    month: { year: 2026, month: 11 },
+    expiries: [],
+    reserve: { totals: {}, names: [] },
+    charge: { totals: {}, names: [] },
+  };
 
   const tests = [
     {
@@ -198,11 +182,11 @@ describe("buildMonthlySummary", () => {
       },
     },
     {
-      name: "returns null for a month without charges, reserves or contract ends",
+      name: "returns empty lists for a month without charges, reserves or contract ends",
       items: [notAmortized],
-      expected: null,
+      expected: emptyMonth,
     },
-    { name: "returns null without subscriptions", items: [], expected: null },
+    { name: "returns empty lists without subscriptions", items: [], expected: emptyMonth },
   ];
 
   for (const tt of tests) {
@@ -215,13 +199,33 @@ describe("buildMonthlySummary", () => {
 describe("hasNoReminders", () => {
   const charge = { date: "2026-11-10", daysBefore: 0, subscription: makeSubscription(), amount: "390.00" };
   const tests = [
-    { name: "empty day", reminders: { charges: [], expiries: [], monthlySummary: null }, expected: true },
-    { name: "a charge", reminders: { charges: [charge], expiries: [], monthlySummary: null }, expected: false },
+    { name: "empty day", reminders: { charges: [], expiries: [] }, expected: true },
+    { name: "a charge", reminders: { charges: [charge], expiries: [] }, expected: false },
+    {
+      name: "an expiry",
+      reminders: { charges: [], expiries: [{ date: "2026-11-10", daysBefore: 0, subscription: charge.subscription }] },
+      expected: false,
+    },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
       expect(hasNoReminders({ today: "2026-11-10", ...tt.reminders })).toBe(tt.expected);
+    });
+  }
+});
+
+describe("isFirstOfMonth", () => {
+  const tests = [
+    { name: "the 1st", date: "2026-11-01", expected: true },
+    { name: "the 2nd", date: "2026-11-02", expected: false },
+    { name: "the 11th", date: "2026-11-11", expected: false },
+    { name: "the 31st", date: "2026-12-31", expected: false },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(isFirstOfMonth(tt.date)).toBe(tt.expected);
     });
   }
 });
