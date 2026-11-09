@@ -93,13 +93,12 @@ function subscriptionExpiryReminders(subscription: SubscriptionDto, today: strin
  *
  * @param items - Every subscription.
  * @param month - The month.
- * @returns The summary, or null when the month has nothing to report.
+ * @returns The summary; its lists are empty for a month with nothing to report.
  */
-export function buildMonthlySummary(items: SubscriptionDto[], month: YearMonth): MonthlySummary | null {
+export function buildMonthlySummary(items: SubscriptionDto[], month: YearMonth): MonthlySummary {
   const expiries = monthContractExpiries(items, month);
   const reserves = monthReserves(items, month);
   const charges = monthOccurrences(items, month);
-  if (expiries.length === 0 && reserves.length === 0 && charges.length === 0) return null;
   return {
     month,
     expiries,

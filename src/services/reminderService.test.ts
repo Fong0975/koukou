@@ -8,7 +8,7 @@ import type { Dispatch } from "./notificationDispatchStore";
 
 const { mocks } = vi.hoisted(() => ({
   mocks: {
-    pushText: vi.fn(),
+    pushMessage: vi.fn(),
     findDispatch: vi.fn(),
     saveDispatch: vi.fn(),
     readNotificationSetting: vi.fn(),
@@ -17,7 +17,7 @@ const { mocks } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/logger", () => import("@/test/logger"));
-vi.mock("./lineClient", () => ({ pushText: mocks.pushText }));
+vi.mock("./lineClient", () => ({ pushMessage: mocks.pushMessage }));
 vi.mock("./notificationDispatchStore", () => ({
   findDispatch: mocks.findDispatch,
   saveDispatch: mocks.saveDispatch,
@@ -47,8 +47,10 @@ const quiet = makeSubscription({ id: 2, name: "Quiet" });
 const SUMMARY_TEXT = "📅 11 月摘要";
 const REMINDER_TEXT = "💳 扣款提醒";
 const REJECTION = "LINE 拒絕傳送訊息（HTTP 400）";
-const rejectSummary = (text: string) =>
-  text.includes(SUMMARY_TEXT) ? Promise.reject(new UpstreamError(REJECTION)) : Promise.resolve();
+/** Everything a sent message shows, whether it is text or a card. */
+const textOf = (message: unknown) => JSON.stringify(message);
+const rejectSummary = (message: unknown) =>
+  textOf(message).includes(SUMMARY_TEXT) ? Promise.reject(new UpstreamError(REJECTION)) : Promise.resolve();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -64,7 +66,7 @@ describe("runDailyReminder", () => {
     date?: string;
     previous?: { SUMMARY?: Dispatch; DAILY?: Dispatch };
     items?: SubscriptionDto[];
-    push?: (text: string) => Promise<void>;
+    push?: (message: unknown) => Promise<void>;
     expected: ReminderRunResult;
     /** What is recorded for the day, in order. */
     saved?: [kind: string, dispatch: Dispatch, error?: string][];
@@ -193,15 +195,16 @@ describe("runDailyReminder", () => {
       looksUpSummary: true,
     },
     {
-      name: "skips the summary on the 1st when there is nothing to report",
+      name: "still sends the summary on the 1st when there is nothing to report",
       now: firstOfMonth,
       date: "2026-11-01",
       items: [],
-      expected: "skipped",
+      expected: "sent",
       saved: [
-        ["SUMMARY", { status: "SKIPPED", attempts: 0 }],
+        ["SUMMARY", { status: "SENT", attempts: 1 }],
         ["DAILY", { status: "SKIPPED", attempts: 0 }],
       ],
+      pushed: [{ has: "NT$ 0" }],
       looksUpSummary: true,
     },
     {
@@ -222,7 +225,7 @@ describe("runDailyReminder", () => {
         Promise.resolve(tt.previous?.[kind] ?? null),
       );
       mocks.listSubscriptions.mockResolvedValue(tt.items ?? [dueToday]);
-      mocks.pushText.mockImplementation(tt.push ?? (() => Promise.resolve()));
+      mocks.pushMessage.mockImplementation(tt.push ?? (() => Promise.resolve()));
 
       await expect(runDailyReminder(tt.now ?? now)).resolves.toBe(tt.expected);
 
@@ -233,9 +236,9 @@ describe("runDailyReminder", () => {
       );
 
       const pushed = tt.pushed ?? [];
-      expect(mocks.pushText).toHaveBeenCalledTimes(pushed.length);
+      expect(mocks.pushMessage).toHaveBeenCalledTimes(pushed.length);
       pushed.forEach(({ has, lacks }, index) => {
-        const text = mocks.pushText.mock.calls[index][0] as string;
+        const text = textOf(mocks.pushMessage.mock.calls[index][0]);
         expect(text).toContain(has);
         if (lacks) expect(text).not.toContain(lacks);
       });
@@ -259,12 +262,18 @@ describe("sendTestMessage", () => {
 
   for (const tt of tests) {
     it(tt.name, async () => {
-      mocks.pushText.mockImplementation(tt.push);
+      mocks.pushMessage.mockImplementation(tt.push);
       const promise = sendTestMessage(now);
       if (tt.error) await expect(promise).rejects.toThrow(tt.error);
       else await expect(promise).resolves.toBeUndefined();
-      expect(mocks.pushText).toHaveBeenCalledWith(expect.stringContaining("KouKou 測試訊息"));
-      expect(mocks.pushText).toHaveBeenCalledWith(expect.stringContaining("2026/11/08 09:30"));
+      expect(mocks.pushMessage).toHaveBeenCalledWith({
+        type: "text",
+        text: expect.stringContaining("KouKou 測試訊息"),
+      });
+      expect(mocks.pushMessage).toHaveBeenCalledWith({
+        type: "text",
+        text: expect.stringContaining("2026/11/08 09:30"),
+      });
     });
   }
 });

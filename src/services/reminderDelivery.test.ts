@@ -1,13 +1,17 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UpstreamError } from "@/lib/errors";
+import type { LineMessage } from "@/lib/notification/lineMessage";
 import { loggerMock } from "@/test/logger";
 import type { Dispatch } from "./notificationDispatchStore";
 
-const { mocks } = vi.hoisted(() => ({ mocks: { pushText: vi.fn(), saveDispatch: vi.fn() } }));
+const hello: LineMessage = { type: "text", text: "hello" };
+const card: LineMessage = { type: "flex", altText: "card", contents: { type: "bubble" } };
+
+const { mocks } = vi.hoisted(() => ({ mocks: { pushMessage: vi.fn(), saveDispatch: vi.fn() } }));
 
 vi.mock("@/lib/logger", () => import("@/test/logger"));
-vi.mock("./lineClient", () => ({ pushText: mocks.pushText }));
+vi.mock("./lineClient", () => ({ pushMessage: mocks.pushMessage }));
 vi.mock("./notificationDispatchStore", () => ({ saveDispatch: mocks.saveDispatch }));
 
 import { deliverMessage, isPending, MAX_SEND_ATTEMPTS, type DeliveryResult } from "./reminderDelivery";
@@ -41,7 +45,7 @@ describe("deliverMessage", () => {
   const tests: {
     name: string;
     kind: "SUMMARY" | "DAILY";
-    message: string | null;
+    message: LineMessage | null;
     previous: Dispatch | null;
     push?: () => Promise<void>;
     expected: DeliveryResult;
@@ -51,7 +55,16 @@ describe("deliverMessage", () => {
     {
       name: "sends a message and records it",
       kind: "SUMMARY",
-      message: "hello",
+      message: hello,
+      previous: null,
+      expected: "sent",
+      saved: [{ status: "SENT", attempts: 1 }],
+      pushes: 1,
+    },
+    {
+      name: "sends a Flex message as it is",
+      kind: "SUMMARY",
+      message: card,
       previous: null,
       expected: "sent",
       saved: [{ status: "SENT", attempts: 1 }],
@@ -60,7 +73,7 @@ describe("deliverMessage", () => {
     {
       name: "counts a retry",
       kind: "DAILY",
-      message: "hello",
+      message: hello,
       previous: { status: "FAILED", attempts: 2 },
       expected: "sent",
       saved: [{ status: "SENT", attempts: 3 }],
@@ -78,7 +91,7 @@ describe("deliverMessage", () => {
     {
       name: "records a failed send with its reason",
       kind: "SUMMARY",
-      message: "hello",
+      message: hello,
       previous: null,
       push: () => Promise.reject(new UpstreamError("LINE 拒絕傳送訊息（HTTP 400）")),
       expected: "failed",
@@ -89,12 +102,13 @@ describe("deliverMessage", () => {
 
   for (const tt of tests) {
     it(tt.name, async () => {
-      mocks.pushText.mockImplementation(tt.push ?? (() => Promise.resolve()));
+      mocks.pushMessage.mockImplementation(tt.push ?? (() => Promise.resolve()));
 
       await expect(deliverMessage("2026-11-01", tt.kind, tt.message, tt.previous)).resolves.toBe(tt.expected);
 
       expect(mocks.saveDispatch).toHaveBeenCalledWith("2026-11-01", tt.kind, ...tt.saved);
-      expect(mocks.pushText).toHaveBeenCalledTimes(tt.pushes);
+      expect(mocks.pushMessage).toHaveBeenCalledTimes(tt.pushes);
+      if (tt.pushes > 0) expect(mocks.pushMessage).toHaveBeenCalledWith(tt.message);
       expect(loggerMock.error).toHaveBeenCalledTimes(tt.expected === "failed" ? 1 : 0);
     });
   }

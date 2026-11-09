@@ -1,6 +1,7 @@
 import type { DispatchKind } from "@/generated/prisma/enums";
 import { createLogger } from "@/lib/logger";
-import { pushText } from "./lineClient";
+import type { LineMessage } from "@/lib/notification/lineMessage";
+import { pushMessage } from "./lineClient";
 import { saveDispatch, type Dispatch } from "./notificationDispatchStore";
 
 const logger = createLogger("reminderDelivery");
@@ -32,14 +33,14 @@ export function isPending(previous: Dispatch | null): boolean {
  *
  * @param date - The day, "YYYY-MM-DD".
  * @param kind - Which of the day's messages this is.
- * @param message - The text to send, or null when there is nothing to report.
+ * @param message - The message to send, or null when there is nothing to report.
  * @param previous - The message's earlier outcome, or null when it was never tried.
  * @returns What was done.
  */
 export async function deliverMessage(
   date: string,
   kind: DispatchKind,
-  message: string | null,
+  message: LineMessage | null,
   previous: Dispatch | null,
 ): Promise<DeliveryResult> {
   const attempts = (previous?.attempts ?? 0) + 1;
@@ -50,7 +51,7 @@ export async function deliverMessage(
   }
 
   try {
-    await pushText(message);
+    await pushMessage(message);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     await saveDispatch(date, kind, { status: "FAILED", attempts }, reason);

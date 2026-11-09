@@ -1,12 +1,14 @@
+import { randomUUID } from "node:crypto";
 import { toCalendarDate } from "@/lib/calendarMonth";
 import { dateKeyToYearMonth, toDateKey } from "@/lib/dateKey";
 import { formatTimestamp } from "@/lib/format";
 import { createLogger } from "@/lib/logger";
 import { buildMonthlySummary, collectDailyReminders, isFirstOfMonth } from "@/lib/notification/dueReminders";
+import { toTextMessage } from "@/lib/notification/lineMessage";
 import { buildReminderMessage, buildTestMessage } from "@/lib/notification/messageText";
 import { isSendTimeReached } from "@/lib/notification/sendTime";
 import { buildSummaryMessage } from "@/lib/notification/summaryMessage";
-import { pushText } from "./lineClient";
+import { pushMessage } from "./lineClient";
 import { findDispatch } from "./notificationDispatchStore";
 import { readNotificationSetting } from "./notificationSettingService";
 import { deliverMessage, isPending, type DeliveryResult } from "./reminderDelivery";
@@ -62,11 +64,11 @@ export async function runDailyReminder(now: Date = new Date()): Promise<Reminder
   const items = await listSubscriptions();
   const results: DeliveryResult[] = [];
   if (summaryPending) {
-    const summary = buildSummaryMessage(buildMonthlySummary(items, dateKeyToYearMonth(today)));
+    const summary = buildSummaryMessage(buildMonthlySummary(items, dateKeyToYearMonth(today)), randomUUID());
     results.push(await deliverMessage(today, "SUMMARY", summary, summaryPrevious));
   }
   if (isPending(dailyPrevious)) {
-    const reminders = buildReminderMessage(collectDailyReminders(items, today));
+    const reminders = toTextMessage(buildReminderMessage(collectDailyReminders(items, today)));
     results.push(await deliverMessage(today, "DAILY", reminders, dailyPrevious));
   }
   return summarize(results);
@@ -79,6 +81,6 @@ export async function runDailyReminder(now: Date = new Date()): Promise<Reminder
  * @throws UpstreamError when LINE is not configured or rejects the message.
  */
 export async function sendTestMessage(now: Date = new Date()): Promise<void> {
-  await pushText(buildTestMessage(formatTimestamp(now.toISOString())));
+  await pushMessage({ type: "text", text: buildTestMessage(formatTimestamp(now.toISOString())) });
   logger.info("Test message sent");
 }

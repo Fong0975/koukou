@@ -143,6 +143,12 @@ describe("buildMonthlySummary", () => {
   });
   const telecom = makeSubscription({ id: 4, name: "中華電信", amount: "599.00", contractEndDate: "2026-11-20" });
   const notAmortized = { ...domain, amortize: false };
+  const emptyMonth = {
+    month: { year: 2026, month: 11 },
+    expiries: [],
+    reserve: { totals: {}, names: [] },
+    charge: { totals: {}, names: [] },
+  };
 
   const tests = [
     {
@@ -176,11 +182,11 @@ describe("buildMonthlySummary", () => {
       },
     },
     {
-      name: "returns null for a month without charges, reserves or contract ends",
+      name: "returns empty lists for a month without charges, reserves or contract ends",
       items: [notAmortized],
-      expected: null,
+      expected: emptyMonth,
     },
-    { name: "returns null without subscriptions", items: [], expected: null },
+    { name: "returns empty lists without subscriptions", items: [], expected: emptyMonth },
   ];
 
   for (const tt of tests) {

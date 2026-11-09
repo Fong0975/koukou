@@ -1,65 +1,148 @@
 import { currencyEntries, type CurrencyTotals } from "../billingSummary";
 import { formatCents } from "../format";
 import type { MonthlySummary, NamedTotal } from "./dueReminders";
+import type { FlexMessage, FlexNode } from "./lineMessage";
 import { formatMessageDate } from "./messageDate";
-import { capList, fitToLimit, joinBlocks, moreText } from "./messageLayout";
+import { capList, moreText } from "./messageLayout";
+import {
+  amountPill,
+  CARD_COLORS,
+  expiryList,
+  expiryRow,
+  moreRow,
+  namesBlock,
+  pill,
+  pillRow,
+  sectionCard,
+} from "./summaryCards";
+
+/** Most rows or names a list shows before it ends with "…另 N 項", keeping the card well below LINE's size limit. */
+const MAX_LISTED = 30;
+
+/** Describes the card in the header, under the month. */
+const SUBTITLE = "本月扣款、預扣、合約到期一覽";
 
 /** Formats totals per currency, e.g. "NT$ 1,290 + US$ 20.00"; the currencies are never converted into one. */
 function totalsText(totals: CurrencyTotals): string {
-  return currencyEntries(totals)
-    .map(([currency, cents]) => formatCents(currency, cents))
-    .join(" + ");
+  const entries = currencyEntries(totals);
+  if (entries.length === 0) return formatCents("TWD", 0);
+  return entries.map(([currency, cents]) => formatCents(currency, cents)).join(" + ");
+}
+
+/** The card's header: the month with a calendar icon. */
+function header(month: number): FlexNode {
+  return {
+    type: "box",
+    layout: "horizontal",
+    alignItems: "center",
+    spacing: "md",
+    paddingAll: "16px",
+    background: {
+      type: "linearGradient",
+      angle: "135deg",
+      startColor: CARD_COLORS.leaf,
+      endColor: CARD_COLORS.leafDark,
+    },
+    contents: [
+      {
+        type: "box",
+        layout: "vertical",
+        width: "48px",
+        height: "48px",
+        cornerRadius: "24px",
+        backgroundColor: "#FFFFFF33",
+        justifyContent: "center",
+        alignItems: "center",
+        flex: 0,
+        contents: [{ type: "text", text: "📅", size: "xl", align: "center" }],
+      },
+      {
+        type: "box",
+        layout: "vertical",
+        spacing: "xs",
+        flex: 1,
+        contents: [
+          { type: "text", text: `${month} 月摘要`, weight: "bold", size: "xxl", color: "#FFFFFF" },
+          { type: "text", text: SUBTITLE, size: "xs", color: CARD_COLORS.card },
+        ],
+      },
+    ],
+  };
 }
 
 /**
- * Lines of a summary total: its amounts, then the names it is made of.
+ * The picture under the header. The token makes every send a new URL, so the picture changes each
+ * time instead of coming from a cache.
  *
- * @param label - What the total is, e.g. "本月扣款".
- * @param total - The total and its subscription names.
- * @param cap - Most names to show.
+ * @param token - Anything that differs between sends.
  */
-function namedTotalLines(label: string, { totals, names }: NamedTotal, cap: number): string[] {
-  if (names.length === 0) return [`・${label}：無`];
-  const { shown, hidden } = capList(names, cap);
+function hero(token: string): FlexNode {
+  return {
+    type: "image",
+    url: `https://picsum.photos/1024/358.jpg?random=${encodeURIComponent(token)}`,
+    size: "full",
+    aspectRatio: "20:7",
+    aspectMode: "cover",
+  };
+}
+
+/** The contract ends of the month, with their count on the title. */
+function expirySection(expiries: MonthlySummary["expiries"]): FlexNode {
+  const { shown, hidden } = capList(expiries, MAX_LISTED);
+  const rows = shown.map(({ date, subscription }, index) =>
+    expiryRow(formatMessageDate(date), subscription.name, index),
+  );
+  return sectionCard("⏰", "本月到期", pill(`${expiries.length} 項`, CARD_COLORS.berryBackground, CARD_COLORS.berry), [
+    expiryList(rows),
+    ...(hidden ? [moreRow(moreText(hidden))] : []),
+  ]);
+}
+
+/**
+ * A section made of a total and the names it adds up. The amount sits at the title's right end, or on
+ * its own line below when several currencies make it too long for the title row.
+ *
+ * @param icon - An emoji.
+ * @param title - The section title.
+ * @param named - The total and its names.
+ */
+function amountSection(icon: string, title: string, { totals, names }: NamedTotal): FlexNode {
+  const amount = amountPill(totalsText(totals));
+  const stacked = currencyEntries(totals).length > 1;
+  const { shown, hidden } = capList(names, MAX_LISTED);
   const nameText = [...shown, ...(hidden ? [moreText(hidden)] : [])].join("、");
-  return [`・${label}：${totalsText(totals)}`, `  ${nameText}`];
+  return sectionCard(icon, title, stacked ? null : amount, [
+    ...(stacked ? [pillRow(amount)] : []),
+    ...(names.length > 0 ? [namesBlock(nameText)] : []),
+  ]);
 }
 
 /**
- * Renders the summary with every list cut to at most `cap` items.
+ * Builds the monthly summary as a LINE card of its own. Sections without anything to report are left
+ * out, except that the charge section always shows so a quiet month reads "NT$ 0".
  *
  * @param summary - The month's summary.
- * @param cap - Most items any of its lists shows.
+ * @param imageToken - Anything that differs between sends, which picks the header picture.
  */
-function renderSummary(summary: MonthlySummary, cap: number): string {
-  const { shown, hidden } = capList(summary.expiries, cap);
-  const expiryLines =
-    summary.expiries.length === 0
-      ? ["・本月到期：無"]
-      : [
-          `・本月到期 (${summary.expiries.length} 項)`,
-          ...shown.map(({ date, subscription }) => `  ${formatMessageDate(date)} ${subscription.name}`),
-          ...(hidden ? [`  ${moreText(hidden)}`] : []),
-        ];
-  return [
-    `📅 ${summary.month.month} 月摘要`,
-    ...joinBlocks([
-      expiryLines,
-      namedTotalLines("本月預扣", summary.reserve, cap),
-      namedTotalLines("本月扣款", summary.charge, cap),
-    ]),
-  ].join("\n");
-}
+export function buildSummaryMessage(summary: MonthlySummary, imageToken: string): FlexMessage {
+  const { month, expiries, reserve, charge } = summary;
+  const nothingElse = expiries.length === 0 && reserve.names.length === 0;
+  const sections = [
+    expiries.length > 0 && expirySection(expiries),
+    reserve.names.length > 0 && amountSection("🗓️", "本月預扣", reserve),
+    (charge.names.length > 0 || nothingElse) && amountSection("💳", "本月扣款", charge),
+  ].filter((section): section is FlexNode => typeof section === "object");
 
-/**
- * Builds the monthly summary as a LINE text message of its own. When it would exceed the length LINE
- * allows, every list is cut to the most items that still fit and ends with "…另 N 項".
- *
- * @param summary - The month's summary.
- * @returns The message, or null when there is no summary to send.
- */
-export function buildSummaryMessage(summary: MonthlySummary | null): string | null {
-  if (summary === null) return null;
-  const longestList = Math.max(summary.expiries.length, summary.reserve.names.length, summary.charge.names.length);
-  return fitToLimit((cap) => renderSummary(summary, cap), longestList);
+  return {
+    type: "flex",
+    altText: `📅 ${month.month} 月摘要`,
+    contents: {
+      type: "bubble",
+      size: "mega",
+      styles: { body: { backgroundColor: CARD_COLORS.page } },
+      header: header(month.month),
+      hero: hero(imageToken),
+      body: { type: "box", layout: "vertical", spacing: "md", paddingAll: "12px", contents: sections },
+    },
+  };
 }

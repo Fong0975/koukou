@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { UpstreamError } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
+import type { LineMessage } from "@/lib/notification/lineMessage";
 import { readSecret } from "@/lib/secret";
 
 const logger = createLogger("services/lineClient");
@@ -58,13 +59,13 @@ async function errorReason(response: Response): Promise<string> {
 }
 
 /**
- * Pushes a text message to the configured LINE user. The token is only ever placed in the
+ * Pushes a message to the configured LINE user. The token is only ever placed in the
  * Authorization header and never logged.
  *
- * @param text - The message, at most 5000 characters.
+ * @param message - The text or Flex message to send.
  * @throws UpstreamError when LINE is not configured, cannot be reached or rejects the message.
  */
-export async function pushText(text: string): Promise<void> {
+export async function pushMessage(message: LineMessage): Promise<void> {
   const credentials = readCredentials();
   if (!credentials) {
     throw new UpstreamError("尚未設定 LINE：請設定 LINE_CHANNEL_ACCESS_TOKEN 與 LINE_USER_ID");
@@ -80,7 +81,7 @@ export async function pushText(text: string): Promise<void> {
         // Lets LINE drop a duplicate if this exact request is ever retried.
         "X-Line-Retry-Key": randomUUID(),
       },
-      body: JSON.stringify({ to: credentials.userId, messages: [{ type: "text", text }] }),
+      body: JSON.stringify({ to: credentials.userId, messages: [message] }),
       cache: "no-store",
     });
   } catch (error) {
@@ -93,5 +94,5 @@ export async function pushText(text: string): Promise<void> {
     logger.warn("LINE rejected the push", { status: response.status, reason });
     throw new UpstreamError(`LINE 拒絕傳送訊息（HTTP ${response.status}${reason ? `：${reason}` : ""}）`);
   }
-  logger.info("LINE message pushed", { length: text.length });
+  logger.info("LINE message pushed", { type: message.type });
 }

@@ -1,16 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { makePaymentMethod, makeSubscription } from "@/test/fixtures";
+import { makeSubscription } from "@/test/fixtures";
 import type { MonthlySummary } from "./dueReminders";
-import { MAX_MESSAGE_LENGTH } from "./messageLayout";
+import type { FlexNode } from "./lineMessage";
 import { buildSummaryMessage } from "./summaryMessage";
 
-const telecom = makeSubscription({
-  id: 2,
-  name: "中華電信",
-  amount: "599.00",
-  paymentMethod: makePaymentMethod({ type: "BANK_ACCOUNT", name: "台新帳戶" }),
-});
+const telecom = makeSubscription({ id: 2, name: "中華電信", amount: "599.00" });
 
 const summary: MonthlySummary = {
   month: { year: 2026, month: 11 },
@@ -19,78 +14,152 @@ const summary: MonthlySummary = {
   charge: { totals: { TWD: 98900, USD: 2000 }, names: ["Netflix", "中華電信", "ChatGPT"] },
 };
 
+const quiet: MonthlySummary = {
+  ...summary,
+  expiries: [],
+  reserve: { totals: {}, names: [] },
+  charge: { totals: {}, names: [] },
+};
+
+/** Every text in a component, in reading order. */
+function textsOf(node: unknown): string[] {
+  if (Array.isArray(node)) return node.flatMap(textsOf);
+  if (typeof node !== "object" || node === null) return [];
+  const { type, text, contents } = node as FlexNode;
+  return [...(type === "text" ? [String(text)] : []), ...textsOf(contents)];
+}
+
+/** The section cards in the card's body. */
+function sectionsOf(contents: FlexNode): FlexNode[] {
+  return (contents.body as { contents: FlexNode[] }).contents;
+}
+
+/** The title row of a section card: icon, title and, when the amount sits there, a pill. */
+const titleRowOf = (section: FlexNode) => (section.contents as FlexNode[])[0].contents as FlexNode[];
+
 describe("buildSummaryMessage", () => {
-  const tests: { name: string; summary: MonthlySummary | null; expected: string | null }[] = [
-    { name: "returns null when there is no summary", summary: null, expected: null },
+  const tests: {
+    name: string;
+    summary: MonthlySummary;
+    /** Titles of the sections shown, in order. */
+    titles: string[];
+    /** Texts that must show. */
+    shows?: string[];
+  }[] = [
     {
-      name: "lists expiries, reserves and charges",
+      name: "lists expiries, reserves and charges, expiries first",
       summary,
-      expected: [
-        "📅 11 月摘要",
-        "・本月到期 (1 項)",
-        "  11/20 (五) 中華電信",
-        "",
-        "・本月預扣：NT$ 100",
-        "  網域",
-        "",
-        "・本月扣款：NT$ 989 + US$ 20.00",
-        "  Netflix、中華電信、ChatGPT",
-      ].join("\n"),
+      titles: ["本月到期", "本月預扣", "本月扣款"],
+      shows: ["1 項", "11/20 (五)", "中華電信", "NT$ 100", "網域", "NT$ 989 + US$ 20.00", "Netflix、中華電信、ChatGPT"],
     },
     {
-      name: "says a summary list is empty",
+      name: "leaves out sections with nothing to report",
       summary: { ...summary, expiries: [], reserve: { totals: {}, names: [] } },
-      expected: [
-        "📅 11 月摘要",
-        "・本月到期：無",
-        "",
-        "・本月預扣：無",
-        "",
-        "・本月扣款：NT$ 989 + US$ 20.00",
-        "  Netflix、中華電信、ChatGPT",
-      ].join("\n"),
+      titles: ["本月扣款"],
+    },
+    {
+      name: "leaves the charges out when only others have something",
+      summary: { ...quiet, expiries: summary.expiries },
+      titles: ["本月到期"],
+    },
+    {
+      name: "shows zero charges for a month with nothing at all",
+      summary: quiet,
+      titles: ["本月扣款"],
+      shows: ["NT$ 0"],
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(buildSummaryMessage(tt.summary)).toBe(tt.expected);
+      const message = buildSummaryMessage(tt.summary, "token");
+      const texts = textsOf(sectionsOf(message.contents));
+
+      const shownTitles = ["本月到期", "本月預扣", "本月扣款"].filter((title) => texts.includes(title));
+      expect(shownTitles).toEqual(tt.titles);
+      expect(sectionsOf(message.contents)).toHaveLength(tt.titles.length);
+      for (const text of tt.shows ?? []) expect(texts).toContain(text);
+    });
+  }
+});
+
+describe("buildSummaryMessage frame", () => {
+  const tests: { name: string; check: (message: ReturnType<typeof buildSummaryMessage>) => void }[] = [
+    {
+      name: "is a Flex message whose alt text names the month",
+      check: (message) => {
+        expect(message.type).toBe("flex");
+        expect(message.altText).toBe("📅 11 月摘要");
+      },
+    },
+    {
+      name: "titles the header with the month",
+      check: (message) => expect(textsOf(message.contents.header)).toContain("11 月摘要"),
+    },
+    {
+      name: "picks the picture by the token",
+      check: (message) =>
+        expect(message.contents.hero).toMatchObject({ url: "https://picsum.photos/1024/358.jpg?random=token" }),
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      tt.check(buildSummaryMessage(summary, "token"));
+    });
+  }
+});
+
+describe("buildSummaryMessage amount placement", () => {
+  const tests: { name: string; totals: MonthlySummary["charge"]["totals"]; onTitleRow: boolean }[] = [
+    { name: "puts a single currency beside the title", totals: { TWD: 39000 }, onTitleRow: true },
+    { name: "puts a zero total beside the title", totals: {}, onTitleRow: true },
+    { name: "puts several currencies below the title", totals: { TWD: 39000, USD: 2000 }, onTitleRow: false },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const { contents } = buildSummaryMessage(
+        { ...quiet, charge: { totals: tt.totals, names: ["Netflix"] } },
+        "token",
+      );
+      const [section] = sectionsOf(contents);
+      expect(titleRowOf(section)).toHaveLength(tt.onTitleRow ? 3 : 2);
     });
   }
 });
 
 describe("buildSummaryMessage length limit", () => {
-  const MARK = "很長的訂閱項目名稱";
-  const names = (count: number) => Array.from({ length: count }, (_, index) => `${MARK}${index}`.padEnd(60, "＊"));
-  const countShown = (message: string) => message.split(MARK).length - 1;
+  const names = (count: number) =>
+    Array.from({ length: count }, (_, index) => `很長的訂閱項目名稱${index}`.padEnd(60, "＊"));
+  const expiries = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      day: 20,
+      date: "2026-11-20",
+      subscription: makeSubscription({ id: index + 1, name: `合約${index}` }),
+    }));
 
-  const tests: { name: string; summary: MonthlySummary; cutLists: number; total: number }[] = [
+  const tests: { name: string; summary: MonthlySummary; hidden: string[] }[] = [
     {
       name: "cuts long name lists",
       summary: {
-        ...summary,
-        reserve: { totals: { TWD: 100 }, names: names(150) },
-        charge: { totals: { TWD: 100 }, names: names(150) },
+        ...quiet,
+        reserve: { totals: { TWD: 100 }, names: names(100) },
+        charge: { totals: { TWD: 100 }, names: names(45) },
       },
-      cutLists: 2,
-      total: 300,
+      hidden: ["…另 70 項", "…另 15 項"],
     },
-    {
-      name: "keeps a message that fits whole",
-      summary: { ...summary, reserve: { totals: { TWD: 100 }, names: names(5) }, charge: { totals: {}, names: [] } },
-      cutLists: 0,
-      total: 5,
-    },
+    { name: "cuts a long expiry list", summary: { ...quiet, expiries: expiries(100) }, hidden: ["…另 70 項"] },
+    { name: "keeps short lists whole", summary, hidden: [] },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      const message = buildSummaryMessage(tt.summary)!;
-      const hidden = [...message.matchAll(/…另 (\d+) 項/g)].map((match) => Number(match[1]));
+      const message = buildSummaryMessage(tt.summary, "token");
+      const shown = textsOf(sectionsOf(message.contents)).flatMap((text) => text.match(/…另 \d+ 項/g) ?? []);
 
-      expect(message.length).toBeLessThanOrEqual(MAX_MESSAGE_LENGTH);
-      expect(hidden).toHaveLength(tt.cutLists);
-      expect(countShown(message) + hidden.reduce((sum, count) => sum + count, 0)).toBe(tt.total);
+      expect(shown).toEqual(tt.hidden);
+      expect(JSON.stringify(message).length).toBeLessThan(50_000);
     });
   }
 });
