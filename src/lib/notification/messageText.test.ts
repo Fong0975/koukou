@@ -1,8 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { makePaymentMethod, makeSubscription } from "@/test/fixtures";
-import type { DailyReminders, MonthlySummary } from "./dueReminders";
-import { buildReminderMessage, buildTestMessage, MAX_MESSAGE_LENGTH } from "./messageText";
+import type { DailyReminders } from "./dueReminders";
+import { MAX_MESSAGE_LENGTH } from "./messageLayout";
+import { buildReminderMessage, buildTestMessage } from "./messageText";
 
 const netflix = makeSubscription({ id: 1, name: "Netflix" });
 const telecom = makeSubscription({
@@ -12,38 +13,20 @@ const telecom = makeSubscription({
   paymentMethod: makePaymentMethod({ type: "BANK_ACCOUNT", name: "台新帳戶" }),
 });
 
-const summary: MonthlySummary = {
-  month: { year: 2026, month: 11 },
-  expiries: [{ day: 20, date: "2026-11-20", subscription: telecom }],
-  reserve: { totals: { TWD: 10000 }, names: ["網域"] },
-  charge: { totals: { TWD: 98900, USD: 2000 }, names: ["Netflix", "中華電信", "ChatGPT"] },
-};
-
-const empty: DailyReminders = { today: "2026-11-01", monthlySummary: null, charges: [], expiries: [] };
+const empty: DailyReminders = { today: "2026-11-01", charges: [], expiries: [] };
 
 describe("buildReminderMessage", () => {
   const tests: { name: string; reminders: DailyReminders; expected: string | null }[] = [
     { name: "returns null when there is nothing to send", reminders: empty, expected: null },
     {
-      name: "combines every section into one message",
+      name: "combines charges and expiries into one message",
       reminders: {
         ...empty,
-        monthlySummary: summary,
         charges: [{ date: "2026-11-01", daysBefore: 0, subscription: netflix, amount: "390.00" }],
         expiries: [{ date: "2026-11-08", daysBefore: 7, subscription: telecom }],
       },
       expected: [
-        "🔔 11 月摘要・扣款 1 筆・到期 1 項｜11/1 (日)",
-        "",
-        "📅 11 月摘要",
-        "・本月到期 (1 項)",
-        "  11/20 (五) 中華電信",
-        "",
-        "・本月預扣：NT$ 100",
-        "  網域",
-        "",
-        "・本月扣款：NT$ 989 + US$ 20.00",
-        "  Netflix、中華電信、ChatGPT",
+        "🔔 扣款 1 筆・到期 1 項｜11/1 (日)",
         "",
         "💳 扣款提醒",
         "  ▸ 今天 11/1 (日)",
@@ -52,24 +35,6 @@ describe("buildReminderMessage", () => {
         "",
         "⏰ 合約到期",
         "・中華電信：7 天後 (11/8) 到期",
-      ].join("\n"),
-    },
-    {
-      name: "says a summary list is empty",
-      reminders: {
-        ...empty,
-        monthlySummary: { ...summary, expiries: [], reserve: { totals: {}, names: [] } },
-      },
-      expected: [
-        "🔔 11 月摘要｜11/1 (日)",
-        "",
-        "📅 11 月摘要",
-        "・本月到期：無",
-        "",
-        "・本月預扣：無",
-        "",
-        "・本月扣款：NT$ 989 + US$ 20.00",
-        "  Netflix、中華電信、ChatGPT",
       ].join("\n"),
     },
     {
@@ -158,19 +123,6 @@ describe("buildReminderMessage length limit", () => {
     total: number;
   }[] = [
     { name: "cuts a long charge list", reminders: { ...empty, charges: charges(200) }, cutLists: 1, total: 200 },
-    {
-      name: "cuts long summary name lists",
-      reminders: {
-        ...empty,
-        monthlySummary: {
-          ...summary,
-          reserve: { totals: { TWD: 100 }, names: names(150) },
-          charge: { totals: { TWD: 100 }, names: names(150) },
-        },
-      },
-      cutLists: 2,
-      total: 300,
-    },
     { name: "keeps a message that fits whole", reminders: { ...empty, charges: charges(10) }, cutLists: 0, total: 10 },
   ];
 

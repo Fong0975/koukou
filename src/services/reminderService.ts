@@ -1,19 +1,18 @@
 import { toCalendarDate } from "@/lib/calendarMonth";
-import { toDateKey } from "@/lib/dateKey";
+import { dateKeyToYearMonth, toDateKey } from "@/lib/dateKey";
 import { formatTimestamp } from "@/lib/format";
 import { createLogger } from "@/lib/logger";
-import { collectDailyReminders } from "@/lib/notification/dueReminders";
+import { buildMonthlySummary, collectDailyReminders, isFirstOfMonth } from "@/lib/notification/dueReminders";
 import { buildReminderMessage, buildTestMessage } from "@/lib/notification/messageText";
 import { isSendTimeReached } from "@/lib/notification/sendTime";
+import { buildSummaryMessage } from "@/lib/notification/summaryMessage";
 import { pushText } from "./lineClient";
-import { findDispatch, saveDispatch } from "./notificationDispatchStore";
+import { findDispatch } from "./notificationDispatchStore";
 import { readNotificationSetting } from "./notificationSettingService";
+import { deliverMessage, isPending, type DeliveryResult } from "./reminderDelivery";
 import { listSubscriptions } from "./subscriptionService";
 
 const logger = createLogger("reminderService");
-
-/** Most tries at sending one day's message before giving up on it. */
-export const MAX_SEND_ATTEMPTS = 3;
 
 /** What one run of {@link runDailyReminder} did. */
 export type ReminderRunResult =
@@ -21,19 +20,27 @@ export type ReminderRunResult =
   | "disabled"
   /** Today's send time has not come yet. */
   | "not-due"
-  /** Today's message was already handled, or failed too often. */
+  /** Today's messages were already handled, or failed too often. */
   | "done"
-  /** Today has nothing to report, so nothing was sent. */
-  | "skipped"
-  | "sent"
-  /** Sending failed; a later run tries again until {@link MAX_SEND_ATTEMPTS}. */
-  | "failed";
+  | DeliveryResult;
 
 /**
- * Sends today's reminder message once its send time has come. Each day is sent at most once; a
- * server that was down at the send time catches up on its first run later that day, and a failed
- * send is retried on later runs up to {@link MAX_SEND_ATTEMPTS} tries. Notifications switched on after
- * the send time start the next day, since saving them marks today as skipped.
+ * Sums up what each message of a run did: a failure outweighs a send, which outweighs a skip.
+ *
+ * @param results - What each message did; never empty.
+ */
+function summarize(results: DeliveryResult[]): DeliveryResult {
+  if (results.includes("failed")) return "failed";
+  return results.includes("sent") ? "sent" : "skipped";
+}
+
+/**
+ * Sends today's messages once their send time has come: first the monthly summary (on the 1st, when
+ * switched on), then the day's charge and expiry reminders. Each message is sent at most once per day
+ * and tracked on its own, so a failed message is retried up to MAX_SEND_ATTEMPTS tries without
+ * repeating the other. A server that was down at the send time catches up on its first run later that
+ * day. Notifications switched on after the send time start the next day, since saving them marks
+ * today as skipped.
  *
  * @param now - The current time; dates and the send time are read in the server's time zone.
  * @returns What the run did.
@@ -44,37 +51,25 @@ export async function runDailyReminder(now: Date = new Date()): Promise<Reminder
   if (!isSendTimeReached(now, setting.sendTime)) return "not-due";
 
   const today = toDateKey(toCalendarDate(now));
-  const previous = await findDispatch(today);
-  if (previous && (previous.status !== "FAILED" || previous.attempts >= MAX_SEND_ATTEMPTS)) return "done";
-  const attempts = (previous?.attempts ?? 0) + 1;
+  const summaryDue = setting.monthlySummaryEnabled && isFirstOfMonth(today);
+  const [summaryPrevious, dailyPrevious] = await Promise.all([
+    summaryDue ? findDispatch(today, "SUMMARY") : null,
+    findDispatch(today, "DAILY"),
+  ]);
+  const summaryPending = summaryDue && isPending(summaryPrevious);
+  if (!summaryPending && !isPending(dailyPrevious)) return "done";
 
-  const reminders = collectDailyReminders(await listSubscriptions(), today, {
-    monthlySummary: setting.monthlySummaryEnabled,
-  });
-  const message = buildReminderMessage(reminders);
-  if (message === null) {
-    await saveDispatch(today, { status: "SKIPPED", attempts: previous?.attempts ?? 0 });
-    logger.info("No reminders today", { date: today });
-    return "skipped";
+  const items = await listSubscriptions();
+  const results: DeliveryResult[] = [];
+  if (summaryPending) {
+    const summary = buildSummaryMessage(buildMonthlySummary(items, dateKeyToYearMonth(today)));
+    results.push(await deliverMessage(today, "SUMMARY", summary, summaryPrevious));
   }
-
-  try {
-    await pushText(message);
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    await saveDispatch(today, { status: "FAILED", attempts }, reason);
-    logger.error("Reminder message failed", { date: today, attempts }, error);
-    return "failed";
+  if (isPending(dailyPrevious)) {
+    const reminders = buildReminderMessage(collectDailyReminders(items, today));
+    results.push(await deliverMessage(today, "DAILY", reminders, dailyPrevious));
   }
-  await saveDispatch(today, { status: "SENT", attempts });
-  logger.info("Reminder message sent", {
-    date: today,
-    attempts,
-    charges: reminders.charges.length,
-    expiries: reminders.expiries.length,
-    monthlySummary: reminders.monthlySummary !== null,
-  });
-  return "sent";
+  return summarize(results);
 }
 
 /**

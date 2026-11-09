@@ -32,11 +32,23 @@ const setting: NotificationSettingValuesDto = { enabled: true, monthlySummaryEna
 /** 2026-11-08 09:30 in the local time zone. */
 const now = new Date(2026, 10, 8, 9, 30);
 
-const dueToday = makeSubscription({
-  schedules: [{ id: 10, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 8, month: null }],
-  reminders: { chargeDaysBefore: [0], expiryDaysBefore: [] },
-});
+/** The 1st of the month, when the monthly summary is due. */
+const firstOfMonth = new Date(2026, 10, 1, 9, 0);
+
+const monthlyOn = (dayOfMonth: number) => [
+  { id: 10, cycle: "MONTHLY" as const, dayOfWeek: null, dayOfMonth, month: null },
+];
+const chargeToday = { chargeDaysBefore: [0], expiryDaysBefore: [] };
+
+const dueToday = makeSubscription({ schedules: monthlyOn(8), reminders: chargeToday });
+const dueFirst = makeSubscription({ schedules: monthlyOn(1), reminders: chargeToday });
 const quiet = makeSubscription({ id: 2, name: "Quiet" });
+
+const SUMMARY_TEXT = "📅 11 月摘要";
+const REMINDER_TEXT = "💳 扣款提醒";
+const REJECTION = "LINE 拒絕傳送訊息（HTTP 400）";
+const rejectSummary = (text: string) =>
+  text.includes(SUMMARY_TEXT) ? Promise.reject(new UpstreamError(REJECTION)) : Promise.resolve();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -48,86 +60,189 @@ describe("runDailyReminder", () => {
     name: string;
     setting?: Partial<NotificationSettingValuesDto>;
     now?: Date;
-    previous?: Dispatch | null;
+    /** The day the run handles, "YYYY-MM-DD"; defaults to the 8th. */
+    date?: string;
+    previous?: { SUMMARY?: Dispatch; DAILY?: Dispatch };
     items?: SubscriptionDto[];
-    push?: () => Promise<void>;
+    push?: (text: string) => Promise<void>;
     expected: ReminderRunResult;
-    /** What is recorded for the day, or undefined when nothing is. */
-    saved?: [Dispatch, string?];
-    pushed?: string;
+    /** What is recorded for the day, in order. */
+    saved?: [kind: string, dispatch: Dispatch, error?: string][];
+    /** What each sent message holds and must not hold, in order. */
+    pushed?: { has: string; lacks?: string }[];
+    /** Whether the summary's earlier outcome is looked up. */
+    looksUpSummary?: boolean;
   }[] = [
     { name: "does nothing when switched off", setting: { enabled: false }, expected: "disabled" },
     { name: "waits for the send time", setting: { sendTime: "10:00" }, expected: "not-due" },
-    { name: "skips a day already sent", previous: { status: "SENT", attempts: 1 }, expected: "done" },
-    { name: "skips a day with nothing to send", previous: { status: "SKIPPED", attempts: 0 }, expected: "done" },
-    { name: "gives up after too many failures", previous: { status: "FAILED", attempts: 3 }, expected: "done" },
+    { name: "skips a day already sent", previous: { DAILY: { status: "SENT", attempts: 1 } }, expected: "done" },
+    {
+      name: "skips a day with nothing to send",
+      previous: { DAILY: { status: "SKIPPED", attempts: 0 } },
+      expected: "done",
+    },
+    {
+      name: "gives up after too many failures",
+      previous: { DAILY: { status: "FAILED", attempts: 3 } },
+      expected: "done",
+    },
     {
       name: "records a day without reminders",
       items: [quiet],
       expected: "skipped",
-      saved: [{ status: "SKIPPED", attempts: 0 }],
+      saved: [["DAILY", { status: "SKIPPED", attempts: 0 }]],
     },
     {
       name: "sends today's reminders",
       expected: "sent",
-      saved: [{ status: "SENT", attempts: 1 }],
-      pushed: "・Netflix NT$ 390",
+      saved: [["DAILY", { status: "SENT", attempts: 1 }]],
+      pushed: [{ has: "・Netflix NT$ 390", lacks: "月摘要" }],
     },
     {
       name: "catches up later the same day",
       now: new Date(2026, 10, 8, 22, 15),
       expected: "sent",
-      saved: [{ status: "SENT", attempts: 1 }],
+      saved: [["DAILY", { status: "SENT", attempts: 1 }]],
+      pushed: [{ has: REMINDER_TEXT }],
     },
     {
       name: "retries after a failure",
-      previous: { status: "FAILED", attempts: 1 },
+      previous: { DAILY: { status: "FAILED", attempts: 1 } },
       expected: "sent",
-      saved: [{ status: "SENT", attempts: 2 }],
+      saved: [["DAILY", { status: "SENT", attempts: 2 }]],
+      pushed: [{ has: REMINDER_TEXT }],
     },
     {
       name: "records a failed send",
-      push: () => Promise.reject(new UpstreamError("LINE 拒絕傳送訊息（HTTP 400）")),
+      push: () => Promise.reject(new UpstreamError(REJECTION)),
       expected: "failed",
-      saved: [{ status: "FAILED", attempts: 1 }, "LINE 拒絕傳送訊息（HTTP 400）"],
+      saved: [["DAILY", { status: "FAILED", attempts: 1 }, REJECTION]],
+      pushed: [{ has: REMINDER_TEXT }],
     },
     {
-      name: "sends the monthly summary on the 1st",
-      now: new Date(2026, 10, 1, 9, 0),
+      name: "sends the monthly summary before the day's reminders on the 1st",
+      now: firstOfMonth,
+      date: "2026-11-01",
+      items: [dueFirst],
+      expected: "sent",
+      saved: [
+        ["SUMMARY", { status: "SENT", attempts: 1 }],
+        ["DAILY", { status: "SENT", attempts: 1 }],
+      ],
+      pushed: [
+        { has: SUMMARY_TEXT, lacks: REMINDER_TEXT },
+        { has: REMINDER_TEXT, lacks: "月摘要" },
+      ],
+      looksUpSummary: true,
+    },
+    {
+      name: "sends only the summary on the 1st when no reminder is due",
+      now: firstOfMonth,
+      date: "2026-11-01",
       items: [quiet],
       expected: "sent",
-      saved: [{ status: "SENT", attempts: 1 }],
-      pushed: "📅 11 月摘要",
+      saved: [
+        ["SUMMARY", { status: "SENT", attempts: 1 }],
+        ["DAILY", { status: "SKIPPED", attempts: 0 }],
+      ],
+      pushed: [{ has: SUMMARY_TEXT }],
+      looksUpSummary: true,
+    },
+    {
+      name: "still sends the reminders when the summary fails",
+      now: firstOfMonth,
+      date: "2026-11-01",
+      items: [dueFirst],
+      push: rejectSummary,
+      expected: "failed",
+      saved: [
+        ["SUMMARY", { status: "FAILED", attempts: 1 }, REJECTION],
+        ["DAILY", { status: "SENT", attempts: 1 }],
+      ],
+      pushed: [{ has: SUMMARY_TEXT }, { has: REMINDER_TEXT }],
+      looksUpSummary: true,
+    },
+    {
+      name: "retries a failed summary without repeating the reminders",
+      now: firstOfMonth,
+      date: "2026-11-01",
+      items: [dueFirst],
+      previous: { SUMMARY: { status: "FAILED", attempts: 1 }, DAILY: { status: "SENT", attempts: 1 } },
+      expected: "sent",
+      saved: [["SUMMARY", { status: "SENT", attempts: 2 }]],
+      pushed: [{ has: SUMMARY_TEXT, lacks: REMINDER_TEXT }],
+      looksUpSummary: true,
+    },
+    {
+      name: "retries failed reminders without repeating the summary",
+      now: firstOfMonth,
+      date: "2026-11-01",
+      items: [dueFirst],
+      previous: { SUMMARY: { status: "SENT", attempts: 1 }, DAILY: { status: "FAILED", attempts: 1 } },
+      expected: "sent",
+      saved: [["DAILY", { status: "SENT", attempts: 2 }]],
+      pushed: [{ has: REMINDER_TEXT, lacks: "月摘要" }],
+      looksUpSummary: true,
+    },
+    {
+      name: "is done on the 1st once both messages are handled",
+      now: firstOfMonth,
+      date: "2026-11-01",
+      previous: { SUMMARY: { status: "SENT", attempts: 1 }, DAILY: { status: "SKIPPED", attempts: 0 } },
+      expected: "done",
+      looksUpSummary: true,
+    },
+    {
+      name: "skips the summary on the 1st when there is nothing to report",
+      now: firstOfMonth,
+      date: "2026-11-01",
+      items: [],
+      expected: "skipped",
+      saved: [
+        ["SUMMARY", { status: "SKIPPED", attempts: 0 }],
+        ["DAILY", { status: "SKIPPED", attempts: 0 }],
+      ],
+      looksUpSummary: true,
     },
     {
       name: "leaves the summary out when switched off",
       setting: { monthlySummaryEnabled: false },
-      now: new Date(2026, 10, 1, 9, 0),
+      now: firstOfMonth,
+      date: "2026-11-01",
       items: [quiet],
       expected: "skipped",
-      saved: [{ status: "SKIPPED", attempts: 0 }],
+      saved: [["DAILY", { status: "SKIPPED", attempts: 0 }]],
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, async () => {
       mocks.readNotificationSetting.mockResolvedValue({ ...setting, ...tt.setting });
-      mocks.findDispatch.mockResolvedValue(tt.previous ?? null);
+      mocks.findDispatch.mockImplementation((_date: string, kind: "SUMMARY" | "DAILY") =>
+        Promise.resolve(tt.previous?.[kind] ?? null),
+      );
       mocks.listSubscriptions.mockResolvedValue(tt.items ?? [dueToday]);
       mocks.pushText.mockImplementation(tt.push ?? (() => Promise.resolve()));
 
       await expect(runDailyReminder(tt.now ?? now)).resolves.toBe(tt.expected);
 
-      if (tt.saved) {
-        const date = (tt.now ?? now).getDate() === 1 ? "2026-11-01" : "2026-11-08";
-        expect(mocks.saveDispatch).toHaveBeenCalledWith(date, ...tt.saved);
-      } else {
-        expect(mocks.saveDispatch).not.toHaveBeenCalled();
-      }
-      const sent = ["sent", "failed"].includes(tt.expected);
-      expect(mocks.pushText).toHaveBeenCalledTimes(sent ? 1 : 0);
-      if (tt.pushed) expect(mocks.pushText.mock.calls[0][0]).toContain(tt.pushed);
-      expect(loggerMock.error).toHaveBeenCalledTimes(tt.expected === "failed" ? 1 : 0);
+      const date = tt.date ?? "2026-11-08";
+      const saved = tt.saved ?? [];
+      expect(mocks.saveDispatch.mock.calls).toEqual(
+        saved.map(([kind, dispatch, error]) => (error ? [date, kind, dispatch, error] : [date, kind, dispatch])),
+      );
+
+      const pushed = tt.pushed ?? [];
+      expect(mocks.pushText).toHaveBeenCalledTimes(pushed.length);
+      pushed.forEach(({ has, lacks }, index) => {
+        const text = mocks.pushText.mock.calls[index][0] as string;
+        expect(text).toContain(has);
+        if (lacks) expect(text).not.toContain(lacks);
+      });
+
+      const summaryLookups = mocks.findDispatch.mock.calls.filter(([, kind]) => kind === "SUMMARY").length;
+      expect(summaryLookups).toBe(tt.looksUpSummary && tt.setting?.monthlySummaryEnabled !== false ? 1 : 0);
+      expect(loggerMock.error).toHaveBeenCalledTimes(saved.filter(([, { status }]) => status === "FAILED").length);
     });
   }
 });

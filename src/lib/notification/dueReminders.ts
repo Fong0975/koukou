@@ -33,7 +33,7 @@ export interface NamedTotal {
   names: string[];
 }
 
-/** What the month ahead holds, sent on its 1st. */
+/** What the month ahead holds, sent on its own message on the 1st. */
 export interface MonthlySummary {
   month: YearMonth;
   expiries: ContractExpiry[];
@@ -43,22 +43,14 @@ export interface MonthlySummary {
   charge: NamedTotal;
 }
 
-/** Everything one day's message reports. */
+/** Everything one day's reminder message reports. */
 export interface DailyReminders {
   /** The day the reminders are sent, "YYYY-MM-DD". */
   today: string;
-  /** Present only on the 1st of a month with the summary switched on and something to report. */
-  monthlySummary: MonthlySummary | null;
   /** Ordered by charge day, then subscription name. */
   charges: ChargeReminder[];
   /** Ordered by end date, then subscription name. */
   expiries: ExpiryReminder[];
-}
-
-/** Options of {@link collectDailyReminders}. */
-export interface CollectOptions {
-  /** Whether the 1st of a month carries the month's summary. */
-  monthlySummary: boolean;
 }
 
 const uniqueNames = (subscriptions: SubscriptionDto[]) => [...new Set(subscriptions.map(({ name }) => name))];
@@ -117,22 +109,23 @@ export function buildMonthlySummary(items: SubscriptionDto[], month: YearMonth):
 }
 
 /**
- * Collects everything to report in today's message.
+ * Tells whether a day is the 1st of a month, when the monthly summary goes out.
+ *
+ * @param date - The day as "YYYY-MM-DD".
+ */
+export function isFirstOfMonth(date: string): boolean {
+  return date.endsWith("-01");
+}
+
+/**
+ * Collects everything to report in today's reminder message.
  *
  * @param items - Every subscription.
  * @param today - Today as "YYYY-MM-DD".
- * @param options - Which optional parts to include.
  */
-export function collectDailyReminders(
-  items: SubscriptionDto[],
-  today: string,
-  options: CollectOptions,
-): DailyReminders {
-  const isFirstOfMonth = today.endsWith("-01");
+export function collectDailyReminders(items: SubscriptionDto[], today: string): DailyReminders {
   return {
     today,
-    monthlySummary:
-      options.monthlySummary && isFirstOfMonth ? buildMonthlySummary(items, dateKeyToYearMonth(today)) : null,
     charges: items.flatMap((subscription) => subscriptionChargeReminders(subscription, today)).sort(byDateThenName),
     expiries: items.flatMap((subscription) => subscriptionExpiryReminders(subscription, today)).sort(byDateThenName),
   };
@@ -144,5 +137,5 @@ export function collectDailyReminders(
  * @param reminders - The day's reminders.
  */
 export function hasNoReminders(reminders: DailyReminders): boolean {
-  return reminders.monthlySummary === null && reminders.charges.length === 0 && reminders.expiries.length === 0;
+  return reminders.charges.length === 0 && reminders.expiries.length === 0;
 }

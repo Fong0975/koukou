@@ -144,15 +144,24 @@ enum DispatchStatus {
   FAILED
 }
 
-/// Outcome of one day's reminder message, so a day is sent at most once and a missed send time
-/// can still be caught up later that day. A log, so it is left out of backups.
+/// Which of a day's messages a dispatch is about: the monthly summary goes out on its own, ahead of
+/// the daily reminder.
+enum DispatchKind {
+  SUMMARY
+  DAILY
+}
+
+/// Outcome of one of a day's messages, so each is sent at most once and a missed send time can still
+/// be caught up later that day. A log, so it is left out of backups.
 model NotificationDispatch {
-  date      DateTime       @id @db.Date
+  date      DateTime       @db.Date
+  kind      DispatchKind   @default(DAILY)
   status    DispatchStatus
   attempts  Int            @default(0)
   lastError String?        @map("last_error") @db.VarChar(255)
   updatedAt DateTime       @updatedAt @map("updated_at")
 
+  @@id([date, kind])
   @@map("notification_dispatches")
 }
 
