@@ -5,16 +5,19 @@ import { Modal } from "./Modal";
 import { SubscriptionList, type SubscriptionListProps } from "./SubscriptionList";
 
 interface AllSubscriptionsModalProps extends SubscriptionListProps {
+  onManageCategories: () => void;
   onClose: () => void;
 }
 
 /**
  * Dialog listing every subscription by category, where they are added, edited and deleted.
- * The add/edit form and the delete confirmation open on top of it.
+ * A toolbar above the list opens the category manager. The add/edit form, the delete
+ * confirmation and the manager open on top of it.
  *
+ * @param props.onManageCategories - Opens the category manager.
  * @param props.onClose - Closes the dialog.
  */
-export function AllSubscriptionsModal({ onClose, ...listProps }: AllSubscriptionsModalProps) {
+export function AllSubscriptionsModal({ onManageCategories, onClose, ...listProps }: AllSubscriptionsModalProps) {
   // The empty state has its own "add first" button, so the header button only shows once there is a list.
   const showAdd = listProps.items.length > 0;
 
@@ -33,6 +36,11 @@ export function AllSubscriptionsModal({ onClose, ...listProps }: AllSubscription
         )
       }
     >
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button type="button" className="btn btn-soft btn-sm" onClick={onManageCategories}>
+          管理類型
+        </button>
+      </div>
       <SubscriptionList {...listProps} />
     </Modal>
   );

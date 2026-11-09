@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { categoryInputSchema } from "./categorySchema";
+import { categoryInputSchema, categoryOrderSchema } from "./categorySchema";
 
 describe("categoryInputSchema", () => {
   const tests: { name: string; input: unknown; expected?: unknown; errorPath?: string }[] = [
@@ -19,6 +19,28 @@ describe("categoryInputSchema", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       const result = categoryInputSchema.safeParse(tt.input);
+      if (tt.errorPath) {
+        expect(result.error?.issues.map((issue) => issue.path.join("."))).toContain(tt.errorPath);
+      } else {
+        expect(result.data).toEqual(tt.expected);
+      }
+    });
+  }
+});
+
+describe("categoryOrderSchema", () => {
+  const tests: { name: string; input: unknown; expected?: unknown; errorPath?: string }[] = [
+    { name: "keeps numeric ids", input: { ids: [3, 1, 2] }, expected: { ids: [3, 1, 2] } },
+    { name: "coerces numeric strings", input: { ids: ["3", "1"] }, expected: { ids: [3, 1] } },
+    { name: "rejects an empty list", input: { ids: [] }, errorPath: "ids" },
+    { name: "rejects a missing list", input: {}, errorPath: "ids" },
+    { name: "rejects non-numeric ids", input: { ids: ["x"] }, errorPath: "ids.0" },
+    { name: "rejects non-positive ids", input: { ids: [0] }, errorPath: "ids.0" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const result = categoryOrderSchema.safeParse(tt.input);
       if (tt.errorPath) {
         expect(result.error?.issues.map((issue) => issue.path.join("."))).toContain(tt.errorPath);
       } else {

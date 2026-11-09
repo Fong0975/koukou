@@ -97,6 +97,15 @@ export function ChevronDownIcon(props: IconProps) {
   );
 }
 
+/** Up chevron, for moving an item up a list. */
+export function ChevronUpIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 15l6-6 6 6" />
+    </svg>
+  );
+}
+
 /** Left chevron, for "previous" navigation. */
 export function ChevronLeftIcon(props: IconProps) {
   return (

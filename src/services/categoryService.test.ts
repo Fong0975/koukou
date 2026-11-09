@@ -1,9 +1,12 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError } from "@/lib/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 
 const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: { category: { findMany: vi.fn(), create: vi.fn() } },
+  prismaMock: {
+    category: { findMany: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    $transaction: vi.fn(),
+  },
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: prismaMock }));
@@ -11,7 +14,7 @@ vi.mock("@/lib/logger", () => import("@/test/logger"));
 
 import { loggerMock } from "@/test/logger";
 import { prismaError } from "@/test/prismaError";
-import { createCategory, listCategories } from "./categoryService";
+import { createCategory, deleteCategory, listCategories, reorderCategories, updateCategory } from "./categoryService";
 
 describe("listCategories", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -79,6 +82,134 @@ describe("createCategory", () => {
         expect(prismaMock.category.create).toHaveBeenCalledWith(
           expect.objectContaining({ data: { ...data, sortOrder: 500 } }),
         );
+      }
+    });
+  }
+});
+
+describe("updateCategory", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const data = { name: "健身房", icon: "🏋️" };
+  const tests: { name: string; setup: () => void; expected?: unknown; error?: new (...args: never[]) => Error }[] = [
+    {
+      name: "updates name and icon",
+      setup: () => prismaMock.category.update.mockResolvedValue({ id: 9, ...data, sortOrder: 500 }),
+      expected: { id: 9, ...data, sortOrder: 500 },
+    },
+    {
+      name: "missing category → NotFoundError",
+      setup: () => prismaMock.category.update.mockRejectedValue(prismaError("P2025")),
+      error: NotFoundError,
+    },
+    {
+      name: "duplicate name → ConflictError",
+      setup: () => prismaMock.category.update.mockRejectedValue(prismaError("P2002")),
+      error: ConflictError,
+    },
+    {
+      name: "unknown errors propagate",
+      setup: () => prismaMock.category.update.mockRejectedValue(new Error("db down")),
+      error: Error,
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, async () => {
+      tt.setup();
+      const promise = updateCategory(9, data);
+      if (tt.error) {
+        await expect(promise).rejects.toBeInstanceOf(tt.error);
+        expect(loggerMock.info).not.toHaveBeenCalled();
+      } else {
+        await expect(promise).resolves.toEqual(tt.expected);
+        expect(loggerMock.info).toHaveBeenCalledWith("Category updated", { id: 9, name: "健身房" });
+        expect(prismaMock.category.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 9 }, data }));
+      }
+    });
+  }
+});
+
+describe("deleteCategory", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const tests: { name: string; setup: () => void; error?: new (...args: never[]) => Error }[] = [
+    { name: "deletes an unused category", setup: () => prismaMock.category.delete.mockResolvedValue({}) },
+    {
+      name: "missing category → NotFoundError",
+      setup: () => prismaMock.category.delete.mockRejectedValue(prismaError("P2025")),
+      error: NotFoundError,
+    },
+    {
+      name: "category in use → ValidationError",
+      setup: () => prismaMock.category.delete.mockRejectedValue(prismaError("P2003")),
+      error: ValidationError,
+    },
+    {
+      name: "unknown errors propagate",
+      setup: () => prismaMock.category.delete.mockRejectedValue(new Error("db down")),
+      error: Error,
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, async () => {
+      tt.setup();
+      const promise = deleteCategory(9);
+      if (tt.error) {
+        await expect(promise).rejects.toBeInstanceOf(tt.error);
+        expect(loggerMock.info).not.toHaveBeenCalled();
+      } else {
+        await expect(promise).resolves.toBeUndefined();
+        expect(loggerMock.info).toHaveBeenCalledWith("Category deleted", { id: 9 });
+      }
+      expect(prismaMock.category.delete).toHaveBeenCalledWith({ where: { id: 9 } });
+    });
+  }
+});
+
+describe("reorderCategories", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const existing = [{ id: 1 }, { id: 2 }, { id: 3 }];
+  const reordered = [{ id: 3, name: "c", icon: null, sortOrder: 10 }];
+  const tests: { name: string; ids: number[]; expectedSortOrders?: [number, number][]; error?: boolean }[] = [
+    {
+      name: "renumbers sortOrder in steps of 10 following the given order",
+      ids: [3, 1, 2],
+      expectedSortOrders: [
+        [3, 10],
+        [1, 20],
+        [2, 30],
+      ],
+    },
+    { name: "rejects a missing id", ids: [1, 2], error: true },
+    { name: "rejects an unknown id", ids: [1, 2, 9], error: true },
+    { name: "rejects duplicated ids", ids: [1, 1, 2], error: true },
+    { name: "rejects extra ids", ids: [1, 2, 3, 4], error: true },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, async () => {
+      prismaMock.category.findMany.mockResolvedValueOnce(existing).mockResolvedValueOnce(reordered);
+      prismaMock.category.update.mockImplementation((args: unknown) => args);
+      prismaMock.$transaction.mockResolvedValue([]);
+
+      const promise = reorderCategories(tt.ids);
+
+      if (tt.error) {
+        await expect(promise).rejects.toBeInstanceOf(ValidationError);
+        expect(prismaMock.$transaction).not.toHaveBeenCalled();
+        expect(loggerMock.info).not.toHaveBeenCalled();
+      } else {
+        await expect(promise).resolves.toEqual(reordered);
+        const updates = prismaMock.category.update.mock.calls.map((call) => {
+          const args = call[0] as { where: { id: number }; data: { sortOrder: number } };
+          return [args.where.id, args.data.sortOrder];
+        });
+        expect(updates).toEqual(tt.expectedSortOrders);
+        expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+        expect(loggerMock.info).toHaveBeenCalledWith("Categories reordered", { count: 3 });
       }
     });
   }

@@ -13,9 +13,23 @@ describe("AllSubscriptionsModal", () => {
     items: SubscriptionDto[];
     click?: string;
     expectedToolbarAdd: boolean;
-    expectedHandler?: "onAdd" | "onClose";
+    expectedHandler?: "onAdd" | "onClose" | "onManageCategories";
   }[] = [
     { name: "shows the list inside a titled dialog", items, expectedToolbarAdd: true },
+    {
+      name: "the category button opens the manager",
+      items,
+      click: "管理類型",
+      expectedToolbarAdd: true,
+      expectedHandler: "onManageCategories",
+    },
+    {
+      name: "the category button is available even when the list is empty",
+      items: [],
+      click: "管理類型",
+      expectedToolbarAdd: false,
+      expectedHandler: "onManageCategories",
+    },
     { name: "the toolbar button adds", items, click: "新增扣款", expectedToolbarAdd: true, expectedHandler: "onAdd" },
     { name: "the close button closes", items, click: "關閉", expectedToolbarAdd: true, expectedHandler: "onClose" },
     { name: "an empty list relies on the empty state's add button", items: [], expectedToolbarAdd: false },
@@ -23,7 +37,14 @@ describe("AllSubscriptionsModal", () => {
 
   for (const tt of tests) {
     it(tt.name, () => {
-      const handlers = { onRetry: vi.fn(), onAdd: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn(), onClose: vi.fn() };
+      const handlers = {
+        onRetry: vi.fn(),
+        onAdd: vi.fn(),
+        onEdit: vi.fn(),
+        onDelete: vi.fn(),
+        onManageCategories: vi.fn(),
+        onClose: vi.fn(),
+      };
       render(<AllSubscriptionsModal items={tt.items} status="ready" loadError={null} {...handlers} remindersActive />);
 
       const dialog = screen.getByRole("dialog", { name: "所有扣款" });
@@ -34,6 +55,7 @@ describe("AllSubscriptionsModal", () => {
       for (const item of tt.items) expect(within(dialog).getByText(item.name)).toBeInTheDocument();
       expect(handlers.onAdd).toHaveBeenCalledTimes(tt.expectedHandler === "onAdd" ? 1 : 0);
       expect(handlers.onClose).toHaveBeenCalledTimes(tt.expectedHandler === "onClose" ? 1 : 0);
+      expect(handlers.onManageCategories).toHaveBeenCalledTimes(tt.expectedHandler === "onManageCategories" ? 1 : 0);
     });
   }
 });

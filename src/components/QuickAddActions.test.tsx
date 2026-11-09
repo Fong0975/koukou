@@ -7,6 +7,7 @@ describe("QuickAddActions", () => {
     name: string;
     pending: boolean;
     error: string | null;
+    labels?: { submitLabel: string; pendingLabel: string };
     click?: "取消" | "加入";
     expectedSaveLabel: string;
     expectedCalls: { onSave: number; onCancel: number };
@@ -35,6 +36,22 @@ describe("QuickAddActions", () => {
       expectedCalls: { onSave: 0, onCancel: 0 },
     },
     {
+      name: "custom labels replace the defaults",
+      pending: false,
+      error: null,
+      labels: { submitLabel: "儲存", pendingLabel: "儲存中…" },
+      expectedSaveLabel: "儲存",
+      expectedCalls: { onSave: 0, onCancel: 0 },
+    },
+    {
+      name: "custom pending label shows while pending",
+      pending: true,
+      error: null,
+      labels: { submitLabel: "儲存", pendingLabel: "儲存中…" },
+      expectedSaveLabel: "儲存中…",
+      expectedCalls: { onSave: 0, onCancel: 0 },
+    },
+    {
       name: "shows the error as an alert",
       pending: false,
       error: "類型名稱重複",
@@ -46,7 +63,7 @@ describe("QuickAddActions", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       const handlers = { onSave: vi.fn(), onCancel: vi.fn() };
-      render(<QuickAddActions pending={tt.pending} error={tt.error} {...handlers} />);
+      render(<QuickAddActions pending={tt.pending} error={tt.error} {...handlers} {...tt.labels} />);
 
       if (tt.click) fireEvent.click(screen.getByRole("button", { name: tt.click }));
 

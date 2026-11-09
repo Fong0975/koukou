@@ -1,6 +1,6 @@
 /**
  * Next.js start-up hook. Runs once per server process, records the start-up, prepares the
- * database (migrations + seed) and starts the LINE reminder scheduler. Skipped on the Edge runtime,
+ * database (migrations) and starts the LINE reminder scheduler. Skipped on the Edge runtime,
  * which cannot spawn processes or write files.
  */
 export async function register(): Promise<void> {

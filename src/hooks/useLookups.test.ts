@@ -30,6 +30,8 @@ describe("useLookups", () => {
     created?: unknown;
     expectedCategories: string[];
     expectedPaymentMethods: string[];
+    expectedRequest?: [string, unknown];
+    notRequested?: string;
     expectLogged?: boolean;
     unmountBeforeLoad?: boolean;
   }[] = [
@@ -97,6 +99,36 @@ describe("useLookups", () => {
       expectedPaymentMethods: ["國泰 CUBE"],
     },
     {
+      name: "updateCategory replaces that category in place",
+      act: (hook) => hook.updateCategory(5, { name: "電信費", icon: "" }),
+      created: makeCategory({ id: 5, name: "電信費", sortOrder: 40 }),
+      expectedCategories: ["影音串流", "電信費"],
+      expectedPaymentMethods: ["國泰 CUBE"],
+      expectedRequest: ["/api/categories/5", { method: "PUT", body: { name: "電信費", icon: "" } }],
+    },
+    {
+      name: "removeCategory drops that category",
+      act: (hook) => hook.removeCategory(2),
+      expectedCategories: ["電信"],
+      expectedPaymentMethods: ["國泰 CUBE"],
+      expectedRequest: ["/api/categories/2", { method: "DELETE" }],
+    },
+    {
+      name: "moveCategory saves the swapped order and shows the saved list",
+      act: (hook) => hook.moveCategory(5, -1),
+      created: [telecom, streaming],
+      expectedCategories: ["電信", "影音串流"],
+      expectedPaymentMethods: ["國泰 CUBE"],
+      expectedRequest: ["/api/categories/order", { method: "PUT", body: { ids: [5, 2] } }],
+    },
+    {
+      name: "moveCategory does nothing at the edge of the list",
+      act: (hook) => hook.moveCategory(2, -1),
+      expectedCategories: ["影音串流", "電信"],
+      expectedPaymentMethods: ["國泰 CUBE"],
+      notRequested: "/api/categories/order",
+    },
+    {
       name: "addPaymentMethod inserts by type",
       act: (hook) => hook.addPaymentMethod({ type: "BANK_ACCOUNT", name: "台新 Richart" }),
       created: account,
@@ -132,6 +164,8 @@ describe("useLookups", () => {
 
       expect(result.current.categories.map((c) => c.name)).toEqual(tt.expectedCategories);
       expect(result.current.paymentMethods.map((m) => m.name)).toEqual(tt.expectedPaymentMethods);
+      if (tt.expectedRequest) expect(apiRequest).toHaveBeenCalledWith(...tt.expectedRequest);
+      if (tt.notRequested) expect(apiRequest).not.toHaveBeenCalledWith(tt.notRequested, expect.anything());
       expect(logSpy).toHaveBeenCalledTimes(tt.expectLogged ? 1 : 0);
     });
   }

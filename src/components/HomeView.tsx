@@ -1,14 +1,17 @@
 "use client";
 
+import { useMemo } from "react";
 import { useBackup } from "@/hooks/useBackup";
 import { useHomeDialogs } from "@/hooks/useHomeDialogs";
 import { useLookups } from "@/hooks/useLookups";
 import { useNotificationSetting } from "@/hooks/useNotificationSetting";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useToday } from "@/hooks/useToday";
+import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import { AllSubscriptionsModal } from "./AllSubscriptionsModal";
 import { CalendarSection } from "./CalendarSection";
+import { CategoryManagerModal } from "./CategoryManagerModal";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { ConfirmImportDialog } from "./ConfirmImportDialog";
 import { Header } from "./Header";
@@ -18,7 +21,7 @@ import { SubscriptionFormModal } from "./SubscriptionFormModal";
 
 /**
  * Client-side home screen: wires the data hooks to the calendar, the subscription list dialog,
- * the add/edit form, the delete dialog, the annual report, the notification settings and the backup menu with
+ * the add/edit form, the delete dialog, the category manager, the annual report, the notification settings and the backup menu with
  * its import confirmation.
  */
 export function HomeView() {
@@ -34,6 +37,18 @@ export function HomeView() {
 
   const handleSubmit = (input: SubscriptionInput) =>
     editing ? subscriptions.update(editing.id, input) : subscriptions.create(input);
+
+  const usedCategoryIds = useMemo(
+    () => new Set(subscriptions.items.map((item) => item.category.id)),
+    [subscriptions.items],
+  );
+
+  // Subscriptions embed their category, so they are reloaded to show the new name or icon.
+  const updateCategory = async (id: number, input: CategoryInput) => {
+    const updated = await lookups.updateCategory(id, input);
+    void subscriptions.reload();
+    return updated;
+  };
 
   const confirmImport = async () => {
     await backup.confirmImport();
@@ -72,7 +87,20 @@ export function HomeView() {
           onEdit={dialogs.openEdit}
           onDelete={dialogs.openDelete}
           remindersActive={notification.remindersActive}
+          onManageCategories={dialogs.openCategories}
           onClose={dialogs.closeList}
+        />
+      )}
+
+      {dialogs.categoriesOpen && (
+        <CategoryManagerModal
+          categories={lookups.categories}
+          usedCategoryIds={usedCategoryIds}
+          onCreate={lookups.addCategory}
+          onUpdate={updateCategory}
+          onDelete={lookups.removeCategory}
+          onMove={lookups.moveCategory}
+          onClose={dialogs.closeCategories}
         />
       )}
 
@@ -99,7 +127,12 @@ export function HomeView() {
       )}
 
       {dialogs.deleting && (
-        <ConfirmDeleteDialog item={dialogs.deleting} onConfirm={subscriptions.remove} onClose={dialogs.closeDelete} />
+        <ConfirmDeleteDialog
+          item={dialogs.deleting}
+          message="刪除後，這筆扣款和它的所有扣款日都會一起移除，無法復原。"
+          onConfirm={subscriptions.remove}
+          onClose={dialogs.closeDelete}
+        />
       )}
 
       {backup.pendingImport && (

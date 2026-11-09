@@ -16,6 +16,7 @@ const {
   formProps,
   calendarProps,
   listProps,
+  managerProps,
   reportProps,
   settingsProps,
 } = vi.hoisted(() => ({
@@ -29,7 +30,16 @@ const {
     update: vi.fn(),
     remove: vi.fn(),
   },
-  lookups: { categories: [], paymentMethods: [], reload: vi.fn(), addCategory: vi.fn(), addPaymentMethod: vi.fn() },
+  lookups: {
+    categories: [],
+    paymentMethods: [],
+    reload: vi.fn(),
+    addCategory: vi.fn(),
+    updateCategory: vi.fn(),
+    removeCategory: vi.fn(),
+    moveCategory: vi.fn(),
+    addPaymentMethod: vi.fn(),
+  },
   backup: {
     pendingImport: null as PendingImport | null,
     exportBackup: vi.fn(),
@@ -41,6 +51,7 @@ const {
   formProps: vi.fn(),
   calendarProps: vi.fn(),
   listProps: vi.fn(),
+  managerProps: vi.fn(),
   reportProps: vi.fn(),
   settingsProps: vi.fn(),
 }));
@@ -59,10 +70,13 @@ vi.mock("./CalendarSection", () => ({
   },
 }));
 vi.mock("./AllSubscriptionsModal", () => ({
-  AllSubscriptionsModal: (props: SubscriptionListProps & { onClose: () => void }) => {
+  AllSubscriptionsModal: (props: SubscriptionListProps & { onManageCategories: () => void; onClose: () => void }) => {
     listProps(props);
     return (
       <div role="dialog" aria-label="所有扣款">
+        <button type="button" onClick={props.onManageCategories}>
+          管理類型
+        </button>
         <button type="button" onClick={props.onAdd}>
           新增
         </button>
@@ -77,6 +91,24 @@ vi.mock("./AllSubscriptionsModal", () => ({
         </button>
         <button type="button" onClick={props.onClose}>
           關閉清單
+        </button>
+      </div>
+    );
+  },
+}));
+vi.mock("./CategoryManagerModal", () => ({
+  CategoryManagerModal: (props: {
+    onUpdate: (id: number, input: unknown) => Promise<unknown>;
+    onClose: () => void;
+  }) => {
+    managerProps(props);
+    return (
+      <div role="dialog" aria-label="類型管理">
+        <button type="button" onClick={() => void props.onUpdate(1, { name: "新名稱" }).catch(() => {})}>
+          儲存類型
+        </button>
+        <button type="button" onClick={props.onClose}>
+          關閉類型管理
         </button>
       </div>
     );
@@ -217,6 +249,18 @@ describe("HomeView", () => {
     },
     { name: "closing the list removes it", clicks: ["所有扣款", "關閉清單"], expectedDialogs: [], expectedCalls: {} },
     {
+      name: "the list's category button opens the manager above it",
+      clicks: ["所有扣款", "管理類型"],
+      expectedDialogs: ["所有扣款", "類型管理"],
+      expectedCalls: {},
+    },
+    {
+      name: "closing the manager returns to the list",
+      clicks: ["所有扣款", "管理類型", "關閉類型管理"],
+      expectedDialogs: ["所有扣款"],
+      expectedCalls: {},
+    },
+    {
       name: "the header button opens the annual report",
       clicks: ["年度報表"],
       expectedDialogs: ["年度報表"],
@@ -266,6 +310,17 @@ describe("HomeView", () => {
           expect.objectContaining({ ...data, remindersActive: notification.remindersActive }),
         );
       }
+      if (managerProps.mock.calls.length > 0) {
+        expect(managerProps).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            categories: lookups.categories,
+            usedCategoryIds: new Set([item.category.id]),
+            onCreate: lookups.addCategory,
+            onDelete: lookups.removeCategory,
+            onMove: lookups.moveCategory,
+          }),
+        );
+      }
       if (settingsProps.mock.calls.length > 0) {
         expect(settingsProps).toHaveBeenLastCalledWith(expect.objectContaining({ onSaved: notification.apply }));
       }
@@ -285,6 +340,43 @@ describe("HomeView", () => {
           }),
         );
       }
+    });
+  }
+});
+
+describe("HomeView category manager", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Object.assign(subscriptions, { items: [item], status: "ready", loadError: null });
+  });
+
+  const tests: { name: string; update: () => Promise<unknown>; expectedReloads: number }[] = [
+    {
+      name: "saving a category reloads the subscriptions so they show its new name",
+      update: () => Promise.resolve({ id: 1 }),
+      expectedReloads: 1,
+    },
+    {
+      name: "a failed save does not reload the subscriptions",
+      update: () => Promise.reject(new Error("類型「其他」已存在")),
+      expectedReloads: 0,
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, async () => {
+      lookups.updateCategory.mockImplementation(tt.update);
+      render(<HomeView />);
+
+      fireEvent.click(screen.getByRole("button", { name: "所有扣款" }));
+      fireEvent.click(screen.getByRole("button", { name: "管理類型" }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "儲存類型" }));
+        await flushPromises();
+      });
+
+      expect(lookups.updateCategory).toHaveBeenCalledWith(1, { name: "新名稱" });
+      expect(subscriptions.reload).toHaveBeenCalledTimes(tt.expectedReloads);
     });
   }
 });
