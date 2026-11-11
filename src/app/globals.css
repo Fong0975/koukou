@@ -102,6 +102,15 @@ body {
     -webkit-backdrop-filter: blur(18px) saturate(150%);
   }
 
+  /*
+   * The backdrop filter makes each card its own stacking context, trapping an open popup's z-index inside it,
+   * so the card holding one is raised to let the popup overlap the cards after it.
+   */
+  .glass:has(.popup) {
+    position: relative;
+    z-index: 10;
+  }
+
   /* Lighter panel nested in a dialog, e.g. a section or a figure tile of the annual report. */
   .report-panel {
     border: 1px solid rgb(255 255 255 / 0.8);
