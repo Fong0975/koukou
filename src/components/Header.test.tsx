@@ -53,3 +53,33 @@ describe("Header", () => {
     });
   }
 });
+
+describe("Header toolbarSlotRef", () => {
+  const tests = [
+    { name: "hands the slot inside the header to the ref", withRef: true },
+    { name: "renders without a ref", withRef: false },
+  ] as const;
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const slotRef = vi.fn();
+      render(
+        <Header
+          onOpenList={vi.fn()}
+          onOpenReport={vi.fn()}
+          onOpenSettings={vi.fn()}
+          onExport={() => Promise.resolve()}
+          onImportFile={() => Promise.resolve()}
+          toolbarSlotRef={tt.withRef ? slotRef : undefined}
+        />,
+      );
+
+      if (tt.withRef) {
+        const slot = slotRef.mock.calls[0][0] as HTMLElement;
+        expect(screen.getByRole("banner")).toContainElement(slot);
+      } else {
+        expect(slotRef).not.toHaveBeenCalled();
+      }
+    });
+  }
+});
