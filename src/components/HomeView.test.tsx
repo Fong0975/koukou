@@ -348,7 +348,11 @@ describe("HomeView", () => {
 
       const data = { items: subscriptions.items, status: subscriptions.status, loadError: subscriptions.loadError };
       expect(screen.getByRole("region", { name: "月曆" })).toBeInTheDocument();
-      expect(calendarProps).toHaveBeenLastCalledWith({ ...data, onRetry: expect.any(Function) });
+      expect(calendarProps).toHaveBeenLastCalledWith({
+        ...data,
+        onRetry: expect.any(Function),
+        toolbarSlot: expect.any(HTMLElement),
+      });
       if (listProps.mock.calls.length > 0) {
         expect(listProps).toHaveBeenLastCalledWith(
           expect.objectContaining({ ...data, remindersActive: notification.remindersActive }),

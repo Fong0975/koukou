@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useBackup } from "@/hooks/useBackup";
 import { useHomeDialogs } from "@/hooks/useHomeDialogs";
 import { useLookupManagement } from "@/hooks/useLookupManagement";
@@ -32,6 +33,7 @@ export function HomeView() {
   const today = useToday();
   const notification = useNotificationSetting();
   const { editing } = dialogs;
+  const [toolbarSlot, setToolbarSlot] = useState<HTMLElement | null>(null);
 
   const retry = () => void subscriptions.reload();
 
@@ -48,22 +50,29 @@ export function HomeView() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-3 pb-16 sm:px-6">
-      <Header
-        onOpenList={dialogs.openList}
-        onOpenReport={dialogs.openReport}
-        onOpenSettings={dialogs.openSettings}
-        onExport={backup.exportBackup}
-        onImportFile={backup.selectFile}
-      />
-
-      <main className="mt-8">
-        <CalendarSection
-          items={subscriptions.items}
-          status={subscriptions.status}
-          loadError={subscriptions.loadError}
-          onRetry={retry}
+    <div className="flex h-dvh flex-col pt-3">
+      <div className="mx-auto w-full max-w-7xl shrink-0 px-4 sm:px-6">
+        <Header
+          onOpenList={dialogs.openList}
+          onOpenReport={dialogs.openReport}
+          onOpenSettings={dialogs.openSettings}
+          onExport={backup.exportBackup}
+          onImportFile={backup.selectFile}
+          toolbarSlotRef={setToolbarSlot}
         />
+      </div>
+
+      {/* The only scrolling region, full viewport width so its scrollbar sits at the window edge. */}
+      <main className="mt-4 min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-7xl px-4 pt-4 pb-16 sm:px-6">
+          <CalendarSection
+            toolbarSlot={toolbarSlot}
+            items={subscriptions.items}
+            status={subscriptions.status}
+            loadError={subscriptions.loadError}
+            onRetry={retry}
+          />
+        </div>
       </main>
 
       {/* Rendered as siblings, not nested, so the form and the confirmation stack above the list dialog. */}
