@@ -2,8 +2,17 @@
 import { describe, expect, it } from "vitest";
 import { makeOccurrence, makeSubscription } from "@/test/fixtures";
 import type { ExchangeRateDto } from "@/types/dto";
+import type { Reserve } from "./amortization";
 import type { Occurrence } from "./billingOccurrences";
-import { convertedTwdCents, needsExchangeRate, occurrenceTwdCents, rateOn, sumTwdCents } from "./currencyConversion";
+import {
+  convertedReserveTwdCents,
+  convertedTwdCents,
+  needsExchangeRate,
+  occurrenceTwdCents,
+  rateOn,
+  reserveTwdCents,
+  sumTwdCents,
+} from "./currencyConversion";
 
 const rates: ExchangeRateDto[] = [
   { date: "2026-05-14", rate: 31.492 },
@@ -17,6 +26,18 @@ const spotify = makeSubscription({ id: 2, name: "Spotify", currency: "USD", amou
 
 const charge = (subscription: typeof netflix, date: string, amount = subscription.amount): Occurrence =>
   makeOccurrence(Number(date.slice(8)), subscription, { date, amount });
+
+const reserve = (subscription: typeof netflix, chargeDate: string, reserveCents: number): Reserve => {
+  const [year, month, day] = chargeDate.split("-").map(Number);
+  return {
+    key: `${subscription.id}`,
+    subscription,
+    chargeDate: { year, month, day },
+    installment: 1,
+    reserveCents,
+    averageCents: reserveCents,
+  };
+};
 
 describe("rateOn", () => {
   const tests = [
@@ -90,20 +111,58 @@ describe("convertedTwdCents", () => {
   }
 });
 
-describe("needsExchangeRate", () => {
+describe("reserveTwdCents", () => {
   const tests = [
-    { name: "no charges", occurrences: [], expected: false },
-    { name: "TWD only", occurrences: [charge(netflix, "2026-05-14")], expected: false },
+    { name: "TWD keeps its amount", reserve: reserve(netflix, "2026-10-11", 8400), expected: 8400 },
+    // 9 × 31.514 = 283.63 → 284.
+    { name: "USD uses the charge day's rate", reserve: reserve(spotify, "2026-05-15", 900), expected: 28400 },
+    // 21 × 32.314 = 678.59 → 679.
     {
-      name: "any USD charge",
-      occurrences: [charge(netflix, "2026-05-14"), charge(spotify, "2026-05-15")],
-      expected: true,
+      name: "a charge beyond the rates uses the latest",
+      reserve: reserve(spotify, "2027-03-01", 2100),
+      expected: 67900,
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(needsExchangeRate(tt.occurrences)).toBe(tt.expected);
+      expect(reserveTwdCents(tt.reserve, rates)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("convertedReserveTwdCents", () => {
+  const reserves = [reserve(netflix, "2026-10-11", 8400), reserve(spotify, "2027-03-01", 2100)];
+
+  const tests = [
+    { name: "no reserves", reserves: [], rates, expected: 0 },
+    { name: "adds TWD as is and converts each USD reserve", reserves, rates, expected: 8400 + 67900 },
+    { name: "null without rates", reserves, rates: null, expected: null },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(convertedReserveTwdCents(tt.reserves, tt.rates)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("needsExchangeRate", () => {
+  const tests = [
+    { name: "no charges", items: [], expected: false },
+    { name: "TWD only", items: [charge(netflix, "2026-05-14")], expected: false },
+    {
+      name: "any USD charge",
+      items: [charge(netflix, "2026-05-14"), charge(spotify, "2026-05-15")],
+      expected: true,
+    },
+    { name: "TWD reserves only", items: [reserve(netflix, "2026-10-11", 8400)], expected: false },
+    { name: "any USD reserve", items: [reserve(spotify, "2027-03-01", 2100)], expected: true },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(needsExchangeRate(tt.items)).toBe(tt.expected);
     });
   }
 });

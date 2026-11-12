@@ -130,13 +130,13 @@ export function formatTimestamp(timestamp: string): string {
 export interface FormattedReserve {
   /** The rounded-up whole amount, e.g. "NT$ 84". */
   amount: string;
-  /** The exact average to one decimal place, e.g. "NT$ 83.3", or null when the average is whole. */
-  average: string | null;
+  /** The exact average to one decimal place, e.g. "NT$ 83.3", or the same as `amount` when the average is whole. */
+  average: string;
 }
 
 /**
- * Formats a monthly reserve as its rounded-up whole amount and, when the average is not whole, the exact
- * average to one decimal place; together they read as "NT$ 84 (NT$ 83.3)".
+ * Formats a monthly reserve as its rounded-up whole amount and its exact average, which is shown to one decimal
+ * place unless it is whole.
  *
  * @param currency - The currency.
  * @param reserveCents - The rounded-up reserve in cents; always a whole currency unit.
@@ -146,20 +146,33 @@ export interface FormattedReserve {
 export function formatReserve(currency: Currency, reserveCents: number, averageCents: number): FormattedReserve {
   const prefix = CURRENCY_PREFIX[currency];
   const amount = `${prefix} ${(reserveCents / 100).toLocaleString("en-US")}`;
-  if (averageCents === reserveCents) return { amount, average: null };
+  if (averageCents === reserveCents) return { amount, average: amount };
   const average = (averageCents / 100).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   return { amount, average: `${prefix} ${average}` };
 }
 
+/** A reserve's description, split into segments that should each stay on one line. */
+export interface ReserveDetail {
+  /** For wide screens, e.g. ["2027 年度", "第 3/12 期", "月均 NT$ 83.3"]. */
+  full: string[];
+  /** The same facts in fewer words for narrow screens, e.g. ["2027 年 3/12 期", "NT$ 83.3/月"]. */
+  compact: string[];
+}
+
 /**
- * Names the yearly charge a reserve saves up for and which installment towards it this is, e.g. "2026 年期 (3/12)".
+ * Describes a reserve by the year of the charge it saves for, which installment towards it this is and the
+ * exact monthly average, in a full and a compact wording.
  *
  * @param chargeYear - The year of that charge.
- * @param installment - Which monthly installment this is, from 1.
- * @returns The term year and installment out of {@link AMORTIZATION_MONTHS}.
+ * @param installment - Which monthly installment this is, from 1 to {@link AMORTIZATION_MONTHS}.
+ * @param average - The formatted monthly average, e.g. "NT$ 83.3".
  */
-export function formatReserveTerm(chargeYear: number, installment: number): string {
-  return `${chargeYear} 年期 (${installment}/${AMORTIZATION_MONTHS})`;
+export function formatReserveDetail(chargeYear: number, installment: number, average: string): ReserveDetail {
+  const progress = `${installment}/${AMORTIZATION_MONTHS}`;
+  return {
+    full: [`${chargeYear} 年度`, `第 ${progress} 期`, `月均 ${average}`],
+    compact: [`${chargeYear} 年 ${progress} 期`, `${average}/月`],
+  };
 }
 
 /** One currency's part of a converted total. */

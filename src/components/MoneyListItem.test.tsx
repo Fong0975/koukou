@@ -7,8 +7,8 @@ describe("MoneyListItem", () => {
   const tests: { name: string; subtitle: ReactNode; expected: string }[] = [
     {
       name: "text subtitle",
-      subtitle: "2026 年期 (8/12)",
-      expected: "網域2026 年期 (8/12)NT$ 84",
+      subtitle: "2026 年度 · 第 8/12 期",
+      expected: "網域2026 年度 · 第 8/12 期NT$ 84",
     },
     {
       name: "element subtitle",

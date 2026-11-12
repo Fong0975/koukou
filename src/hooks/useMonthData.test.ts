@@ -85,6 +85,15 @@ describe("useMonthData", () => {
       },
       expectedRateRequest: [2026, true],
     },
+    {
+      // Starting next year, the cloud plan has no charge this year but already saves for its first one.
+      name: "asks for rates when only a reserve is foreign",
+      items: [{ ...cloud, amortize: true, startDate: "2027-01-01" }],
+      cursor: { year: 2026, month: 8 },
+      rates,
+      expected: { charges: [], expiries: [], reserves: ["雲端空間"], yearTotal: {}, yearTwdCents: 0 },
+      expectedRateRequest: [2026, true],
+    },
   ];
 
   for (const tt of tests) {
