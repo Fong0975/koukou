@@ -51,6 +51,7 @@ const record: SubscriptionRecord = {
   amountPeriods: [
     { id: 20, amount: { toFixed: (d: number) => (330).toFixed(d) }, endDate: new Date("2026-03-31T00:00:00.000Z") },
   ],
+  pauses: [{ id: 30, startDate: new Date("2026-05-01T00:00:00.000Z"), endDate: null }],
   reminders: [
     { kind: "CHARGE", daysBefore: 0 },
     { kind: "EXPIRY", daysBefore: 7 },
@@ -67,6 +68,7 @@ const data: SubscriptionData = {
   startDate: "2026-01-01",
   contractEndDate: "2027-03-31",
   amountPeriods: [{ amount: 330, endDate: "2026-03-31" }],
+  pauses: [{ startDate: "2026-05-01", endDate: null }],
   note: null,
   schedules: [
     { cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null },
@@ -89,12 +91,14 @@ const columns = {
 
 const amountPeriodRows = [{ amount: "330.00", endDate: new Date("2026-03-31T00:00:00.000Z") }];
 
+const pauseRows = [{ startDate: new Date("2026-05-01T00:00:00.000Z"), endDate: null }];
+
 const reminderRows = [
   { kind: "CHARGE", daysBefore: 0 },
   { kind: "EXPIRY", daysBefore: 7 },
 ];
 
-const childCounts = { schedules: 2, amountPeriods: 1, reminders: 2 };
+const childCounts = { schedules: 2, amountPeriods: 1, pauses: 1, reminders: 2 };
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -173,6 +177,7 @@ describe("createSubscription", () => {
         startDate: "2026-01-01",
         contractEndDate: "2027-03-31",
         amountPeriods: [{ id: 20, amount: "330.00", endDate: "2026-03-31" }],
+        pauses: [{ id: 30, startDate: "2026-05-01", endDate: null }],
         reminders: { chargeDaysBefore: [0], expiryDaysBefore: [7] },
       });
       expect(loggerMock.info).toHaveBeenCalledWith("Subscription created", { id: 1, ...childCounts });
@@ -182,6 +187,7 @@ describe("createSubscription", () => {
             ...(tt.expectedColumns ?? columns),
             schedules: { create: data.schedules },
             amountPeriods: { create: amountPeriodRows },
+            pauses: { create: pauseRows },
             reminders: { create: reminderRows },
           },
         }),
@@ -192,7 +198,10 @@ describe("createSubscription", () => {
 
 describe("updateSubscription", () => {
   const tests: { name: string; result: () => Promise<unknown>; error?: ErrorCtor }[] = [
-    { name: "replaces fields, all schedules, past amounts and reminders", result: () => Promise.resolve(record) },
+    {
+      name: "replaces fields, all schedules, past amounts, pauses and reminders",
+      result: () => Promise.resolve(record),
+    },
     {
       name: "missing subscription → NotFoundError",
       result: () => Promise.reject(prismaError("P2025")),
@@ -223,6 +232,7 @@ describe("updateSubscription", () => {
             ...columns,
             schedules: { deleteMany: {}, create: data.schedules },
             amountPeriods: { deleteMany: {}, create: amountPeriodRows },
+            pauses: { deleteMany: {}, create: pauseRows },
             reminders: { deleteMany: {}, create: reminderRows },
           },
         }),

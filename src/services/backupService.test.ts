@@ -21,6 +21,7 @@ const { prismaMock } = vi.hoisted(() => {
       subscription: table("subscription"),
       billingSchedule: table("billingSchedule"),
       subscriptionAmountPeriod: table("subscriptionAmountPeriod"),
+      subscriptionPause: table("subscriptionPause"),
       subscriptionReminder: table("subscriptionReminder"),
       notificationSetting: { findUnique: vi.fn(), upsert: vi.fn(() => "notificationSetting.upsert") },
     },
@@ -58,6 +59,7 @@ describe("exportBackup", () => {
           startDate: new Date("2026-01-01T00:00:00.000Z"),
           createdAt: new Date("2026-01-01T00:00:00.000Z"),
           amountPeriods: [{ amount: decimal(330), endDate: new Date("2026-03-31T00:00:00.000Z") }],
+          pauses: [{ startDate: new Date("2026-05-01T00:00:00.000Z"), endDate: new Date("2026-06-30T00:00:00.000Z") }],
           reminders: [{ kind: "CHARGE", daysBefore: 0 }],
         },
       ],
@@ -108,6 +110,7 @@ describe("importBackup", () => {
     "subscription.createMany",
     "billingSchedule.createMany",
     "subscriptionAmountPeriod.createMany",
+    "subscriptionPause.createMany",
     "subscriptionReminder.createMany",
   ];
   const tests: {

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import type { SubscriptionDto } from "@/types/dto";
 import { toRemindersDto, toSubscriptionDto, type SubscriptionRecord } from "./subscriptionMapper";
 
 const decimal = (value: number) => ({ toFixed: (digits: number) => value.toFixed(digits) });
@@ -19,11 +20,16 @@ const baseRecord: SubscriptionRecord = {
   paymentMethod: { id: 3, type: "CREDIT_CARD", name: "國泰 CUBE", note: null, sortOrder: 10 },
   schedules: [{ id: 4, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
   amountPeriods: [],
+  pauses: [],
   reminders: [],
 };
 
 describe("toSubscriptionDto", () => {
-  const tests = [
+  const tests: {
+    name: string;
+    record: SubscriptionRecord;
+    expected: Partial<SubscriptionDto> & Pick<SubscriptionDto, "amount" | "amortize" | "contractEndDate">;
+  }[] = [
     {
       name: "formats integer amount with 2 decimals",
       record: baseRecord,
@@ -63,6 +69,25 @@ describe("toSubscriptionDto", () => {
         ],
       },
     },
+    {
+      name: "serializes pauses with date-only dates and keeps an open end",
+      record: {
+        ...baseRecord,
+        pauses: [
+          { id: 9, startDate: new Date("2026-03-01T00:00:00.000Z"), endDate: new Date("2026-04-30T00:00:00.000Z") },
+          { id: 10, startDate: new Date("2026-08-01T00:00:00.000Z"), endDate: null },
+        ],
+      },
+      expected: {
+        amount: "390.00",
+        amortize: false,
+        contractEndDate: null,
+        pauses: [
+          { id: 9, startDate: "2026-03-01", endDate: "2026-04-30" },
+          { id: 10, startDate: "2026-08-01", endDate: null },
+        ],
+      },
+    },
   ];
 
   for (const tt of tests) {
@@ -76,7 +101,8 @@ describe("toSubscriptionDto", () => {
         amortize: tt.expected.amortize,
         startDate: "2026-01-15",
         contractEndDate: tt.expected.contractEndDate,
-        amountPeriods: tt.expected.amountPeriods,
+        amountPeriods: tt.expected.amountPeriods ?? [],
+        pauses: tt.expected.pauses ?? [],
         note: null,
         category: baseRecord.category,
         paymentMethod: baseRecord.paymentMethod,

@@ -36,6 +36,18 @@ export function toAmountPeriodRows(data: Pick<SubscriptionData, "amountPeriods">
 }
 
 /**
+ * Maps validated pauses to rows of the pause table.
+ *
+ * @param data - Validated subscription data.
+ */
+export function toPauseRows(data: Pick<SubscriptionData, "pauses">) {
+  return data.pauses.map((pause) => ({
+    startDate: dateKeyToUtcDate(pause.startDate),
+    endDate: pause.endDate === null ? null : dateKeyToUtcDate(pause.endDate),
+  }));
+}
+
+/**
  * Maps validated reminders to rows of the reminder table.
  *
  * @param data - Validated subscription data.

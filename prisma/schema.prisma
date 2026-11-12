@@ -74,6 +74,7 @@ model Subscription {
   schedules       BillingSchedule[]
   amountPeriods   SubscriptionAmountPeriod[]
   reminders       SubscriptionReminder[]
+  pauses          SubscriptionPause[]
 
   @@index([categoryId])
   @@index([paymentMethodId])
@@ -91,6 +92,20 @@ model SubscriptionAmountPeriod {
 
   @@unique([subscriptionId, endDate])
   @@map("subscription_amount_periods")
+}
+
+/// A stretch of days on which a subscription is paused: nothing is charged, set aside or reminded of
+/// from `startDate` through `endDate`, both included. Without an `endDate` the subscription stays
+/// paused from `startDate` on, i.e. it is cancelled until an end date is filled in.
+model SubscriptionPause {
+  id             Int          @id @default(autoincrement())
+  subscriptionId Int          @map("subscription_id")
+  startDate      DateTime     @map("start_date") @db.Date
+  endDate        DateTime?    @map("end_date") @db.Date
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, startDate])
+  @@map("subscription_pauses")
 }
 
 /// One billing rule of a subscription. Which day fields are used depends on `cycle`:

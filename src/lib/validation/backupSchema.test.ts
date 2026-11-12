@@ -28,6 +28,7 @@ describe("backupSchema", () => {
             amount: 390,
             createdAt: "2026-01-01T00:00:00.000Z",
             amountPeriods: [{ amount: 330, endDate: "2026-03-31" }],
+            pauses: [{ startDate: "2026-05-01", endDate: "2026-06-30" }],
           }),
         ],
       },
@@ -61,6 +62,20 @@ describe("backupSchema", () => {
       expected: {
         subscriptions: [expect.objectContaining({ reminders: { chargeDaysBefore: [], expiryDaysBefore: [] } })],
       },
+    },
+    {
+      name: "accepts a backup written before pauses existed",
+      input: makeBackup({
+        subscriptions: [{ ...subscription, pauses: undefined } as unknown as typeof subscription],
+      }),
+      expected: { subscriptions: [expect.objectContaining({ pauses: [] })] },
+    },
+    {
+      name: "applies the pause rules",
+      input: makeBackup({
+        subscriptions: [{ ...subscription, pauses: [{ startDate: "2025-12-01", endDate: null }] }],
+      }),
+      error: { path: "subscriptions.0.pauses.0.startDate" },
     },
     {
       name: "applies the reminder rules",

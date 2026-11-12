@@ -1,6 +1,6 @@
 import type { BillingCycle, Currency, PaymentType, ReminderKind } from "@/generated/prisma/enums";
 import { utcDateToDateKey } from "@/lib/dateKey";
-import type { RemindersDto, SubscriptionDto } from "@/types/dto";
+import type { PauseDto, RemindersDto, SubscriptionDto } from "@/types/dto";
 
 /** Structural shape of a Prisma Decimal, enough to serialize it. */
 interface DecimalLike {
@@ -29,8 +29,12 @@ export interface SubscriptionRecord {
     month: number | null;
   }[];
   amountPeriods: { id: number; amount: DecimalLike; endDate: Date }[];
+  pauses: { id: number; startDate: Date; endDate: Date | null }[];
   reminders: ReminderRecord[];
 }
+
+/** Structural shape of a pause row, without the id a backup leaves out. */
+export type PauseRecord = Omit<SubscriptionRecord["pauses"][number], "id">;
 
 /** Structural shape of a reminder row loaded with {@link reminderInclude}. */
 export interface ReminderRecord {
@@ -55,6 +59,10 @@ export const subscriptionInclude = {
   amountPeriods: {
     select: { id: true, amount: true, endDate: true },
     orderBy: { endDate: "asc" },
+  },
+  pauses: {
+    select: { id: true, startDate: true, endDate: true },
+    orderBy: { startDate: "asc" },
   },
   reminders: reminderInclude,
 } as const;
@@ -89,6 +97,18 @@ export function serializeSubscriptionColumns(record: SubscriptionColumnsRecord) 
 }
 
 /**
+ * Serializes a pause's DATE columns as "YYYY-MM-DD".
+ *
+ * @param record - The pause row.
+ */
+export function serializePause(record: PauseRecord): Omit<PauseDto, "id"> {
+  return {
+    startDate: utcDateToDateKey(record.startDate),
+    endDate: record.endDate === null ? null : utcDateToDateKey(record.endDate),
+  };
+}
+
+/**
  * Groups reminder rows by kind into ascending day lists.
  *
  * @param rows - The subscription's reminder rows.
@@ -116,6 +136,7 @@ export function toSubscriptionDto(record: SubscriptionRecord): SubscriptionDto {
       amount: toAmountString(period.amount),
       endDate: utcDateToDateKey(period.endDate),
     })),
+    pauses: record.pauses.map((pause) => ({ id: pause.id, ...serializePause(pause) })),
     category: record.category,
     paymentMethod: record.paymentMethod,
     schedules: record.schedules,

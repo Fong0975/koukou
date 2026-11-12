@@ -35,6 +35,7 @@ export function makeSubscription(overrides: Partial<SubscriptionDto> = {}): Subs
     startDate: "2026-01-01",
     contractEndDate: null,
     amountPeriods: [],
+    pauses: [],
     note: null,
     category: makeCategory(),
     paymentMethod: makePaymentMethod(),

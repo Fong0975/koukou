@@ -33,6 +33,7 @@ describe("subscriptionInputSchema", () => {
         startDate: "2026-01-15",
         contractEndDate: null,
         amountPeriods: [],
+        pauses: [],
         note: null,
         reminders: { chargeDaysBefore: [], expiryDaysBefore: [] },
       },
@@ -115,6 +116,38 @@ describe("subscriptionInputSchema", () => {
         ],
       },
       errorPath: "amountPeriods.1.endDate",
+    },
+    {
+      name: "accepts pauses starting on or after the start date",
+      input: {
+        ...valid,
+        pauses: [
+          { startDate: "2026-01-15", endDate: "2026-02-28" },
+          { startDate: "2026-06-01", endDate: "" },
+        ],
+      },
+      expected: {
+        pauses: [
+          { startDate: "2026-01-15", endDate: "2026-02-28" },
+          { startDate: "2026-06-01", endDate: null },
+        ],
+      },
+    },
+    {
+      name: "rejects a pause starting before the start date",
+      input: { ...valid, pauses: [{ startDate: "2026-01-14", endDate: null }] },
+      errorPath: "pauses.0.startDate",
+    },
+    {
+      name: "rejects overlapping pauses",
+      input: {
+        ...valid,
+        pauses: [
+          { startDate: "2026-03-01", endDate: "2026-04-30" },
+          { startDate: "2026-04-30", endDate: null },
+        ],
+      },
+      errorPath: "pauses.1.startDate",
     },
     { name: "defaults currency to TWD", input: { ...valid, currency: undefined }, expected: { currency: "TWD" } },
     { name: "keeps a trimmed note", input: { ...valid, note: " 家庭方案 " }, expected: { note: "家庭方案" } },
