@@ -23,6 +23,7 @@ import { AmountSection } from "./AmountSection";
 import { CategoryQuickAdd } from "./CategoryQuickAdd";
 import { DateField } from "./DateField";
 import { GuardedModal } from "./GuardedModal";
+import { PauseEditor } from "./PauseEditor";
 import { PaymentMethodQuickAdd } from "./PaymentMethodQuickAdd";
 import { ReminderSection } from "./ReminderSection";
 import { ScheduleEditor } from "./ScheduleEditor";
@@ -131,6 +132,13 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
           value={draft.contractEndDate}
           onChange={(value) => set("contractEndDate", value)}
           error={fieldErrors.contractEndDate}
+        />
+
+        <PauseEditor
+          startDate={draft.startDate}
+          pauses={draft.pauses}
+          onChange={(pauses) => set("pauses", pauses)}
+          errors={fieldErrors}
         />
 
         <AmountSection

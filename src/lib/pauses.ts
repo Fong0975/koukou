@@ -1,4 +1,4 @@
-import type { PauseDto } from "@/types/dto";
+import type { PauseDto, SubscriptionDto } from "@/types/dto";
 
 type PauseDates = Pick<PauseDto, "startDate" | "endDate">;
 
@@ -43,4 +43,34 @@ export function pauseStatusOn(subscription: { pauses: PauseDates[] }, dateKey: s
   return pause.endDate === null
     ? { kind: "cancelled", since: pause.startDate }
     : { kind: "paused", until: pause.endDate };
+}
+
+/** A subscription that is paused or cancelled, with its status. */
+export interface PausedSubscription {
+  item: SubscriptionDto;
+  status: PauseStatus;
+}
+
+/**
+ * Splits subscriptions into those running on a day and those paused or cancelled that day.
+ *
+ * @param items - The subscriptions.
+ * @param dateKey - The day as "YYYY-MM-DD", usually today; null keeps every subscription running, e.g. before
+ *   the browser's date is known.
+ * @returns The running ones in input order, and the paused ones with paused before cancelled, each by name.
+ */
+export function splitByPauseStatus(
+  items: SubscriptionDto[],
+  dateKey: string | null,
+): { active: SubscriptionDto[]; paused: PausedSubscription[] } {
+  const active: SubscriptionDto[] = [];
+  const paused: PausedSubscription[] = [];
+  for (const item of items) {
+    const status = dateKey === null ? null : pauseStatusOn(item, dateKey);
+    if (status === null) active.push(item);
+    else paused.push({ item, status });
+  }
+  const kindRank = (status: PauseStatus) => (status.kind === "paused" ? 0 : 1);
+  paused.sort((a, b) => kindRank(a.status) - kindRank(b.status) || a.item.name.localeCompare(b.item.name));
+  return { active, paused };
 }

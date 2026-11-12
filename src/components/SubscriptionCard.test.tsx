@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { PauseStatus } from "@/lib/pauses";
 import { makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
 import { SubscriptionCard } from "./SubscriptionCard";
@@ -22,6 +23,8 @@ describe("SubscriptionCard", () => {
     remindersActive?: boolean;
     /** Accessible name of the reminder bell, or undefined when there should be none. */
     bell?: string;
+    pauseStatus?: PauseStatus;
+    showCategory?: boolean;
   }[] = [
     {
       name: "renders name, amount, schedules and card",
@@ -65,6 +68,28 @@ describe("SubscriptionCard", () => {
       schedules: ["每月 1 日", "每月 15 日"],
     },
     {
+      name: "shows the category when asked",
+      item,
+      showCategory: true,
+      texts: ["影音串流"],
+      schedules: ["每月 1 日", "每月 15 日"],
+    },
+    {
+      name: "labels a paused subscription",
+      item,
+      pauseStatus: { kind: "paused", until: "2026-04-30" },
+      texts: ["暫停中・至 2026/04/30"],
+      schedules: ["每月 1 日", "每月 15 日"],
+    },
+    {
+      name: "labels a cancelled subscription",
+      item,
+      pauseStatus: { kind: "cancelled", since: "2026-08-01" },
+      texts: ["已取消・2026/08/01 起"],
+      absentTexts: ["暫停中"],
+      schedules: ["每月 1 日", "每月 15 日"],
+    },
+    {
       name: "shows a bell describing the reminders",
       item: {
         ...item,
@@ -92,6 +117,8 @@ describe("SubscriptionCard", () => {
           onEdit={vi.fn()}
           onDelete={vi.fn()}
           remindersActive={tt.remindersActive ?? true}
+          pauseStatus={tt.pauseStatus}
+          showCategory={tt.showCategory}
         />,
       );
 
@@ -109,7 +136,9 @@ describe("SubscriptionCard", () => {
       } else {
         expect(screen.queryByRole("img", { name: /LINE 提醒/ })).not.toBeInTheDocument();
       }
-      expect(screen.getByRole("article", { name: tt.item.name })).toBeInTheDocument();
+      const article = screen.getByRole("article", { name: tt.item.name });
+      if (tt.pauseStatus) expect(article).toHaveClass("opacity-75");
+      else expect(article).not.toHaveClass("opacity-75");
     });
   }
 

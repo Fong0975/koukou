@@ -5,6 +5,7 @@ import { currencyEntries, type CurrencyTotals } from "./billingSummary";
 import { toCalendarDate } from "./calendarMonth";
 import { dateKeyToUtcDate, toDateKey } from "./dateKey";
 import { CURRENCY_PREFIX, CYCLE_LABELS, WEEKDAY_LABELS } from "./labels";
+import type { PauseStatus } from "./pauses";
 
 /** Amount split into a currency prefix and a grouped number, for separate styling. */
 export interface FormattedAmount {
@@ -111,6 +112,17 @@ export function formatContractRemaining(days: number): string {
  */
 export function formatFullDate(date: string): string {
   return date.replaceAll("-", "/");
+}
+
+/**
+ * Describes whether a subscription is paused or cancelled, e.g. "暫停中・至 2026/04/30" or "已取消・2026/08/01 起".
+ *
+ * @param status - The subscription's pause status.
+ */
+export function formatPauseStatus(status: PauseStatus): string {
+  return status.kind === "paused"
+    ? `暫停中・至 ${formatFullDate(status.until)}`
+    : `已取消・${formatFullDate(status.since)} 起`;
 }
 
 /**
