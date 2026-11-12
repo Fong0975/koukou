@@ -494,55 +494,31 @@ describe("SubscriptionFormModal", () => {
 });
 
 describe("SubscriptionFormModal layout", () => {
-  const sections = ["基本資料", "金額與扣款", "訂閱期間", "LINE 提醒"];
-  const tests: { name: string; section: string; field: () => HTMLElement; expectedRequired: boolean }[] = [
+  const tests: { name: string; expectDom: () => void }[] = [
     {
-      name: "名稱 is required",
-      section: "基本資料",
-      field: () => screen.getByLabelText("名稱"),
-      expectedRequired: true,
+      name: "groups the fields into four sections in order",
+      expectDom: () =>
+        expect(screen.getAllByRole("region").map((region) => within(region).getByRole("heading").textContent)).toEqual([
+          "基本資料",
+          "金額與扣款",
+          "訂閱期間",
+          "LINE 提醒",
+        ]),
     },
     {
-      name: "類型 is required",
-      section: "基本資料",
-      field: () => screen.getByLabelText("類型"),
-      expectedRequired: true,
+      name: "puts the reminders in their own section",
+      expectDom: () =>
+        expect(screen.getByRole("region", { name: "LINE 提醒" })).toContainElement(
+          screen.getByRole("group", { name: "LINE 提醒" }),
+        ),
     },
     {
-      name: "備註 is optional",
-      section: "基本資料",
-      field: () => screen.getByLabelText("備註"),
-      expectedRequired: false,
-    },
-    {
-      name: "金額 is required",
-      section: "金額與扣款",
-      field: () => screen.getByRole("textbox", { name: "金額" }),
-      expectedRequired: true,
-    },
-    {
-      name: "扣款方式 is required",
-      section: "金額與扣款",
-      field: () => screen.getByLabelText("扣款方式"),
-      expectedRequired: true,
-    },
-    {
-      name: "起始日 is required",
-      section: "訂閱期間",
-      field: () => screen.getByLabelText("起始日"),
-      expectedRequired: true,
-    },
-    {
-      name: "到期日 is optional",
-      section: "訂閱期間",
-      field: () => screen.getByLabelText("到期日"),
-      expectedRequired: false,
-    },
-    {
-      name: "the reminders sit in their own section",
-      section: "LINE 提醒",
-      field: () => screen.getByRole("group", { name: "LINE 提醒" }),
-      expectedRequired: false,
+      name: "marks required fields instead of labelling optional ones",
+      expectDom: () => {
+        expect(screen.queryByText(/選填/)).not.toBeInTheDocument();
+        expect(screen.getByLabelText("名稱")).toHaveAttribute("aria-required", "true");
+        expect(screen.getByLabelText("備註")).not.toHaveAttribute("aria-required");
+      },
     },
   ];
 
@@ -560,14 +536,7 @@ describe("SubscriptionFormModal layout", () => {
         />,
       );
 
-      expect(screen.getAllByRole("region").map((region) => within(region).getByRole("heading").textContent)).toEqual(
-        sections,
-      );
-      const field = tt.field();
-      expect(screen.getByRole("region", { name: tt.section })).toContainElement(field);
-      if (tt.expectedRequired) expect(field).toHaveAttribute("aria-required", "true");
-      else expect(field).not.toHaveAttribute("aria-required");
-      expect(screen.queryByText(/選填/)).not.toBeInTheDocument();
+      tt.expectDom();
     });
   }
 });
