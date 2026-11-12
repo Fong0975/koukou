@@ -2,6 +2,7 @@ import type { BillingScheduleDto, SubscriptionDto } from "@/types/dto";
 import { amountOn } from "./amountPeriods";
 import { daysInMonth, type YearMonth } from "./calendarMonth";
 import { toDateKey } from "./dateKey";
+import { isPausedOn } from "./pauses";
 
 /** One charge of a subscription on a specific day of a month. */
 export interface Occurrence {
@@ -49,22 +50,24 @@ export function scheduleDaysInMonth(schedule: ScheduleRule, target: YearMonth): 
 
 /**
  * Tells whether a subscription charges on a day: from its start date through its contract end date,
- * which still charges.
+ * which still charges, except on the days of its pauses.
  *
  * @param subscription - The subscription.
  * @param dateKey - The day as "YYYY-MM-DD".
  */
 export function isActiveOn(
-  subscription: Pick<SubscriptionDto, "startDate" | "contractEndDate">,
+  subscription: Pick<SubscriptionDto, "startDate" | "contractEndDate" | "pauses">,
   dateKey: string,
 ): boolean {
-  const { startDate, contractEndDate } = subscription;
-  return dateKey >= startDate && (contractEndDate === null || dateKey <= contractEndDate);
+  const { startDate, contractEndDate, pauses } = subscription;
+  return (
+    dateKey >= startDate && (contractEndDate === null || dateKey <= contractEndDate) && !isPausedOn(pauses, dateKey)
+  );
 }
 
 /**
  * Lists one subscription's charges in a month, skipping days outside its start and contract end dates
- * and pricing each charge with the amount that applied on that day. A day whose amount is zero (e.g. during
+ * or inside its pauses, and pricing each charge with the amount that applied on that day. A day whose amount is zero (e.g. during
  * a free trial) is not a charge and is skipped too.
  *
  * @param subscription - The subscription.

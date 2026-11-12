@@ -53,7 +53,7 @@ function installmentNumber(chargeDate: CalendarDate, target: YearMonth): number 
 
 /**
  * Builds the reserve of one yearly schedule for a month, or none when that charge falls
- * before the subscription starts or after its contract ends, or its amount is zero (e.g. a free trial).
+ * before the subscription starts, after its contract ends or during a pause, or its amount is zero (e.g. a free trial).
  *
  * @param subscription - An amortized subscription.
  * @param schedule - One of its YEARLY billing rules.

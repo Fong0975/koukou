@@ -5,6 +5,7 @@ import { sumByCurrency, type CurrencyTotals } from "../billingSummary";
 import type { YearMonth } from "../calendarMonth";
 import { monthContractExpiries, type ContractExpiry } from "../contractExpiries";
 import { addDays, dateKeyToYearMonth } from "../dateKey";
+import { isPausedOn } from "../pauses";
 
 /** An upcoming charge a subscription asked to be reminded of. */
 export interface ChargeReminder {
@@ -75,14 +76,15 @@ function subscriptionChargeReminders(subscription: SubscriptionDto, today: strin
 }
 
 /**
- * Lists the contract ends a subscription's expiry reminders fire for today.
+ * Lists the contract ends a subscription's expiry reminders fire for today. An end date that falls in a pause
+ * has nothing to remind of.
  *
  * @param subscription - The subscription.
  * @param today - Today as "YYYY-MM-DD".
  */
 function subscriptionExpiryReminders(subscription: SubscriptionDto, today: string): ExpiryReminder[] {
   const { contractEndDate } = subscription;
-  if (contractEndDate === null) return [];
+  if (contractEndDate === null || isPausedOn(subscription.pauses, contractEndDate)) return [];
   return subscription.reminders.expiryDaysBefore
     .filter((daysBefore) => addDays(today, daysBefore) === contractEndDate)
     .map((daysBefore) => ({ date: contractEndDate, daysBefore, subscription }));

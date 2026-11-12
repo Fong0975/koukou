@@ -37,6 +37,22 @@ describe("monthContractExpiries", () => {
       expected: [["Domain", 15, "2027-10-15"]],
     },
     { name: "a different month has none", items: [phone], target: { year: 2026, month: 11 }, expected: [] },
+    {
+      name: "skips a contract ending during a pause",
+      items: [
+        { ...phone, pauses: [{ id: 1, startDate: "2026-10-01", endDate: "2026-10-31" }] },
+        { ...gym, pauses: [{ id: 2, startDate: "2026-09-01", endDate: null }] },
+        insurance,
+      ],
+      target: { year: 2026, month: 10 },
+      expected: [["Insurance", 31, "2026-10-31"]],
+    },
+    {
+      name: "keeps a contract ending the day after a pause",
+      items: [{ ...gym, pauses: [{ id: 1, startDate: "2026-09-01", endDate: "2026-10-04" }] }],
+      target: { year: 2026, month: 10 },
+      expected: [["Gym", 5, "2026-10-05"]],
+    },
   ];
 
   for (const tt of tests) {
