@@ -56,7 +56,7 @@ describe("SubscriptionCard", () => {
       name: "leaves out the contract note without an end date",
       item,
       texts: ["Netflix"],
-      absentTexts: ["合約到期"],
+      absentTexts: ["到期"],
       schedules: ["每月 1 日", "每月 15 日"],
     },
     {

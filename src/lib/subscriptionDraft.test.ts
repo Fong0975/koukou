@@ -13,6 +13,7 @@ import {
   newScheduleDraft,
   nextAmountPeriodDraft,
   nextPauseDraft,
+  resubscribeDraft,
   toFieldErrors,
   type FieldErrors,
   type SubscriptionDraft,
@@ -179,6 +180,42 @@ describe("nextPauseDraft", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(nextPauseDraft(tt.draft, today)).toMatchObject({ startDate: tt.expected, endDate: "" });
+    });
+  }
+});
+
+describe("resubscribeDraft", () => {
+  const earlier = newPauseDraft({ startDate: "2026-02-01", endDate: "2026-02-28" });
+
+  const tests = [
+    {
+      name: "turns the days between the end date and the resume date into a pause",
+      draft: { contractEndDate: "2026-06-30", pauses: [earlier] },
+      resumeDate: "2026-12-01",
+      expected: [
+        { startDate: "2026-02-01", endDate: "2026-02-28" },
+        { startDate: "2026-07-01", endDate: "2026-11-30" },
+      ],
+    },
+    {
+      name: "adds a one-day pause when it resumes two days after ending",
+      draft: { contractEndDate: "2026-06-30", pauses: [] },
+      resumeDate: "2026-07-02",
+      expected: [{ startDate: "2026-07-01", endDate: "2026-07-01" }],
+    },
+    {
+      name: "adds no pause when it resumes the day after ending",
+      draft: { contractEndDate: "2026-06-30", pauses: [earlier] },
+      resumeDate: "2026-07-01",
+      expected: [{ startDate: "2026-02-01", endDate: "2026-02-28" }],
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const result = resubscribeDraft(tt.draft, tt.resumeDate);
+      expect(result.contractEndDate).toBe("");
+      expect(result.pauses.map(({ startDate, endDate }) => ({ startDate, endDate }))).toEqual(tt.expected);
     });
   }
 });

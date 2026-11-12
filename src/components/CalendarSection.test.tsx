@@ -94,7 +94,7 @@ describe("CalendarSection", () => {
         expect(screen.getByText("這個月沒有扣款。")).toBeInTheDocument();
         expect(screen.getByText("共 0 次扣款，來自 0 個項目")).toBeInTheDocument();
         expect(screen.queryByRole("list", { name: "本月預扣" })).not.toBeInTheDocument();
-        expect(screen.getByRole("region", { name: "本月到期" })).toHaveTextContent("這個月沒有到期的合約。");
+        expect(screen.getByRole("region", { name: "本月到期" })).toHaveTextContent("這個月沒有到期的項目。");
       },
       expectedRateRequest: [2026, false],
     },
@@ -165,7 +165,7 @@ describe("CalendarSection", () => {
       status: "ready",
       items: [phone],
       expectDom: () => {
-        expect(screen.getByRole("cell", { name: "20 日：合約到期：中華電信" })).toBeInTheDocument();
+        expect(screen.getByRole("cell", { name: "20 日：到期：中華電信" })).toBeInTheDocument();
         expect(screen.getByRole("cell", { name: "25 日" })).toBeInTheDocument();
         expandCard("本月到期");
         expect(screen.getByRole("list", { name: "到期項目" }).textContent).toBe("中華電信10/20（二）");

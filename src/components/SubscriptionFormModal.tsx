@@ -10,6 +10,7 @@ import {
   emptyDraft,
   hasYearlySchedule,
   isDraftChanged,
+  resubscribeDraft,
   toFieldErrors,
   type FieldErrors,
   type SubscriptionDraft,
@@ -26,6 +27,7 @@ import { GuardedModal } from "./GuardedModal";
 import { PauseEditor } from "./PauseEditor";
 import { PaymentMethodQuickAdd } from "./PaymentMethodQuickAdd";
 import { ReminderSection } from "./ReminderSection";
+import { ResubscribeControl } from "./ResubscribeControl";
 import { ScheduleEditor } from "./ScheduleEditor";
 import { SelectWithQuickAdd } from "./SelectWithQuickAdd";
 
@@ -126,13 +128,20 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
           error={fieldErrors.startDate}
         />
 
-        <DateField
-          id="sub-contract-end-date"
-          label="合約到期日（選填）"
-          value={draft.contractEndDate}
-          onChange={(value) => set("contractEndDate", value)}
-          error={fieldErrors.contractEndDate}
-        />
+        <div>
+          <DateField
+            id="sub-contract-end-date"
+            label="到期日（選填）"
+            value={draft.contractEndDate}
+            onChange={(value) => set("contractEndDate", value)}
+            error={fieldErrors.contractEndDate}
+            hint="到期日當天仍扣款，之後不再扣款；取消訂閱也填這裡。"
+          />
+          <ResubscribeControl
+            endDate={draft.contractEndDate}
+            onResubscribe={(resumeDate) => patch(resubscribeDraft(draft, resumeDate))}
+          />
+        </div>
 
         <PauseEditor
           startDate={draft.startDate}

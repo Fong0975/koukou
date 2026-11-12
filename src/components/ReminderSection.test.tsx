@@ -70,8 +70,8 @@ describe("ReminderSection", () => {
         else expect(control).toBeEnabled();
       }
       expect(screen.getByRole("group", { name: "扣款提醒" })).toBeInTheDocument();
-      if (tt.expectExpiry) expect(screen.getByRole("group", { name: "合約到期提醒" })).toBeInTheDocument();
-      else expect(screen.queryByRole("group", { name: "合約到期提醒" })).not.toBeInTheDocument();
+      if (tt.expectExpiry) expect(screen.getByRole("group", { name: "到期提醒" })).toBeInTheDocument();
+      else expect(screen.queryByRole("group", { name: "到期提醒" })).not.toBeInTheDocument();
 
       if (tt.click) fireEvent.click(screen.getByLabelText(tt.click));
       if (tt.expectedChange) expect(onChange).toHaveBeenCalledWith(tt.expectedChange);

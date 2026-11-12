@@ -63,7 +63,7 @@ export function ReminderSection({
         {hasContractEnd && (
           <div role="group" aria-labelledby={expiryId}>
             <p id={expiryId} className="mb-2 text-sm font-medium">
-              合約到期提醒
+              到期提醒
             </p>
             <div className="pl-4">
               <ExpiryReminderToggles

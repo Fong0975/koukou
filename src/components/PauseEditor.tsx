@@ -15,9 +15,9 @@ interface PauseEditorProps {
 }
 
 /**
- * Editable list of the stretches a subscription is paused, each with a start date and an optional end date;
- * one without an end date marks the subscription cancelled from its start date on. "新增暫停期間" appends a
- * row starting today, or after the subscription start or the latest pause when those come later.
+ * Editable list of the stretches a subscription is paused, each charging again the day after its end date.
+ * "新增暫停期間" appends a row starting today, or after the subscription start or the latest pause when those
+ * come later, with its end date left to pick.
  */
 export function PauseEditor({ startDate, pauses, onChange, errors }: PauseEditorProps) {
   const labelId = useId();
@@ -31,7 +31,7 @@ export function PauseEditor({ startDate, pauses, onChange, errors }: PauseEditor
       <span className="field-label" id={labelId}>
         暫停期間（選填）
       </span>
-      <p className="text-sm text-ink-soft">暫停期間不扣款；未填結束日表示已取消，之後重新訂閱再補上結束日。</p>
+      <p className="text-sm text-ink-soft">暫停期間不扣款，結束日隔天自動恢復；要停止扣款請設定到期日。</p>
       {pauses.length > 0 && (
         <ul aria-labelledby={labelId} className="mt-3 flex flex-col gap-2 border-l-2 border-leaf-500/20 pl-3">
           {pauses.map((pause, index) => {
@@ -60,7 +60,6 @@ export function PauseEditor({ startDate, pauses, onChange, errors }: PauseEditor
                     value={pause.endDate}
                     onChange={(event) => patch(pause.key, { endDate: event.target.value })}
                   />
-                  {pause.endDate === "" && <span className="text-sm text-berry">已取消</span>}
                   <button
                     type="button"
                     className="icon-btn"

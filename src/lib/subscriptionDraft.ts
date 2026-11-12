@@ -24,10 +24,7 @@ export interface AmountPeriodDraft {
   endDate: string;
 }
 
-/**
- * Editable pause; dates are "YYYY-MM-DD" as produced by a date input, and an empty `endDate` leaves the
- * subscription paused for good (cancelled).
- */
+/** Editable pause; dates are "YYYY-MM-DD" as produced by a date input, or "" before one is picked. */
 export interface PauseDraft {
   /** Stable React key; not sent to the server. */
   key: string;
@@ -46,7 +43,7 @@ export interface SubscriptionDraft {
   /** Spread yearly charges into monthly reserves; only takes effect with a YEARLY schedule. */
   amortize: boolean;
   startDate: string;
-  /** Last day of the contract as "YYYY-MM-DD", or "" without one. */
+  /** Last charging day as "YYYY-MM-DD", or "" while it keeps charging. */
   contractEndDate: string;
   amountPeriods: AmountPeriodDraft[];
   pauses: PauseDraft[];
@@ -132,9 +129,9 @@ export function newPauseDraft(values: Omit<PauseDraft, "key">): PauseDraft {
 }
 
 /**
- * Creates the pause row added by the "新增暫停期間" button, without an end date. It starts today, or
- * later when the subscription starts later or another pause ends today or later, so it does not
- * start before the subscription or overlap a pause that has an end date.
+ * Creates the pause row added by the "新增暫停期間" button, with its end date left for the person to pick.
+ * It starts today, or later when the subscription starts later or another pause ends today or later, so
+ * it does not start before the subscription or overlap another pause.
  *
  * @param draft - The form state the row is added to.
  * @param today - Today's date key.
@@ -148,6 +145,26 @@ export function nextPauseDraft(draft: Pick<SubscriptionDraft, "startDate" | "pau
     .filter(isDateKey)
     .reduce((latest, date) => (date > latest ? date : latest), today);
   return newPauseDraft({ startDate, endDate: "" });
+}
+
+/**
+ * Starts an ended subscription charging again: the days between its end date and the resume date become a
+ * pause, so the earlier charges stay and nothing is charged while it was stopped, and the end date is cleared.
+ *
+ * @param draft - The form state; its `contractEndDate` must be a date before `resumeDate`.
+ * @param resumeDate - The first day it charges again, as "YYYY-MM-DD".
+ * @returns The fields to patch into the form; the pause is left out when it resumes the day after ending.
+ */
+export function resubscribeDraft(
+  draft: Pick<SubscriptionDraft, "contractEndDate" | "pauses">,
+  resumeDate: string,
+): Pick<SubscriptionDraft, "contractEndDate" | "pauses"> {
+  const firstStoppedDay = addDays(draft.contractEndDate, 1);
+  const gap =
+    resumeDate > firstStoppedDay
+      ? [newPauseDraft({ startDate: firstStoppedDay, endDate: addDays(resumeDate, -1) })]
+      : [];
+  return { contractEndDate: "", pauses: [...draft.pauses, ...gap] };
 }
 
 /**

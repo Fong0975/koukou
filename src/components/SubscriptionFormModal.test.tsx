@@ -185,7 +185,7 @@ describe("SubscriptionFormModal", () => {
     {
       name: "a contract end date can be added and is submitted",
       fill: true,
-      act: () => fireEvent.change(screen.getByLabelText("合約到期日（選填）"), { target: { value: "2099-12-31" } }),
+      act: () => fireEvent.change(screen.getByLabelText("到期日（選填）"), { target: { value: "2099-12-31" } }),
       click: "新增扣款",
       expectedTitle: "新增扣款",
       expectedInput: { ...filledInput, contractEndDate: "2099-12-31" },
@@ -220,7 +220,7 @@ describe("SubscriptionFormModal", () => {
       expectedTitle: "編輯扣款",
       expectedCloses: 0,
       expectedFieldError: "到期日不可早於起始日",
-      expectedInvalidField: "合約到期日（選填）",
+      expectedInvalidField: "到期日（選填）",
     },
     {
       name: "a past amount ending before the start date is caught before submitting",
@@ -263,6 +263,57 @@ describe("SubscriptionFormModal", () => {
         contractEndDate: "",
         amountPeriods: [],
         pauses: [{ startDate: "2026-03-01", endDate: "2026-03-31" }],
+        note: "",
+        schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
+        reminders: noReminders,
+      },
+      expectedCloses: 1,
+    },
+    {
+      name: "a pause without an end date is caught before submitting",
+      fill: true,
+      act: () => fireEvent.click(screen.getByRole("button", { name: "新增暫停期間" })),
+      click: "新增扣款",
+      expectedTitle: "新增扣款",
+      expectedCloses: 0,
+      expectedFieldError: "請輸入暫停結束日",
+      expectedInvalidField: "第 1 段暫停的結束日",
+    },
+    {
+      name: "a pause ending after the end date is caught before submitting",
+      initial: makeSubscription({
+        contractEndDate: "2099-06-30",
+        pauses: [{ id: 1, startDate: "2099-06-01", endDate: "2099-07-31" }],
+      }),
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedCloses: 0,
+      expectedFieldError: "暫停期間需在到期日之前結束",
+      expectedInvalidField: "第 1 段暫停的結束日",
+    },
+    {
+      name: "resubscribing turns the stopped days into a pause and clears the end date",
+      initial: makeSubscription({ startDate: "2020-01-01", contractEndDate: "2020-06-30" }),
+      act: () => {
+        expect(screen.getByText("到期日當天仍扣款，之後不再扣款；取消訂閱也填這裡。")).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("恢復扣款日"), { target: { value: "2020-12-01" } });
+        fireEvent.click(screen.getByRole("button", { name: "重新訂閱" }));
+        expect(screen.getByLabelText("到期日（選填）")).toHaveValue("");
+        expect(screen.queryByLabelText("恢復扣款日")).not.toBeInTheDocument();
+      },
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedInput: {
+        name: "Netflix",
+        categoryId: "2",
+        paymentMethodId: "3",
+        currency: "TWD",
+        amount: "390",
+        amortize: false,
+        startDate: "2020-01-01",
+        contractEndDate: "",
+        amountPeriods: [],
+        pauses: [{ startDate: "2020-07-01", endDate: "2020-11-30" }],
         note: "",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
         reminders: noReminders,
@@ -342,7 +393,7 @@ describe("SubscriptionFormModal", () => {
       fill: true,
       act: () => {
         expect(screen.queryByRole("checkbox", { name: "到期前 7 天" })).not.toBeInTheDocument();
-        fireEvent.change(screen.getByLabelText("合約到期日（選填）"), { target: { value: "2099-12-31" } });
+        fireEvent.change(screen.getByLabelText("到期日（選填）"), { target: { value: "2099-12-31" } });
         fireEvent.click(screen.getByRole("checkbox", { name: "到期前 7 天" }));
         fireEvent.click(screen.getByRole("checkbox", { name: "到期當日" }));
       },
@@ -363,7 +414,7 @@ describe("SubscriptionFormModal", () => {
       }),
       act: () => {
         expect(screen.getByRole("checkbox", { name: "到期前 7 天" })).toBeChecked();
-        fireEvent.change(screen.getByLabelText("合約到期日（選填）"), { target: { value: "" } });
+        fireEvent.change(screen.getByLabelText("到期日（選填）"), { target: { value: "" } });
         expect(screen.queryByRole("checkbox", { name: "到期前 7 天" })).not.toBeInTheDocument();
       },
       click: "儲存變更",

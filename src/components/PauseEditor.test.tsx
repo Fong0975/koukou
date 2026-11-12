@@ -17,8 +17,8 @@ describe("PauseEditor", () => {
   });
 
   const spring = newPauseDraft({ startDate: "2026-03-01", endDate: "2026-04-30" });
-  const cancelled = newPauseDraft({ startDate: "2026-08-01", endDate: "" });
-  const pauses = [spring, cancelled];
+  const summer = newPauseDraft({ startDate: "2026-08-01", endDate: "2026-08-31" });
+  const pauses = [spring, summer];
 
   const tests: {
     name: string;
@@ -37,7 +37,7 @@ describe("PauseEditor", () => {
       },
     },
     {
-      name: "lists each pause's dates and marks an open end as cancelled",
+      name: "lists each pause's dates",
       pauses,
       expectDom: () => {
         const rows = within(screen.getByRole("list", { name: "暫停期間（選填）" })).getAllByRole("listitem");
@@ -46,9 +46,8 @@ describe("PauseEditor", () => {
         expect(screen.getByLabelText(`${FIRST}的開始日`)).toHaveAttribute("min", "2026-01-15");
         expect(screen.getByLabelText(`${FIRST}的結束日`)).toHaveValue("2026-04-30");
         expect(screen.getByLabelText(`${FIRST}的結束日`)).toHaveAttribute("min", "2026-03-01");
-        expect(screen.getByLabelText(`${SECOND}的結束日`)).toHaveValue("");
-        expect(rows[0]).not.toHaveTextContent("已取消");
-        expect(rows[1]).toHaveTextContent("已取消");
+        expect(screen.getByLabelText(`${SECOND}的結束日`)).toHaveValue("2026-08-31");
+        expect(screen.queryByText("已取消")).not.toBeInTheDocument();
       },
     },
     {
@@ -57,11 +56,11 @@ describe("PauseEditor", () => {
       act: () => fireEvent.change(screen.getByLabelText(`${FIRST}的開始日`), { target: { value: "2026-02-01" } }),
       expectChange: (next) => {
         expect(next.map((p) => p.startDate)).toEqual(["2026-02-01", "2026-08-01"]);
-        expect(next[1]).toBe(cancelled);
+        expect(next[1]).toBe(summer);
       },
     },
     {
-      name: "filling in an end date resumes a cancelled subscription",
+      name: "changing an end date patches only that row",
       pauses,
       act: () => fireEvent.change(screen.getByLabelText(`${SECOND}的結束日`), { target: { value: "2026-09-30" } }),
       expectChange: (next) => expect(next.map((p) => p.endDate)).toEqual(["2026-04-30", "2026-09-30"]),
@@ -70,10 +69,10 @@ describe("PauseEditor", () => {
       name: "removing a row keeps the others",
       pauses,
       act: () => fireEvent.click(screen.getByRole("button", { name: `移除${FIRST}` })),
-      expectChange: (next) => expect(next).toEqual([cancelled]),
+      expectChange: (next) => expect(next).toEqual([summer]),
     },
     {
-      name: "adding appends an open-ended pause starting today",
+      name: "adding appends a pause starting today with its end date left to pick",
       pauses: [spring],
       act: () => fireEvent.click(screen.getByRole("button", { name: "新增暫停期間" })),
       expectChange: (next) => {
@@ -85,12 +84,12 @@ describe("PauseEditor", () => {
     {
       name: "shows each row's error on that row",
       pauses,
-      errors: { "pauses.0.endDate": "只有最後一段暫停可以不填結束日", "pauses.1.startDate": "暫停期間不可重疊" },
+      errors: { "pauses.0.endDate": "暫停期間需在到期日之前結束", "pauses.1.startDate": "暫停期間不可重疊" },
       expectDom: () => {
         expect(screen.getByLabelText(`${FIRST}的結束日`)).toHaveAttribute("aria-invalid", "true");
         expect(screen.getByLabelText(`${FIRST}的開始日`)).toHaveAttribute("aria-invalid", "false");
         expect(screen.getByLabelText(`${SECOND}的開始日`)).toHaveAttribute("aria-invalid", "true");
-        expect(screen.getByText("只有最後一段暫停可以不填結束日")).toBeInTheDocument();
+        expect(screen.getByText("暫停期間需在到期日之前結束")).toBeInTheDocument();
         expect(screen.getByText("暫停期間不可重疊")).toBeInTheDocument();
       },
     },

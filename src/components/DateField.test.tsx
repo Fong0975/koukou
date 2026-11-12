@@ -3,7 +3,14 @@ import { describe, expect, it, vi } from "vitest";
 import { DateField } from "./DateField";
 
 describe("DateField", () => {
-  const tests: { name: string; value: string; error?: string; change: string; expectedInvalid: boolean }[] = [
+  const tests: {
+    name: string;
+    value: string;
+    error?: string;
+    hint?: string;
+    change: string;
+    expectedInvalid: boolean;
+  }[] = [
     {
       name: "shows the value and reports a picked date",
       value: "2026-10-18",
@@ -11,6 +18,13 @@ describe("DateField", () => {
       expectedInvalid: false,
     },
     { name: "reports a cleared date as blank", value: "2026-10-18", change: "", expectedInvalid: false },
+    {
+      name: "shows a hint under the input",
+      value: "",
+      hint: "到期日當天仍扣款",
+      change: "2026-01-01",
+      expectedInvalid: false,
+    },
     {
       name: "shows the error and marks the input invalid",
       value: "",
@@ -23,12 +37,15 @@ describe("DateField", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       const onChange = vi.fn();
-      render(<DateField id="date" label="起始日" value={tt.value} onChange={onChange} error={tt.error} />);
+      render(
+        <DateField id="date" label="起始日" value={tt.value} onChange={onChange} error={tt.error} hint={tt.hint} />,
+      );
 
       const input = screen.getByLabelText("起始日");
       expect(input).toHaveValue(tt.value);
       expect(input).toHaveAttribute("aria-invalid", String(tt.expectedInvalid));
       if (tt.error) expect(screen.getByText(tt.error)).toBeInTheDocument();
+      if (tt.hint) expect(screen.getByText(tt.hint)).toBeInTheDocument();
 
       fireEvent.change(input, { target: { value: tt.change } });
       expect(onChange).toHaveBeenCalledWith(tt.change);

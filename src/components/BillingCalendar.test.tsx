@@ -38,7 +38,7 @@ describe("BillingCalendar", () => {
         { day: 1, date: "2026-04-01", subscription: spotify },
         { day: 20, date: "2026-04-20", subscription: netflix },
       ],
-      expectedCells: ["1 日：Netflix；合約到期：Spotify", "20 日：合約到期：Netflix"],
+      expectedCells: ["1 日：Netflix；到期：Spotify", "20 日：到期：Netflix"],
     },
     {
       name: "highlights today inside the shown month",

@@ -5,6 +5,8 @@ interface DateFieldProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  /** Explanation shown under the input. */
+  hint?: string;
 }
 
 /**
@@ -15,8 +17,9 @@ interface DateFieldProps {
  * @param props.value - The picked date.
  * @param props.onChange - Receives the new date, or "" once cleared.
  * @param props.error - Validation message; marks the input invalid when set.
+ * @param props.hint - Explanation shown under the input, before any error.
  */
-export function DateField({ id, label, value, onChange, error }: DateFieldProps) {
+export function DateField({ id, label, value, onChange, error, hint }: DateFieldProps) {
   return (
     <div>
       <label htmlFor={id} className="field-label">
@@ -30,6 +33,7 @@ export function DateField({ id, label, value, onChange, error }: DateFieldProps)
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={Boolean(error)}
       />
+      {hint && <p className="mt-1.5 text-sm text-ink-soft">{hint}</p>}
       {error && <p className="field-error">{error}</p>}
     </div>
   );
