@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
 import { CategoryFields } from "./CategoryFields";
@@ -13,10 +14,11 @@ interface CategoryQuickAddProps {
   onDone: (newValue?: string) => void;
 }
 
-/** Inline form for adding a category: an optional emoji plus a name. */
+/** Inline form for adding a category: an optional emoji plus a name. Anything typed counts as unsaved changes. */
 export function CategoryQuickAdd({ onCreate, onDone }: CategoryQuickAddProps) {
   const [icon, setIcon] = useState("");
   const [name, setName] = useState("");
+  useReportUnsavedChanges(icon !== "" || name !== "");
   const { pending, error, run } = useAsyncAction(onCreate);
 
   const save = async () => {

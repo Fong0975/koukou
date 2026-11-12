@@ -3,7 +3,7 @@
 import { useNotificationSetting } from "@/hooks/useNotificationSetting";
 import type { NotificationSettingInput } from "@/lib/validation/notificationSettingSchema";
 import type { NotificationSettingDto } from "@/types/dto";
-import { Modal } from "./Modal";
+import { GuardedModal } from "./GuardedModal";
 import { NotificationSettingsForm } from "./NotificationSettingsForm";
 
 interface NotificationSettingsModalProps {
@@ -29,7 +29,7 @@ export function NotificationSettingsModal({ onClose, onSaved }: NotificationSett
   };
 
   return (
-    <Modal title="通知設定" onClose={onClose} titleClassName="font-semibold">
+    <GuardedModal title="通知設定" onClose={onClose} titleClassName="font-semibold">
       {setting ? (
         <NotificationSettingsForm setting={setting} onSave={saveAndReport} onSendTest={sendTest} onClose={onClose} />
       ) : loadError ? (
@@ -42,6 +42,6 @@ export function NotificationSettingsModal({ onClose, onSaved }: NotificationSett
       ) : (
         <p className="text-center text-ink-soft">讀取中…</p>
       )}
-    </Modal>
+    </GuardedModal>
   );
 }

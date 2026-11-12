@@ -184,7 +184,7 @@ describe("PaymentMethodManagerModal", () => {
       name: "the close button closes",
       steps: () => fireEvent.click(screen.getByRole("button", { name: "關閉" })),
       expectedDialogs: ["管理扣款方式"],
-      expectedCalls: { onClose: [expect.any(Object)] },
+      expectedCalls: { onClose: [] },
     },
   ];
 

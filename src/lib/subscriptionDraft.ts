@@ -210,6 +210,18 @@ export function draftToInput(draft: SubscriptionDraft): SubscriptionInput {
 }
 
 /**
+ * Tells whether the form would save something different from what it started with. It compares the
+ * payloads, so row keys and values of hidden controls (e.g. a weekday kept after switching to monthly)
+ * do not count, and a value edited back to its original is no change.
+ *
+ * @param initial - Form state when the form opened.
+ * @param draft - Current form state.
+ */
+export function isDraftChanged(initial: SubscriptionDraft, draft: SubscriptionDraft): boolean {
+  return JSON.stringify(draftToInput(initial)) !== JSON.stringify(draftToInput(draft));
+}
+
+/**
  * Collapses validation issues (from zod or the API error `details`) into one
  * message per field, keeping the first message for each path.
  *
