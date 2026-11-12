@@ -10,6 +10,8 @@ interface AmountInputProps {
   /** Accessible name of the input. */
   label: string;
   invalid?: boolean;
+  /** Marks the input as required for assistive technology. */
+  required?: boolean;
   /** Classes for the wrapper, e.g. to size it inside a row. */
   className?: string;
 }
@@ -17,7 +19,15 @@ interface AmountInputProps {
 /**
  * Money input with the currency prefix (e.g. "NT$") drawn inside the field.
  */
-export function AmountInput({ currency, value, onChange, label, invalid = false, className = "" }: AmountInputProps) {
+export function AmountInput({
+  currency,
+  value,
+  onChange,
+  label,
+  invalid = false,
+  required = false,
+  className = "",
+}: AmountInputProps) {
   return (
     <div className={`relative ${className}`}>
       <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 font-num text-sm text-ink-soft">
@@ -31,6 +41,7 @@ export function AmountInput({ currency, value, onChange, label, invalid = false,
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={invalid}
+        aria-required={required || undefined}
       />
     </div>
   );

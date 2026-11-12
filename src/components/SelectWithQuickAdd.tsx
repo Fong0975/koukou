@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { PlusIcon } from "./Icons";
+import { RequiredMark } from "./RequiredMark";
 
 /** One option of the select. */
 export interface SelectOption {
@@ -17,6 +18,8 @@ interface SelectWithQuickAddProps {
   placeholder: string;
   onChange: (value: string) => void;
   error?: string;
+  /** Marks the select as required. */
+  required?: boolean;
   /** Text of the toggle, e.g. "新增類型". */
   addLabel: string;
   /**
@@ -31,7 +34,7 @@ interface SelectWithQuickAddProps {
  * a small inline form and the created entry is selected automatically.
  */
 export function SelectWithQuickAdd(props: SelectWithQuickAddProps) {
-  const { id, label, value, options, placeholder, onChange, error, addLabel, renderAddForm } = props;
+  const { id, label, value, options, placeholder, onChange, error, required = false, addLabel, renderAddForm } = props;
   const [adding, setAdding] = useState(false);
 
   const done = (newValue?: string) => {
@@ -44,6 +47,7 @@ export function SelectWithQuickAdd(props: SelectWithQuickAddProps) {
       <div className="flex items-end justify-between gap-2">
         <label htmlFor={id} className="field-label">
           {label}
+          {required && <RequiredMark />}
         </label>
         {!adding && (
           <button
@@ -62,6 +66,7 @@ export function SelectWithQuickAdd(props: SelectWithQuickAddProps) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={Boolean(error)}
+        aria-required={required || undefined}
         aria-describedby={error ? `${id}-error` : undefined}
       >
         <option value="" disabled>

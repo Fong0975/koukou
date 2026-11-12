@@ -28,6 +28,7 @@ describe("AmountSection", () => {
       expectDom: () => {
         expect(screen.queryByRole("list", { name: "歷史金額" })).not.toBeInTheDocument();
         expect(screen.queryByText(/起適用/)).not.toBeInTheDocument();
+        expect(screen.getByRole("textbox", { name: "金額" })).toHaveAttribute("aria-required", "true");
       },
     },
     {

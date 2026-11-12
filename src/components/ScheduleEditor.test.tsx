@@ -19,7 +19,7 @@ describe("ScheduleEditor", () => {
       schedules: [newScheduleDraft({ cycle: "MONTHLY" })],
       act: () => {},
       expectDom: () => {
-        expect(screen.getByLabelText(`${ROW}的日期`)).toBeInTheDocument();
+        expect(screen.getByLabelText(`${ROW}的日期`)).toHaveAttribute("aria-required", "true");
         expect(screen.queryByLabelText(`${ROW}的月份`)).not.toBeInTheDocument();
         expect(screen.queryByLabelText(`${ROW}是星期幾`)).not.toBeInTheDocument();
       },

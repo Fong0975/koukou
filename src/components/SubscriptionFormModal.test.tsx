@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "@/lib/apiClient";
 import { todayKey } from "@/lib/dateKey";
@@ -185,7 +185,7 @@ describe("SubscriptionFormModal", () => {
     {
       name: "a contract end date can be added and is submitted",
       fill: true,
-      act: () => fireEvent.change(screen.getByLabelText("到期日（選填）"), { target: { value: "2099-12-31" } }),
+      act: () => fireEvent.change(screen.getByLabelText("到期日"), { target: { value: "2099-12-31" } }),
       click: "新增扣款",
       expectedTitle: "新增扣款",
       expectedInput: { ...filledInput, contractEndDate: "2099-12-31" },
@@ -220,7 +220,7 @@ describe("SubscriptionFormModal", () => {
       expectedTitle: "編輯扣款",
       expectedCloses: 0,
       expectedFieldError: "到期日不可早於起始日",
-      expectedInvalidField: "到期日（選填）",
+      expectedInvalidField: "到期日",
     },
     {
       name: "a past amount ending before the start date is caught before submitting",
@@ -298,7 +298,7 @@ describe("SubscriptionFormModal", () => {
         expect(screen.getByText("到期日當天仍扣款，之後不再扣款；取消訂閱也填這裡。")).toBeInTheDocument();
         fireEvent.change(screen.getByLabelText("恢復扣款日"), { target: { value: "2020-12-01" } });
         fireEvent.click(screen.getByRole("button", { name: "重新訂閱" }));
-        expect(screen.getByLabelText("到期日（選填）")).toHaveValue("");
+        expect(screen.getByLabelText("到期日")).toHaveValue("");
         expect(screen.queryByLabelText("恢復扣款日")).not.toBeInTheDocument();
       },
       click: "儲存變更",
@@ -393,7 +393,7 @@ describe("SubscriptionFormModal", () => {
       fill: true,
       act: () => {
         expect(screen.queryByRole("checkbox", { name: "到期前 7 天" })).not.toBeInTheDocument();
-        fireEvent.change(screen.getByLabelText("到期日（選填）"), { target: { value: "2099-12-31" } });
+        fireEvent.change(screen.getByLabelText("到期日"), { target: { value: "2099-12-31" } });
         fireEvent.click(screen.getByRole("checkbox", { name: "到期前 7 天" }));
         fireEvent.click(screen.getByRole("checkbox", { name: "到期當日" }));
       },
@@ -414,7 +414,7 @@ describe("SubscriptionFormModal", () => {
       }),
       act: () => {
         expect(screen.getByRole("checkbox", { name: "到期前 7 天" })).toBeChecked();
-        fireEvent.change(screen.getByLabelText("到期日（選填）"), { target: { value: "" } });
+        fireEvent.change(screen.getByLabelText("到期日"), { target: { value: "" } });
         expect(screen.queryByRole("checkbox", { name: "到期前 7 天" })).not.toBeInTheDocument();
       },
       click: "儲存變更",
@@ -489,6 +489,54 @@ describe("SubscriptionFormModal", () => {
       }
       if (tt.expectedAlert) expect(screen.getByRole("alert")).toHaveTextContent(tt.expectedAlert);
       else expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+  }
+});
+
+describe("SubscriptionFormModal layout", () => {
+  const tests: { name: string; expectDom: () => void }[] = [
+    {
+      name: "groups the fields into four sections in order",
+      expectDom: () =>
+        expect(screen.getAllByRole("region").map((region) => within(region).getByRole("heading").textContent)).toEqual([
+          "基本資料",
+          "金額與扣款",
+          "訂閱期間",
+          "LINE 提醒",
+        ]),
+    },
+    {
+      name: "puts the reminders in their own section",
+      expectDom: () =>
+        expect(screen.getByRole("region", { name: "LINE 提醒" })).toContainElement(
+          screen.getByRole("group", { name: "LINE 提醒" }),
+        ),
+    },
+    {
+      name: "marks required fields instead of labelling optional ones",
+      expectDom: () => {
+        expect(screen.queryByText(/選填/)).not.toBeInTheDocument();
+        expect(screen.getByLabelText("名稱")).toHaveAttribute("aria-required", "true");
+        expect(screen.getByLabelText("備註")).not.toHaveAttribute("aria-required");
+      },
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      render(
+        <SubscriptionFormModal
+          categories={categories}
+          paymentMethods={paymentMethods}
+          onAddCategory={vi.fn()}
+          onAddPaymentMethod={vi.fn()}
+          onSubmit={vi.fn()}
+          onClose={vi.fn()}
+          remindersActive
+        />,
+      );
+
+      tt.expectDom();
     });
   }
 });

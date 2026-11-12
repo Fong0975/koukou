@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { FieldErrors } from "@/lib/subscriptionDraft";
 import type { RemindersDto } from "@/types/dto";
-import { REMINDERS_DISABLED_HINT, ReminderSection } from "./ReminderSection";
+import { REMINDERS_DISABLED_HINT, REMINDERS_LABEL, ReminderSection } from "./ReminderSection";
 
 const reminders: RemindersDto = { chargeDaysBefore: [3], expiryDaysBefore: [1] };
 
@@ -62,7 +62,7 @@ describe("ReminderSection", () => {
         />,
       );
 
-      const section = screen.getByRole("group", { name: "LINE 提醒（選填）" });
+      const section = screen.getByRole("group", { name: REMINDERS_LABEL });
       if (tt.disabled) expect(section).toHaveAttribute("title", REMINDERS_DISABLED_HINT);
       else expect(section).not.toHaveAttribute("title");
       for (const control of [...screen.queryAllByRole("checkbox"), ...screen.queryAllByRole("button")]) {

@@ -23,6 +23,7 @@ describe("SelectWithQuickAdd", () => {
   const tests: {
     name: string;
     error?: string;
+    required?: boolean;
     act: () => void;
     expectedChanges: string[][];
     expectFormOpen: boolean;
@@ -70,6 +71,13 @@ describe("SelectWithQuickAdd", () => {
       expectedChanges: [],
       expectFormOpen: false,
     },
+    {
+      name: "marks a required select without changing its name",
+      required: true,
+      act: () => {},
+      expectedChanges: [],
+      expectFormOpen: false,
+    },
   ];
 
   for (const tt of tests) {
@@ -84,6 +92,7 @@ describe("SelectWithQuickAdd", () => {
           options={OPTIONS}
           onChange={onChange}
           error={tt.error}
+          required={tt.required}
           addLabel="新增類型"
           renderAddForm={renderAddForm}
         />,
@@ -95,6 +104,8 @@ describe("SelectWithQuickAdd", () => {
       expect(!!screen.queryByRole("button", { name: "完成新增" })).toBe(tt.expectFormOpen);
       expect(!!screen.queryByRole("button", { name: "新增類型" })).toBe(!tt.expectFormOpen);
       const select = screen.getByLabelText("類型");
+      if (tt.required) expect(select).toHaveAttribute("aria-required", "true");
+      else expect(select).not.toHaveAttribute("aria-required");
       if (tt.error) {
         expect(select).toHaveAttribute("aria-invalid", "true");
         expect(select).toHaveAccessibleDescription(tt.error);

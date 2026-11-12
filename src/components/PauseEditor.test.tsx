@@ -32,7 +32,7 @@ describe("PauseEditor", () => {
       name: "shows only the add button without pauses",
       pauses: [],
       expectDom: () => {
-        expect(screen.queryByRole("list", { name: "暫停期間（選填）" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("list", { name: "暫停期間" })).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "新增暫停期間" })).toBeInTheDocument();
       },
     },
@@ -40,7 +40,7 @@ describe("PauseEditor", () => {
       name: "lists each pause's dates",
       pauses,
       expectDom: () => {
-        const rows = within(screen.getByRole("list", { name: "暫停期間（選填）" })).getAllByRole("listitem");
+        const rows = within(screen.getByRole("list", { name: "暫停期間" })).getAllByRole("listitem");
         expect(rows).toHaveLength(2);
         expect(screen.getByLabelText(`${FIRST}的開始日`)).toHaveValue("2026-03-01");
         expect(screen.getByLabelText(`${FIRST}的開始日`)).toHaveAttribute("min", "2026-01-15");
