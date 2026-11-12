@@ -228,13 +228,14 @@ describe("formatReserve", () => {
 
 describe("formatReserveTerm", () => {
   const tests = [
-    { name: "two-digit month and day", date: { year: 2026, month: 10, day: 11 }, expected: "2026 年期（10/11 扣款）" },
-    { name: "single-digit month and day", date: { year: 2027, month: 3, day: 1 }, expected: "2027 年期（3/1 扣款）" },
+    { name: "first installment", chargeYear: 2026, installment: 1, expected: "2026 年期 (1/12)" },
+    { name: "a middle installment", chargeYear: 2027, installment: 3, expected: "2027 年期 (3/12)" },
+    { name: "last installment", chargeYear: 2027, installment: 12, expected: "2027 年期 (12/12)" },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(formatReserveTerm(tt.date)).toBe(tt.expected);
+      expect(formatReserveTerm(tt.chargeYear, tt.installment)).toBe(tt.expected);
     });
   }
 });

@@ -27,6 +27,7 @@ const domain = makeSubscription({
 interface ExpectedReserve {
   key: string;
   chargeDate: CalendarDate;
+  installment: number;
   reserveCents: number;
   averageCents: number;
 }
@@ -36,12 +37,14 @@ type DateTuple = [year: number, month: number, day: number];
 const reserveOf = (
   key: string,
   [year, month, day]: DateTuple,
+  installment: number,
   reserveCents: number,
   averageCents: number,
-): ExpectedReserve => ({ key, chargeDate: { year, month, day }, reserveCents, averageCents });
+): ExpectedReserve => ({ key, chargeDate: { year, month, day }, installment, reserveCents, averageCents });
 
 /** The domain's reserve: TWD 1,000 / 12 = 83.3, rounded up to 84. */
-const domainReserve = (chargeDate: DateTuple) => reserveOf("5-50", chargeDate, 8400, 100000 / 12);
+const domainReserve = (chargeDate: DateTuple, installment: number) =>
+  reserveOf("5-50", chargeDate, installment, 8400, 100000 / 12);
 
 describe("monthReserves", () => {
   const tests: { name: string; items: SubscriptionDto[]; target: YearMonth; expected: ExpectedReserve[] }[] = [
@@ -49,19 +52,19 @@ describe("monthReserves", () => {
       name: "first month of the period saves for the charge 12 months later",
       items: [domain],
       target: { year: 2025, month: 10 },
-      expected: [domainReserve([2026, 10, 11])],
+      expected: [domainReserve([2026, 10, 11], 1)],
     },
     {
       name: "last month before the charge still saves for it",
       items: [domain],
       target: { year: 2026, month: 9 },
-      expected: [domainReserve([2026, 10, 11])],
+      expected: [domainReserve([2026, 10, 11], 12)],
     },
     {
       name: "the charge month saves for next year's charge",
       items: [domain],
       target: { year: 2026, month: 10 },
-      expected: [domainReserve([2027, 10, 11])],
+      expected: [domainReserve([2027, 10, 11], 1)],
     },
     {
       name: "not amortized → nothing",
@@ -78,7 +81,7 @@ describe("monthReserves", () => {
         },
       ],
       target: { year: 2026, month: 5 },
-      expected: [reserveOf("5-52", [2027, 3, 1], 8400, 100000 / 12)],
+      expected: [reserveOf("5-52", [2027, 3, 1], 3, 8400, 100000 / 12)],
     },
     {
       name: "a charge before the start date is skipped",
@@ -90,13 +93,13 @@ describe("monthReserves", () => {
       name: "months before the start date still save for a charge on or after it",
       items: [{ ...domain, startDate: "2026-10-11" }],
       target: { year: 2025, month: 10 },
-      expected: [domainReserve([2026, 10, 11])],
+      expected: [domainReserve([2026, 10, 11], 1)],
     },
     {
       name: "a charge on the contract end date is still saved for",
       items: [{ ...domain, contractEndDate: "2026-10-11" }],
       target: { year: 2026, month: 5 },
-      expected: [domainReserve([2026, 10, 11])],
+      expected: [domainReserve([2026, 10, 11], 8)],
     },
     {
       name: "a charge after the contract end date is skipped",
@@ -108,13 +111,13 @@ describe("monthReserves", () => {
       name: "uses the amount that applies on the charge date",
       items: [{ ...domain, amount: "1500.00", amountPeriods: [{ id: 1, amount: "1200.00", endDate: "2026-10-11" }] }],
       target: { year: 2026, month: 5 },
-      expected: [reserveOf("5-50", [2026, 10, 11], 10000, 10000)],
+      expected: [reserveOf("5-50", [2026, 10, 11], 8, 10000, 10000)],
     },
     {
       name: "the next charge picks up a later amount",
       items: [{ ...domain, amount: "1500.00", amountPeriods: [{ id: 1, amount: "1200.00", endDate: "2026-10-11" }] }],
       target: { year: 2026, month: 10 },
-      expected: [reserveOf("5-50", [2027, 10, 11], 12500, 12500)],
+      expected: [reserveOf("5-50", [2027, 10, 11], 1, 12500, 12500)],
     },
     {
       name: "a zero-amount charge, e.g. a free trial year, is not saved for",
@@ -126,19 +129,19 @@ describe("monthReserves", () => {
       name: "USD rounds up to a whole dollar",
       items: [{ ...domain, currency: "USD", amount: "99.99" }],
       target: { year: 2026, month: 5 },
-      expected: [reserveOf("5-50", [2026, 10, 11], 900, 9999 / 12)],
+      expected: [reserveOf("5-50", [2026, 10, 11], 8, 900, 9999 / 12)],
     },
     {
       name: "February 29 falls on the 28th in a common year",
       items: [{ ...domain, schedules: [yearly(53, 2, 29)] }],
       target: { year: 2026, month: 5 },
-      expected: [reserveOf("5-53", [2027, 2, 28], 8400, 100000 / 12)],
+      expected: [reserveOf("5-53", [2027, 2, 28], 4, 8400, 100000 / 12)],
     },
     {
       name: "February 29 stays in a leap year",
       items: [{ ...domain, schedules: [yearly(53, 2, 29)] }],
       target: { year: 2027, month: 5 },
-      expected: [reserveOf("5-53", [2028, 2, 29], 8400, 100000 / 12)],
+      expected: [reserveOf("5-53", [2028, 2, 29], 4, 8400, 100000 / 12)],
     },
     {
       name: "orders by charge date across schedules and subscriptions, then by name",
@@ -155,9 +158,9 @@ describe("monthReserves", () => {
       ],
       target: { year: 2026, month: 5 },
       expected: [
-        reserveOf("6-60", [2026, 10, 11], 100000, 100000),
-        domainReserve([2026, 10, 11]),
-        reserveOf("5-54", [2027, 3, 1], 8400, 100000 / 12),
+        reserveOf("6-60", [2026, 10, 11], 8, 100000, 100000),
+        domainReserve([2026, 10, 11], 8),
+        reserveOf("5-54", [2027, 3, 1], 3, 8400, 100000 / 12),
       ],
     },
   ];
@@ -165,9 +168,10 @@ describe("monthReserves", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       const reserves = monthReserves(tt.items, tt.target);
-      const actual = reserves.map(({ key, chargeDate, reserveCents, averageCents }) => ({
+      const actual = reserves.map(({ key, chargeDate, installment, reserveCents, averageCents }) => ({
         key,
         chargeDate,
+        installment,
         reserveCents,
         averageCents,
       }));
@@ -181,6 +185,7 @@ describe("sumReserves", () => {
     key: `${subscription.id}`,
     subscription,
     chargeDate: { year: 2026, month: 10, day: 11 },
+    installment: 1,
     reserveCents,
     averageCents: reserveCents - 50,
   });

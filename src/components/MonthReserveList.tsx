@@ -7,7 +7,7 @@ import { MoneyListItem } from "./MoneyListItem";
 
 /**
  * Collapsible card listing what to set aside this month for upcoming amortized yearly charges, one row
- * per charge with the term it saves for and the exact average under the rounded-up amount,
+ * per charge with the term it saves for, which installment towards it this month is, and the exact average under the rounded-up amount,
  * with a footer holding the rounded-up subtotal per currency. Renders nothing without reserves.
  *
  * @param props.reserves - The month's reserves, already in display order.
@@ -26,10 +26,10 @@ export function MonthReserveList({ reserves }: { reserves: Reserve[] }) {
       }
     >
       <ul aria-label="本月預扣" className="flex flex-col divide-y divide-leaf-500/15">
-        {reserves.map(({ key, subscription, chargeDate, reserveCents, averageCents }) => {
+        {reserves.map(({ key, subscription, chargeDate, installment, reserveCents, averageCents }) => {
           const { amount, average } = formatReserve(subscription.currency, reserveCents, averageCents);
           return (
-            <MoneyListItem key={key} title={subscription.name} subtitle={formatReserveTerm(chargeDate)}>
+            <MoneyListItem key={key} title={subscription.name} subtitle={formatReserveTerm(chargeDate.year, installment)}>
               <p className="font-semibold">{amount}</p>
               {average && <p className="text-xs text-ink-soft">({average})</p>}
             </MoneyListItem>

@@ -1,7 +1,8 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { BillingScheduleDto } from "@/types/dto";
+import { AMORTIZATION_MONTHS } from "./amortization";
 import { currencyEntries, type CurrencyTotals } from "./billingSummary";
-import { toCalendarDate, type CalendarDate } from "./calendarMonth";
+import { toCalendarDate } from "./calendarMonth";
 import { dateKeyToUtcDate, toDateKey } from "./dateKey";
 import { CURRENCY_PREFIX, CYCLE_LABELS, WEEKDAY_LABELS } from "./labels";
 
@@ -151,13 +152,14 @@ export function formatReserve(currency: Currency, reserveCents: number, averageC
 }
 
 /**
- * Names the yearly charge a reserve saves up for, e.g. "2026 年期（10/11 扣款）".
+ * Names the yearly charge a reserve saves up for and which installment towards it this is, e.g. "2026 年期 (3/12)".
  *
- * @param chargeDate - The date of that charge.
- * @returns The term year and charge day.
+ * @param chargeYear - The year of that charge.
+ * @param installment - Which monthly installment this is, from 1.
+ * @returns The term year and installment out of {@link AMORTIZATION_MONTHS}.
  */
-export function formatReserveTerm({ year, month, day }: CalendarDate): string {
-  return `${year} 年期（${month}/${day} 扣款）`;
+export function formatReserveTerm(chargeYear: number, installment: number): string {
+  return `${chargeYear} 年期 (${installment}/${AMORTIZATION_MONTHS})`;
 }
 
 /** One currency's part of a converted total. */

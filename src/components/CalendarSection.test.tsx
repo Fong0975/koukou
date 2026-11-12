@@ -137,7 +137,7 @@ describe("CalendarSection", () => {
         expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("NT$ 1,000");
         expandCard("本月預扣");
         expect(screen.getByRole("list", { name: "本月預扣" })).toHaveTextContent(
-          "網域2027 年期（10/11 扣款）NT$ 84(NT$ 83.3)",
+          "網域2027 年期 (1/12)NT$ 84(NT$ 83.3)",
         );
         expect(screen.getByText("預留小計").nextElementSibling).toHaveTextContent("NT$ 84");
       },
@@ -150,7 +150,7 @@ describe("CalendarSection", () => {
       expectDom: () => {
         expect(screen.getByRole("heading", { name: "2026 年 9 月" })).toBeInTheDocument();
         expandCard("本月預扣");
-        expect(screen.getByRole("list", { name: "本月預扣" })).toHaveTextContent("2026 年期（10/11 扣款）");
+        expect(screen.getByRole("list", { name: "本月預扣" })).toHaveTextContent("2026 年期 (12/12)");
       },
     },
     {
