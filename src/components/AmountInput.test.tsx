@@ -8,6 +8,7 @@ describe("AmountInput", () => {
     name: string;
     currency: Currency;
     invalid?: boolean;
+    required?: boolean;
     expectedPrefix: string;
     expectedInvalid: string;
   }[] = [
@@ -19,17 +20,35 @@ describe("AmountInput", () => {
       expectedPrefix: "US$",
       expectedInvalid: "true",
     },
+    {
+      name: "can be marked required",
+      currency: "TWD",
+      required: true,
+      expectedPrefix: "NT$",
+      expectedInvalid: "false",
+    },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
       const onChange = vi.fn();
-      render(<AmountInput currency={tt.currency} value="10" label="金額" invalid={tt.invalid} onChange={onChange} />);
+      render(
+        <AmountInput
+          currency={tt.currency}
+          value="10"
+          label="金額"
+          invalid={tt.invalid}
+          required={tt.required}
+          onChange={onChange}
+        />,
+      );
 
       const input = screen.getByRole("textbox", { name: "金額" });
       expect(screen.getByText(tt.expectedPrefix)).toBeInTheDocument();
       expect(input).toHaveValue("10");
       expect(input).toHaveAttribute("aria-invalid", tt.expectedInvalid);
+      if (tt.required) expect(input).toHaveAttribute("aria-required", "true");
+      else expect(input).not.toHaveAttribute("aria-required");
 
       fireEvent.change(input, { target: { value: "12.5" } });
       expect(onChange).toHaveBeenCalledWith("12.5");

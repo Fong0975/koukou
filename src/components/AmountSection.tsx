@@ -8,6 +8,7 @@ import { nextAmountPeriodDraft, type FieldErrors, type SubscriptionDraft } from 
 import { AmountInput } from "./AmountInput";
 import { AmountPeriodEditor } from "./AmountPeriodEditor";
 import { PlusIcon } from "./Icons";
+import { RequiredMark } from "./RequiredMark";
 import { SegmentedControl } from "./SegmentedControl";
 
 /** The draft fields this section edits. */
@@ -37,6 +38,7 @@ export function AmountSection({ currency, amount, amountPeriods, startDate, onCh
     <div>
       <span className="field-label" id={labelId}>
         金額
+        <RequiredMark />
       </span>
       <div className="flex gap-2">
         <SegmentedControl
@@ -50,6 +52,7 @@ export function AmountSection({ currency, amount, amountPeriods, startDate, onCh
           className="flex-1"
           currency={currency}
           label="金額"
+          required
           value={amount}
           invalid={Boolean(errors.amount)}
           onChange={(value) => onChange({ amount: value })}

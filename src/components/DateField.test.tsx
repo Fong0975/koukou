@@ -8,9 +8,17 @@ describe("DateField", () => {
     value: string;
     error?: string;
     hint?: string;
+    required?: boolean;
     change: string;
     expectedInvalid: boolean;
   }[] = [
+    {
+      name: "marks a required field without changing its name",
+      value: "",
+      required: true,
+      change: "2026-01-01",
+      expectedInvalid: false,
+    },
     {
       name: "shows the value and reports a picked date",
       value: "2026-10-18",
@@ -38,12 +46,22 @@ describe("DateField", () => {
     it(tt.name, () => {
       const onChange = vi.fn();
       render(
-        <DateField id="date" label="起始日" value={tt.value} onChange={onChange} error={tt.error} hint={tt.hint} />,
+        <DateField
+          id="date"
+          label="起始日"
+          value={tt.value}
+          onChange={onChange}
+          error={tt.error}
+          hint={tt.hint}
+          required={tt.required}
+        />,
       );
 
       const input = screen.getByLabelText("起始日");
       expect(input).toHaveValue(tt.value);
       expect(input).toHaveAttribute("aria-invalid", String(tt.expectedInvalid));
+      if (tt.required) expect(input).toHaveAttribute("aria-required", "true");
+      else expect(input).not.toHaveAttribute("aria-required");
       if (tt.error) expect(screen.getByText(tt.error)).toBeInTheDocument();
       if (tt.hint) expect(screen.getByText(tt.hint)).toBeInTheDocument();
 

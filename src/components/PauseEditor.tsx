@@ -29,7 +29,7 @@ export function PauseEditor({ startDate, pauses, onChange, errors }: PauseEditor
   return (
     <div>
       <span className="field-label" id={labelId}>
-        暫停期間（選填）
+        暫停期間
       </span>
       <p className="text-sm text-ink-soft">暫停期間不扣款，結束日隔天自動恢復；要停止扣款請設定到期日。</p>
       {pauses.length > 0 && (

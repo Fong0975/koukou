@@ -4,6 +4,7 @@ import type { BillingCycle } from "@/generated/prisma/enums";
 import { CYCLE_LABELS, WEEKDAY_LABELS } from "@/lib/labels";
 import { newScheduleDraft, type FieldErrors, type ScheduleDraft } from "@/lib/subscriptionDraft";
 import { CloseIcon, PlusIcon } from "./Icons";
+import { RequiredMark } from "./RequiredMark";
 
 interface ScheduleEditorProps {
   schedules: ScheduleDraft[];
@@ -27,7 +28,10 @@ export function ScheduleEditor({ schedules, onChange, errors }: ScheduleEditorPr
 
   return (
     <fieldset>
-      <legend className="field-label">扣款日</legend>
+      <legend className="field-label">
+        扣款日
+        <RequiredMark />
+      </legend>
       <ul className="flex flex-col gap-2">
         {schedules.map((schedule, index) => {
           const error = ["cycle", "dayOfWeek", "month", "dayOfMonth"]
@@ -93,6 +97,7 @@ export function ScheduleEditor({ schedules, onChange, errors }: ScheduleEditorPr
                       className="field w-20 font-num"
                       aria-label={`${rowLabel}的日期`}
                       aria-invalid={Boolean(error)}
+                      aria-required="true"
                       value={schedule.dayOfMonth}
                       onChange={(event) => patch(index, { dayOfMonth: event.target.value })}
                     />
