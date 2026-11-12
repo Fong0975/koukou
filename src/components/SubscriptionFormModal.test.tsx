@@ -5,6 +5,7 @@ import { todayKey } from "@/lib/dateKey";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
 import { flushPromises } from "@/test/async";
 import { makeCategory, makePaymentMethod, makeSubscription } from "@/test/fixtures";
+import { clickCloseButton, isConfirmCloseShown } from "@/test/unsavedChanges";
 import type { SubscriptionDto } from "@/types/dto";
 import { SubscriptionFormModal } from "./SubscriptionFormModal";
 
@@ -380,6 +381,71 @@ describe("SubscriptionFormModal", () => {
       }
       if (tt.expectedAlert) expect(screen.getByRole("alert")).toHaveTextContent(tt.expectedAlert);
       else expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+  }
+});
+
+describe("SubscriptionFormModal unsaved changes", () => {
+  const typeName = (value: string) => fireEvent.change(screen.getByLabelText("名稱"), { target: { value } });
+  const tests: {
+    name: string;
+    initial?: SubscriptionDto;
+    edit?: () => void;
+    close: "x" | "取消";
+    expectedConfirm: boolean;
+  }[] = [
+    { name: "an untouched new form closes without asking", close: "x", expectedConfirm: false },
+    {
+      name: "an untouched edit form closes without asking",
+      initial: makeSubscription(),
+      close: "x",
+      expectedConfirm: false,
+    },
+    { name: "a typed name asks first", edit: () => typeName("Spotify"), close: "x", expectedConfirm: true },
+    {
+      name: "a name typed and cleared again closes without asking",
+      edit: () => {
+        typeName("Spotify");
+        typeName("");
+      },
+      close: "x",
+      expectedConfirm: false,
+    },
+    {
+      name: "a name typed in the quick-add category form asks first",
+      edit: () => {
+        fireEvent.click(screen.getByRole("button", { name: "新增類型" }));
+        fireEvent.change(screen.getByLabelText("新的類型名稱"), { target: { value: "健身房" } });
+      },
+      close: "x",
+      expectedConfirm: true,
+    },
+    { name: "取消 closes without asking despite changes", edit: fillForm, close: "取消", expectedConfirm: false },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const onClose = vi.fn();
+      render(
+        <SubscriptionFormModal
+          initial={tt.initial}
+          categories={categories}
+          paymentMethods={paymentMethods}
+          onAddCategory={vi.fn()}
+          onAddPaymentMethod={vi.fn()}
+          onSubmit={vi.fn()}
+          onClose={onClose}
+          remindersActive
+        />,
+      );
+      const title = tt.initial ? "編輯扣款" : "新增扣款";
+
+      tt.edit?.();
+      if (tt.close === "x") clickCloseButton(title);
+      else fireEvent.click(screen.getByRole("button", { name: "取消" }));
+
+      expect(isConfirmCloseShown()).toBe(tt.expectedConfirm);
+      expect(onClose).toHaveBeenCalledTimes(tt.expectedConfirm ? 0 : 1);
     });
   }
 });

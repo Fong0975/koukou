@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CategoryDto } from "@/types/dto";
 import { flushPromises } from "@/test/async";
 import { makeCategory } from "@/test/fixtures";
+import { runUnsavedChangesCases } from "@/test/unsavedChanges";
 import { CategoryEditForm } from "./CategoryEditForm";
 
 describe("CategoryEditForm", () => {
@@ -76,4 +77,35 @@ describe("CategoryEditForm", () => {
     render(<CategoryEditForm category={makeCategory({ icon: null })} onSave={vi.fn()} onDone={vi.fn()} />);
     expect(screen.getByLabelText("類型圖示（可留空）")).toHaveValue("");
   });
+});
+
+describe("CategoryEditForm unsaved changes", () => {
+  const typeName = (value: string) => fireEvent.change(screen.getByLabelText("類型名稱"), { target: { value } });
+
+  runUnsavedChangesCases(
+    () => (
+      <CategoryEditForm
+        category={makeCategory({ id: 4, name: "影音串流", icon: "🎬" })}
+        onSave={vi.fn()}
+        onDone={vi.fn()}
+      />
+    ),
+    [
+      { name: "unchanged values close without asking", expectedConfirm: false },
+      { name: "an edited name asks first", edit: () => typeName("串流平台"), expectedConfirm: true },
+      {
+        name: "an edited emoji asks first",
+        edit: () => fireEvent.change(screen.getByLabelText("類型圖示（可留空）"), { target: { value: "📺" } }),
+        expectedConfirm: true,
+      },
+      {
+        name: "a name edited back to the original closes without asking",
+        edit: () => {
+          typeName("串流平台");
+          typeName("影音串流");
+        },
+        expectedConfirm: false,
+      },
+    ],
+  );
 });

@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { toFieldErrors, type FieldErrors } from "@/lib/subscriptionDraft";
 import {
   notificationSettingInputSchema,
@@ -20,7 +21,7 @@ interface NotificationSettingsFormProps {
 
 /**
  * Edits the LINE notification switches and send time, with a button to send a test message.
- * Saving closes the dialog.
+ * Saving closes the dialog. Reports to the enclosing dialog whether the values differ from the loaded ones.
  *
  * @param props.setting - The loaded settings.
  * @param props.onSave - Saves the edited settings.
@@ -33,6 +34,11 @@ export function NotificationSettingsForm({ setting, onSave, onSendTest, onClose 
     monthlySummaryEnabled: setting.monthlySummaryEnabled,
     sendTime: setting.sendTime,
   });
+  useReportUnsavedChanges(
+    values.enabled !== setting.enabled ||
+      values.monthlySummaryEnabled !== setting.monthlySummaryEnabled ||
+      values.sendTime !== setting.sendTime,
+  );
   const [errors, setErrors] = useState<FieldErrors>({});
   const saving = useAsyncAction(async (input: NotificationSettingInput) => {
     await onSave(input);

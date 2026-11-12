@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
 import { CategoryFields } from "./CategoryFields";
@@ -14,10 +15,14 @@ interface CategoryEditFormProps {
   onDone: () => void;
 }
 
-/** Inline form for changing a category's emoji and name; stays open and shows the reason if saving fails. */
+/**
+ * Inline form for changing a category's emoji and name; stays open and shows the reason if saving fails.
+ * Values that differ from the category's count as unsaved changes.
+ */
 export function CategoryEditForm({ category, onSave, onDone }: CategoryEditFormProps) {
   const [icon, setIcon] = useState(category.icon ?? "");
   const [name, setName] = useState(category.name);
+  useReportUnsavedChanges(icon !== (category.icon ?? "") || name !== category.name);
   const { pending, error, run } = useAsyncAction(onSave);
 
   const save = async () => {

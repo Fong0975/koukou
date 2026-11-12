@@ -7,6 +7,7 @@ import {
   emptyDraft,
   errorUnder,
   hasYearlySchedule,
+  isDraftChanged,
   newAmountPeriodDraft,
   newScheduleDraft,
   nextAmountPeriodDraft,
@@ -378,6 +379,33 @@ describe("errorUnder", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(errorUnder(tt.errors, "reminders.chargeDaysBefore")).toBe(tt.expected);
+    });
+  }
+});
+
+describe("isDraftChanged", () => {
+  const initial = draftFromDto(dto);
+  const tests: { name: string; draft: SubscriptionDraft; expected: boolean }[] = [
+    { name: "the same draft is unchanged", draft: initial, expected: false },
+    { name: "a fresh copy of the same subscription is unchanged", draft: draftFromDto(dto), expected: false },
+    { name: "an edited name is a change", draft: { ...initial, name: "Netflix 4K" }, expected: true },
+    {
+      name: "a weekday kept on a monthly schedule is no change",
+      draft: { ...initial, schedules: [{ ...initial.schedules[0], dayOfWeek: "5" }, initial.schedules[1]] },
+      expected: false,
+    },
+    { name: "a different cycle is a change", draft: { ...initial, schedules: [initial.schedules[0]] }, expected: true },
+    { name: "amortize without a yearly schedule is no change", draft: { ...initial, amortize: true }, expected: false },
+    {
+      name: "an added reminder is a change",
+      draft: { ...initial, reminders: { ...initial.reminders, chargeDaysBefore: [1] } },
+      expected: true,
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(isDraftChanged(initial, tt.draft)).toBe(tt.expected);
     });
   }
 });

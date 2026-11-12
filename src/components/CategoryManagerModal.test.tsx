@@ -48,7 +48,7 @@ describe("CategoryManagerModal", () => {
       name: "the close button closes",
       steps: () => fireEvent.click(screen.getByRole("button", { name: "關閉" })),
       expectedDialogs: ["管理類型"],
-      expectedCalls: { onClose: [expect.any(Object)] },
+      expectedCalls: { onClose: [] },
     },
     {
       name: "the add button opens the add form, which creates",

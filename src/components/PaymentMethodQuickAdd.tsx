@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PaymentType } from "@/generated/prisma/enums";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import type { PaymentMethodDto } from "@/types/dto";
 import { PaymentMethodFields } from "./PaymentMethodFields";
@@ -14,10 +15,16 @@ interface PaymentMethodQuickAddProps {
   onDone: (newValue?: string) => void;
 }
 
-/** Inline form for adding a payment method: its type plus the card or account name. */
+const DEFAULT_TYPE: PaymentType = "CREDIT_CARD";
+
+/**
+ * Inline form for adding a payment method: its type plus the card or account name. A typed name or a
+ * changed type counts as unsaved changes.
+ */
 export function PaymentMethodQuickAdd({ onCreate, onDone }: PaymentMethodQuickAddProps) {
-  const [type, setType] = useState<PaymentType>("CREDIT_CARD");
+  const [type, setType] = useState<PaymentType>(DEFAULT_TYPE);
   const [name, setName] = useState("");
+  useReportUnsavedChanges(type !== DEFAULT_TYPE || name !== "");
   const { pending, error, run } = useAsyncAction(onCreate);
 
   const save = async () => {

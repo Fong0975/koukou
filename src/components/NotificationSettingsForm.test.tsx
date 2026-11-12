@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "@/lib/apiClient";
 import type { NotificationSettingInput } from "@/lib/validation/notificationSettingSchema";
 import { flushPromises } from "@/test/async";
+import { runUnsavedChangesCases } from "@/test/unsavedChanges";
 import type { NotificationSettingDto } from "@/types/dto";
 import { NotificationSettingsForm } from "./NotificationSettingsForm";
 
@@ -127,4 +128,33 @@ describe("NotificationSettingsForm", () => {
       }
     });
   }
+});
+
+describe("NotificationSettingsForm unsaved changes", () => {
+  const toggleEnabled = () => fireEvent.click(screen.getByRole("checkbox", { name: "啟用 LINE 通知" }));
+
+  runUnsavedChangesCases(
+    () => <NotificationSettingsForm setting={setting} onSave={vi.fn()} onSendTest={vi.fn()} onClose={vi.fn()} />,
+    [
+      { name: "the loaded settings close without asking", expectedConfirm: false },
+      { name: "a toggled switch asks first", edit: toggleEnabled, expectedConfirm: true },
+      {
+        name: "a changed send time asks first",
+        edit: () => {
+          toggleEnabled();
+          fireEvent.change(screen.getByLabelText("傳送時間"), { target: { value: "08:30" } });
+          toggleEnabled();
+        },
+        expectedConfirm: true,
+      },
+      {
+        name: "a switch toggled back closes without asking",
+        edit: () => {
+          toggleEnabled();
+          toggleEnabled();
+        },
+        expectedConfirm: false,
+      },
+    ],
+  );
 });

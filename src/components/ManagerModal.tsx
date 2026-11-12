@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { GuardedModal } from "./GuardedModal";
 import { PlusIcon } from "./Icons";
-import { Modal } from "./Modal";
 
 interface ManagerModalProps {
   title: string;
@@ -23,7 +23,8 @@ interface ManagerModalProps {
 
 /**
  * Frame shared by the category and payment method managers: a header button that reveals an
- * inline add form, an empty state, and the lists of rows.
+ * inline add form, an empty state, and the lists of rows. Closing it while an add or edit form
+ * has unsaved changes asks first.
  */
 export function ManagerModal({
   title,
@@ -40,7 +41,7 @@ export function ManagerModal({
 
   return (
     <>
-      <Modal
+      <GuardedModal
         title={title}
         onClose={onClose}
         titleClassName="font-semibold"
@@ -64,7 +65,7 @@ export function ManagerModal({
           </p>
         )}
         {isEmpty ? <p className="text-ink-soft">{emptyText}</p> : children}
-      </Modal>
+      </GuardedModal>
       {confirm}
     </>
   );

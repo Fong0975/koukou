@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { CloseIcon } from "./Icons";
 
-interface ModalProps {
+export interface ModalProps {
   title: string;
   onClose: () => void;
   children: ReactNode;

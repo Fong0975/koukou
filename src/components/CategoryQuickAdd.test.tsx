@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CategoryDto } from "@/types/dto";
 import { flushPromises } from "@/test/async";
 import { makeCategory } from "@/test/fixtures";
+import { runUnsavedChangesCases } from "@/test/unsavedChanges";
 import { CategoryQuickAdd } from "./CategoryQuickAdd";
 
 describe("CategoryQuickAdd", () => {
@@ -60,4 +61,29 @@ describe("CategoryQuickAdd", () => {
       expect(onDone.mock.calls).toEqual(tt.expectedDone);
     });
   }
+});
+
+describe("CategoryQuickAdd unsaved changes", () => {
+  const typeName = (value: string) => fireEvent.change(screen.getByLabelText("新的類型名稱"), { target: { value } });
+
+  runUnsavedChangesCases(
+    () => <CategoryQuickAdd onCreate={vi.fn()} onDone={vi.fn()} />,
+    [
+      { name: "an empty form closes without asking", expectedConfirm: false },
+      { name: "a typed name asks first", edit: () => typeName("健身房"), expectedConfirm: true },
+      {
+        name: "an emoji alone asks first",
+        edit: () => fireEvent.change(screen.getByLabelText("類型圖示（可留空）"), { target: { value: "💪" } }),
+        expectedConfirm: true,
+      },
+      {
+        name: "a name typed and cleared again closes without asking",
+        edit: () => {
+          typeName("健身房");
+          typeName("");
+        },
+        expectedConfirm: false,
+      },
+    ],
+  );
 });

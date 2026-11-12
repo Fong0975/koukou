@@ -9,6 +9,7 @@ import {
   draftToInput,
   emptyDraft,
   hasYearlySchedule,
+  isDraftChanged,
   toFieldErrors,
   type FieldErrors,
   type SubscriptionDraft,
@@ -21,7 +22,7 @@ import { AmortizeToggle } from "./AmortizeToggle";
 import { AmountSection } from "./AmountSection";
 import { CategoryQuickAdd } from "./CategoryQuickAdd";
 import { DateField } from "./DateField";
-import { Modal } from "./Modal";
+import { GuardedModal } from "./GuardedModal";
 import { PaymentMethodQuickAdd } from "./PaymentMethodQuickAdd";
 import { ReminderSection } from "./ReminderSection";
 import { ScheduleEditor } from "./ScheduleEditor";
@@ -42,14 +43,14 @@ interface SubscriptionFormModalProps {
 
 /**
  * Add/edit form for a subscription. Validates with the same zod schema as the API,
- * then maps any server-side field errors back onto the inputs.
+ * then maps any server-side field errors back onto the inputs. Closing it with unsaved changes,
+ * in the form or in a quick-add form inside it, asks first; 取消 closes it right away.
  */
 export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
   const { initial, categories, paymentMethods, onAddCategory, onAddPaymentMethod, onSubmit, onClose, remindersActive } =
     props;
-  const [draft, setDraft] = useState<SubscriptionDraft>(() =>
-    initial ? draftFromDto(initial) : emptyDraft(todayKey()),
-  );
+  const [initialDraft] = useState<SubscriptionDraft>(() => (initial ? draftFromDto(initial) : emptyDraft(todayKey())));
+  const [draft, setDraft] = useState(initialDraft);
   const [errors, setErrors] = useState<FieldErrors>({});
   const submission = useAsyncAction(async (input: SubscriptionInput) => {
     await onSubmit(input);
@@ -77,7 +78,12 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
   const showFormError = submission.error && Object.keys(serverErrors).length === 0;
 
   return (
-    <Modal title={initial ? "編輯扣款" : "新增扣款"} onClose={onClose} titleClassName="font-semibold">
+    <GuardedModal
+      title={initial ? "編輯扣款" : "新增扣款"}
+      dirty={isDraftChanged(initialDraft, draft)}
+      onClose={onClose}
+      titleClassName="font-semibold"
+    >
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <div>
           <label htmlFor="sub-name" className="field-label">
@@ -198,6 +204,6 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
           </button>
         </div>
       </form>
-    </Modal>
+    </GuardedModal>
   );
 }

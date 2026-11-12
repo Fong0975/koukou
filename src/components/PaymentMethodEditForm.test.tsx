@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { PaymentMethodDto } from "@/types/dto";
 import { flushPromises } from "@/test/async";
 import { makePaymentMethod } from "@/test/fixtures";
+import { runUnsavedChangesCases } from "@/test/unsavedChanges";
 import { PaymentMethodEditForm } from "./PaymentMethodEditForm";
 
 describe("PaymentMethodEditForm", () => {
@@ -92,4 +93,40 @@ describe("PaymentMethodEditForm", () => {
       else expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
   }
+});
+
+describe("PaymentMethodEditForm unsaved changes", () => {
+  const typeNote = (value: string) => fireEvent.change(screen.getByLabelText("備註（可留空）"), { target: { value } });
+
+  runUnsavedChangesCases(
+    () => (
+      <PaymentMethodEditForm
+        paymentMethod={makePaymentMethod({ id: 7, type: "CREDIT_CARD", name: "國泰 CUBE", note: "主力卡" })}
+        onSave={vi.fn()}
+        onDone={vi.fn()}
+      />
+    ),
+    [
+      { name: "unchanged values close without asking", expectedConfirm: false },
+      {
+        name: "a changed type asks first",
+        edit: () => fireEvent.change(screen.getByLabelText("扣款方式種類"), { target: { value: "BANK_ACCOUNT" } }),
+        expectedConfirm: true,
+      },
+      {
+        name: "an edited name asks first",
+        edit: () => fireEvent.change(screen.getByLabelText("卡片或帳戶名稱"), { target: { value: "台新 Richart" } }),
+        expectedConfirm: true,
+      },
+      { name: "an edited note asks first", edit: () => typeNote("薪轉"), expectedConfirm: true },
+      {
+        name: "a note edited back to the original closes without asking",
+        edit: () => {
+          typeNote("薪轉");
+          typeNote("主力卡");
+        },
+        expectedConfirm: false,
+      },
+    ],
+  );
 });
