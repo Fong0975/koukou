@@ -23,10 +23,12 @@ import { AmortizeToggle } from "./AmortizeToggle";
 import { AmountSection } from "./AmountSection";
 import { CategoryQuickAdd } from "./CategoryQuickAdd";
 import { DateField } from "./DateField";
+import { FormSection } from "./FormSection";
 import { GuardedModal } from "./GuardedModal";
 import { PauseEditor } from "./PauseEditor";
 import { PaymentMethodQuickAdd } from "./PaymentMethodQuickAdd";
-import { ReminderSection } from "./ReminderSection";
+import { REMINDERS_LABEL, ReminderSection } from "./ReminderSection";
+import { RequiredMark } from "./RequiredMark";
 import { ResubscribeControl } from "./ResubscribeControl";
 import { ScheduleEditor } from "./ScheduleEditor";
 import { SelectWithQuickAdd } from "./SelectWithQuickAdd";
@@ -45,7 +47,8 @@ interface SubscriptionFormModalProps {
 }
 
 /**
- * Add/edit form for a subscription. Validates with the same zod schema as the API,
+ * Add/edit form for a subscription, grouped into basics, amount and charging, subscription period and
+ * LINE reminders. Validates with the same zod schema as the API,
  * then maps any server-side field errors back onto the inputs. Closing it with unsaved changes,
  * in the form or in a quick-add form inside it, asks first; 取消 closes it right away.
  */
@@ -88,123 +91,137 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
       titleClassName="font-semibold"
     >
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-        <div>
-          <label htmlFor="sub-name" className="field-label">
-            名稱
-          </label>
-          <input
-            id="sub-name"
-            className="field"
-            placeholder="例如：Netflix、中華電信月租"
-            value={draft.name}
-            maxLength={100}
-            autoFocus
-            onChange={(event) => set("name", event.target.value)}
-            aria-invalid={Boolean(fieldErrors.name)}
+        <FormSection title="基本資料">
+          <div>
+            <label htmlFor="sub-name" className="field-label">
+              名稱
+              <RequiredMark />
+            </label>
+            <input
+              id="sub-name"
+              className="field"
+              placeholder="例如：Netflix、中華電信月租"
+              value={draft.name}
+              maxLength={100}
+              autoFocus
+              onChange={(event) => set("name", event.target.value)}
+              aria-invalid={Boolean(fieldErrors.name)}
+              aria-required="true"
+            />
+            {fieldErrors.name && <p className="field-error">{fieldErrors.name}</p>}
+          </div>
+
+          <SelectWithQuickAdd
+            id="sub-category"
+            label="類型"
+            placeholder="選擇類型"
+            value={draft.categoryId}
+            onChange={(value) => set("categoryId", value)}
+            options={categories.map((category) => ({
+              value: String(category.id),
+              label: category.icon ? `${category.icon} ${category.name}` : category.name,
+            }))}
+            error={fieldErrors.categoryId}
+            required
+            addLabel="新增類型"
+            renderAddForm={(done) => <CategoryQuickAdd onCreate={onAddCategory} onDone={done} />}
           />
-          {fieldErrors.name && <p className="field-error">{fieldErrors.name}</p>}
-        </div>
 
-        <SelectWithQuickAdd
-          id="sub-category"
-          label="類型"
-          placeholder="選擇類型"
-          value={draft.categoryId}
-          onChange={(value) => set("categoryId", value)}
-          options={categories.map((category) => ({
-            value: String(category.id),
-            label: category.icon ? `${category.icon} ${category.name}` : category.name,
-          }))}
-          error={fieldErrors.categoryId}
-          addLabel="新增類型"
-          renderAddForm={(done) => <CategoryQuickAdd onCreate={onAddCategory} onDone={done} />}
-        />
+          <div>
+            <label htmlFor="sub-note" className="field-label">
+              備註
+            </label>
+            <input
+              id="sub-note"
+              className="field"
+              placeholder="例如：家庭方案，和家人分攤"
+              value={draft.note}
+              maxLength={255}
+              onChange={(event) => set("note", event.target.value)}
+            />
+          </div>
+        </FormSection>
 
-        <DateField
-          id="sub-start-date"
-          label="起始日"
-          value={draft.startDate}
-          onChange={(value) => set("startDate", value)}
-          error={fieldErrors.startDate}
-        />
-
-        <div>
-          <DateField
-            id="sub-contract-end-date"
-            label="到期日（選填）"
-            value={draft.contractEndDate}
-            onChange={(value) => set("contractEndDate", value)}
-            error={fieldErrors.contractEndDate}
-            hint="到期日當天仍扣款，之後不再扣款；取消訂閱也填這裡。"
+        <FormSection title="金額與扣款">
+          <AmountSection
+            currency={draft.currency}
+            amount={draft.amount}
+            amountPeriods={draft.amountPeriods}
+            startDate={draft.startDate}
+            onChange={patch}
+            errors={fieldErrors}
           />
-          <ResubscribeControl
-            endDate={draft.contractEndDate}
-            onResubscribe={(resumeDate) => patch(resubscribeDraft(draft, resumeDate))}
+
+          <ScheduleEditor
+            schedules={draft.schedules}
+            onChange={(schedules) => set("schedules", schedules)}
+            errors={fieldErrors}
           />
-        </div>
 
-        <PauseEditor
-          startDate={draft.startDate}
-          pauses={draft.pauses}
-          onChange={(pauses) => set("pauses", pauses)}
-          errors={fieldErrors}
-        />
+          {hasYearlySchedule(draft.schedules) && (
+            <AmortizeToggle checked={draft.amortize} onChange={(checked) => set("amortize", checked)} />
+          )}
 
-        <AmountSection
-          currency={draft.currency}
-          amount={draft.amount}
-          amountPeriods={draft.amountPeriods}
-          startDate={draft.startDate}
-          onChange={patch}
-          errors={fieldErrors}
-        />
-
-        <ScheduleEditor
-          schedules={draft.schedules}
-          onChange={(schedules) => set("schedules", schedules)}
-          errors={fieldErrors}
-        />
-
-        {hasYearlySchedule(draft.schedules) && (
-          <AmortizeToggle checked={draft.amortize} onChange={(checked) => set("amortize", checked)} />
-        )}
-
-        <SelectWithQuickAdd
-          id="sub-payment"
-          label="扣款方式"
-          placeholder="選擇信用卡或帳戶"
-          value={draft.paymentMethodId}
-          onChange={(value) => set("paymentMethodId", value)}
-          options={paymentMethods.map((method) => ({
-            value: String(method.id),
-            label: paymentMethodOptionLabel(method),
-          }))}
-          error={fieldErrors.paymentMethodId}
-          addLabel="新增扣款方式"
-          renderAddForm={(done) => <PaymentMethodQuickAdd onCreate={onAddPaymentMethod} onDone={done} />}
-        />
-
-        <ReminderSection
-          reminders={draft.reminders}
-          hasContractEnd={draft.contractEndDate !== ""}
-          disabled={!remindersActive}
-          onChange={(reminders) => set("reminders", reminders)}
-          errors={fieldErrors}
-        />
-
-        <div>
-          <label htmlFor="sub-note" className="field-label">
-            備註（選填）
-          </label>
-          <input
-            id="sub-note"
-            className="field"
-            placeholder="例如：家庭方案，和家人分攤"
-            value={draft.note}
-            maxLength={255}
-            onChange={(event) => set("note", event.target.value)}
+          <SelectWithQuickAdd
+            id="sub-payment"
+            label="扣款方式"
+            placeholder="選擇信用卡或帳戶"
+            value={draft.paymentMethodId}
+            onChange={(value) => set("paymentMethodId", value)}
+            options={paymentMethods.map((method) => ({
+              value: String(method.id),
+              label: paymentMethodOptionLabel(method),
+            }))}
+            error={fieldErrors.paymentMethodId}
+            required
+            addLabel="新增扣款方式"
+            renderAddForm={(done) => <PaymentMethodQuickAdd onCreate={onAddPaymentMethod} onDone={done} />}
           />
-        </div>
+        </FormSection>
+
+        <FormSection title="訂閱期間">
+          <div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <DateField
+                id="sub-start-date"
+                label="起始日"
+                value={draft.startDate}
+                onChange={(value) => set("startDate", value)}
+                error={fieldErrors.startDate}
+                required
+              />
+              <DateField
+                id="sub-contract-end-date"
+                label="到期日"
+                value={draft.contractEndDate}
+                onChange={(value) => set("contractEndDate", value)}
+                error={fieldErrors.contractEndDate}
+                hint="到期日當天仍扣款，之後不再扣款；取消訂閱也填這裡。"
+              />
+            </div>
+            <ResubscribeControl
+              endDate={draft.contractEndDate}
+              onResubscribe={(resumeDate) => patch(resubscribeDraft(draft, resumeDate))}
+            />
+          </div>
+
+          <PauseEditor
+            startDate={draft.startDate}
+            pauses={draft.pauses}
+            onChange={(pauses) => set("pauses", pauses)}
+            errors={fieldErrors}
+          />
+        </FormSection>
+
+        <FormSection title={REMINDERS_LABEL}>
+          <ReminderSection
+            reminders={draft.reminders}
+            hasContractEnd={draft.contractEndDate !== ""}
+            disabled={!remindersActive}
+            onChange={(reminders) => set("reminders", reminders)}
+            errors={fieldErrors}
+          />
+        </FormSection>
 
         {showFormError && (
           <p role="alert" className="field-error">
