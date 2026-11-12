@@ -15,6 +15,8 @@ export interface Reserve {
   subscription: SubscriptionDto;
   /** The yearly charge this reserve saves up for. */
   chargeDate: CalendarDate;
+  /** Which of the {@link AMORTIZATION_MONTHS} monthly installments this month is, from 1. */
+  installment: number;
   /** Amount to set aside, rounded up to a whole currency unit, in cents. */
   reserveCents: number;
   /** Exact monthly share in cents; may be fractional. */
@@ -38,6 +40,18 @@ function upcomingChargeDate(schedule: BillingScheduleDto, target: YearMonth): Ca
 }
 
 /**
+ * Counts which monthly installment a month is towards a charge: the month a year before the
+ * charge month is the first, the month before the charge month the last.
+ *
+ * @param chargeDate - The yearly charge being saved for.
+ * @param target - The month doing the saving.
+ * @returns 1 to {@link AMORTIZATION_MONTHS}.
+ */
+function installmentNumber(chargeDate: CalendarDate, target: YearMonth): number {
+  return (target.year - chargeDate.year) * 12 + target.month - chargeDate.month + AMORTIZATION_MONTHS + 1;
+}
+
+/**
  * Builds the reserve of one yearly schedule for a month, or none when that charge falls
  * before the subscription starts or after its contract ends, or its amount is zero (e.g. a free trial).
  *
@@ -57,6 +71,7 @@ function scheduleReserve(subscription: SubscriptionDto, schedule: BillingSchedul
       key: `${subscription.id}-${schedule.id}`,
       subscription,
       chargeDate,
+      installment: installmentNumber(chargeDate, target),
       reserveCents: Math.ceil(averageCents / 100) * 100,
       averageCents,
     },

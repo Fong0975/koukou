@@ -1,6 +1,9 @@
+import type { Currency } from "@/generated/prisma/enums";
 import type { ExchangeRateDto } from "@/types/dto";
+import type { Reserve } from "./amortization";
 import type { Occurrence } from "./billingOccurrences";
 import { toCents } from "./billingSummary";
+import { toDateKey } from "./dateKey";
 
 /**
  * Picks the USD→TWD rate for a day: the one published that day or, failing that, the most recent one before
@@ -27,21 +30,45 @@ export function rateOn(rates: ExchangeRateDto[], dateKey: string): number {
 }
 
 /**
- * Converts one charge to TWD with the rate of its charge day. A converted charge is rounded to a whole dollar,
- * so the converted rows of a list add up exactly to its converted total.
+ * Converts an amount to TWD with the rate of a day. A converted amount is rounded to a whole dollar, so the
+ * converted rows of a list add up exactly to its converted total.
+ *
+ * @param currency - The amount's currency.
+ * @param cents - The amount in cents.
+ * @param rates - Rates ordered by date; must not be empty.
+ * @param dateKey - The day whose rate applies, "YYYY-MM-DD".
+ * @returns The TWD amount in whole cents.
+ */
+function toTwdCents(currency: Currency, cents: number, rates: ExchangeRateDto[], dateKey: string): number {
+  switch (currency) {
+    case "TWD":
+      return cents;
+    case "USD":
+      return Math.round((cents * rateOn(rates, dateKey)) / 100) * 100;
+  }
+}
+
+/**
+ * Converts one charge to TWD with the rate of its charge day.
  *
  * @param occurrence - The charge.
  * @param rates - Rates ordered by date; must not be empty.
  * @returns The TWD amount in whole cents.
  */
 export function occurrenceTwdCents({ date, subscription, amount }: Occurrence, rates: ExchangeRateDto[]): number {
-  const cents = toCents(amount);
-  switch (subscription.currency) {
-    case "TWD":
-      return cents;
-    case "USD":
-      return Math.round((cents * rateOn(rates, date)) / 100) * 100;
-  }
+  return toTwdCents(subscription.currency, toCents(amount), rates, date);
+}
+
+/**
+ * Converts the rounded-up amount of one reserve to TWD with the rate of the charge it saves for, which for a
+ * charge beyond the known rates is the latest one.
+ *
+ * @param reserve - The reserve.
+ * @param rates - Rates ordered by date; must not be empty.
+ * @returns The TWD amount in whole cents.
+ */
+export function reserveTwdCents({ subscription, chargeDate, reserveCents }: Reserve, rates: ExchangeRateDto[]): number {
+  return toTwdCents(subscription.currency, reserveCents, rates, toDateKey(chargeDate));
 }
 
 /**
@@ -56,12 +83,12 @@ export function sumTwdCents(occurrences: Occurrence[], rates: ExchangeRateDto[])
 }
 
 /**
- * Tells whether any charge has to be converted, i.e. whether exchange rates are worth fetching.
+ * Tells whether any charge or reserve has to be converted, i.e. whether exchange rates are worth fetching.
  *
- * @param occurrences - The charges.
+ * @param items - The charges or reserves.
  */
-export function needsExchangeRate(occurrences: Occurrence[]): boolean {
-  return occurrences.some(({ subscription }) => subscription.currency !== "TWD");
+export function needsExchangeRate(items: readonly { subscription: { currency: Currency } }[]): boolean {
+  return items.some(({ subscription }) => subscription.currency !== "TWD");
 }
 
 /**
@@ -73,4 +100,15 @@ export function needsExchangeRate(occurrences: Occurrence[]): boolean {
  */
 export function convertedTwdCents(occurrences: Occurrence[], rates: ExchangeRateDto[] | null): number | null {
   return rates === null ? null : sumTwdCents(occurrences, rates);
+}
+
+/**
+ * Adds the rounded-up reserves up in TWD when rates are available.
+ *
+ * @param reserves - The reserves.
+ * @param rates - Rates ordered by date, or null when they are not loaded.
+ * @returns The TWD total in whole cents, or null without rates.
+ */
+export function convertedReserveTwdCents(reserves: Reserve[], rates: ExchangeRateDto[] | null): number | null {
+  return rates === null ? null : reserves.reduce((total, reserve) => total + reserveTwdCents(reserve, rates), 0);
 }

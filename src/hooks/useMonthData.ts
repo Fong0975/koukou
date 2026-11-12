@@ -12,8 +12,8 @@ import { useYearRates } from "./useYearRates";
 
 /**
  * Derives everything the home calendar shows for one month: its charges, contract expiries and amortized
- * reserves, plus the totals of its year. When that year has foreign charges, its exchange rates are fetched
- * so the totals can be converted to TWD.
+ * reserves, plus the totals of its year. When that year has foreign charges or the month foreign reserves,
+ * the year's exchange rates are fetched so the amounts can be converted to TWD.
  *
  * @param items - All subscriptions.
  * @param cursor - The shown month, or null before the client knows the date (everything is then empty).
@@ -27,7 +27,10 @@ export function useMonthData(items: SubscriptionDto[], cursor: YearMonth | null)
   const year = cursor?.year;
   const yearCharges = useMemo(() => (year === undefined ? [] : yearOccurrences(items, year)), [items, year]);
   const yearTotal = useMemo(() => sumByCurrency(yearCharges), [yearCharges]);
-  const needsRates = useMemo(() => needsExchangeRate(yearCharges), [yearCharges]);
+  const needsRates = useMemo(
+    () => needsExchangeRate(yearCharges) || needsExchangeRate(reserves),
+    [yearCharges, reserves],
+  );
   const rates = useYearRates(year, needsRates);
   const yearTwdCents = useMemo(() => convertedTwdCents(yearCharges, rates), [yearCharges, rates]);
 

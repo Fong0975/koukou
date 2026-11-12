@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LoadStatus } from "@/hooks/useSubscriptions";
 import { expandCard } from "@/test/collapsibleCard";
 import { makeSubscription } from "@/test/fixtures";
+import { reserveDetailText } from "@/test/reserveDetail";
 import type { ExchangeRateDto, SubscriptionDto } from "@/types/dto";
 
 const { useYearRates } = vi.hoisted(() => ({ useYearRates: vi.fn() }));
@@ -137,7 +138,7 @@ describe("CalendarSection", () => {
         expect(screen.getByText("本月總計").nextElementSibling).toHaveTextContent("NT$ 1,000");
         expandCard("本月預扣");
         expect(screen.getByRole("list", { name: "本月預扣" })).toHaveTextContent(
-          "網域2027 年期（10/11 扣款）NT$ 84(NT$ 83.3)",
+          `網域${reserveDetailText(2027, "1/12", "NT$ 83.3")}NT$ 84`,
         );
         expect(screen.getByText("預留小計").nextElementSibling).toHaveTextContent("NT$ 84");
       },
@@ -150,7 +151,7 @@ describe("CalendarSection", () => {
       expectDom: () => {
         expect(screen.getByRole("heading", { name: "2026 年 9 月" })).toBeInTheDocument();
         expandCard("本月預扣");
-        expect(screen.getByRole("list", { name: "本月預扣" })).toHaveTextContent("2026 年期（10/11 扣款）");
+        expect(screen.getByRole("list", { name: "本月預扣" })).toHaveTextContent("2026 年度 · 第 12/12 期");
       },
     },
     {

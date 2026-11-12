@@ -13,7 +13,7 @@ import {
   formatFullDate,
   formatPercent,
   formatReserve,
-  formatReserveTerm,
+  formatReserveDetail,
   formatSchedule,
   formatTimestamp,
   type ConvertedTotal,
@@ -190,11 +190,11 @@ describe("formatReserve", () => {
       expected: { amount: "NT$ 84", average: "NT$ 83.3" },
     },
     {
-      name: "whole average shows only the amount",
+      name: "whole average reads the same as the amount",
       currency: "TWD",
       reserveCents: 10000,
       averageCents: 10000,
-      expected: { amount: "NT$ 100", average: null },
+      expected: { amount: "NT$ 100", average: "NT$ 100" },
     },
     {
       name: "average rounding up to a whole number keeps one decimal",
@@ -226,15 +226,34 @@ describe("formatReserve", () => {
   }
 });
 
-describe("formatReserveTerm", () => {
+describe("formatReserveDetail", () => {
   const tests = [
-    { name: "two-digit month and day", date: { year: 2026, month: 10, day: 11 }, expected: "2026 年期（10/11 扣款）" },
-    { name: "single-digit month and day", date: { year: 2027, month: 3, day: 1 }, expected: "2027 年期（3/1 扣款）" },
+    {
+      name: "first installment",
+      chargeYear: 2026,
+      installment: 1,
+      average: "NT$ 83.3",
+      expected: { full: ["2026 年度", "第 1/12 期", "月均 NT$ 83.3"], compact: ["2026 年 1/12 期", "NT$ 83.3/月"] },
+    },
+    {
+      name: "a middle installment of a foreign reserve",
+      chargeYear: 2027,
+      installment: 3,
+      average: "US$ 8.3",
+      expected: { full: ["2027 年度", "第 3/12 期", "月均 US$ 8.3"], compact: ["2027 年 3/12 期", "US$ 8.3/月"] },
+    },
+    {
+      name: "last installment",
+      chargeYear: 2027,
+      installment: 12,
+      average: "NT$ 100",
+      expected: { full: ["2027 年度", "第 12/12 期", "月均 NT$ 100"], compact: ["2027 年 12/12 期", "NT$ 100/月"] },
+    },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(formatReserveTerm(tt.date)).toBe(tt.expected);
+      expect(formatReserveDetail(tt.chargeYear, tt.installment, tt.average)).toEqual(tt.expected);
     });
   }
 });
