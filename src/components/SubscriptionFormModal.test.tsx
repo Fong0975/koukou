@@ -33,6 +33,7 @@ const filledInput: SubscriptionInput = {
   startDate: todayKey(),
   contractEndDate: "",
   amountPeriods: [],
+  pauses: [],
   note: "",
   schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
   reminders: noReminders,
@@ -80,6 +81,7 @@ describe("SubscriptionFormModal", () => {
         startDate: "2026-01-01",
         contractEndDate: "",
         amountPeriods: [],
+        pauses: [],
         note: "家庭方案",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
         reminders: noReminders,
@@ -91,6 +93,7 @@ describe("SubscriptionFormModal", () => {
       initial: makeSubscription({
         startDate: "2026-01-15",
         amountPeriods: [{ id: 1, amount: "330.00", endDate: "2026-03-31" }],
+        pauses: [],
       }),
       click: "儲存變更",
       expectedTitle: "編輯扣款",
@@ -104,6 +107,7 @@ describe("SubscriptionFormModal", () => {
         startDate: "2026-01-15",
         contractEndDate: "",
         amountPeriods: [{ amount: "330", endDate: "2026-03-31" }],
+        pauses: [],
         note: "",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
         reminders: noReminders,
@@ -125,6 +129,7 @@ describe("SubscriptionFormModal", () => {
         amount: "12.99",
         startDate: "2026-01-01",
         amountPeriods: [{ amount: "10.99", endDate: todayKey() }],
+        pauses: [],
       },
       expectedCloses: 1,
     },
@@ -170,6 +175,7 @@ describe("SubscriptionFormModal", () => {
         startDate: "2026-01-01",
         contractEndDate: "",
         amountPeriods: [],
+        pauses: [],
         note: "",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "11" }],
         reminders: noReminders,
@@ -179,7 +185,7 @@ describe("SubscriptionFormModal", () => {
     {
       name: "a contract end date can be added and is submitted",
       fill: true,
-      act: () => fireEvent.change(screen.getByLabelText("合約到期日（選填）"), { target: { value: "2099-12-31" } }),
+      act: () => fireEvent.change(screen.getByLabelText("到期日（選填）"), { target: { value: "2099-12-31" } }),
       click: "新增扣款",
       expectedTitle: "新增扣款",
       expectedInput: { ...filledInput, contractEndDate: "2099-12-31" },
@@ -200,6 +206,7 @@ describe("SubscriptionFormModal", () => {
         startDate: "2026-01-01",
         contractEndDate: "2027-03-31",
         amountPeriods: [],
+        pauses: [],
         note: "",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
         reminders: noReminders,
@@ -212,20 +219,120 @@ describe("SubscriptionFormModal", () => {
       click: "儲存變更",
       expectedTitle: "編輯扣款",
       expectedCloses: 0,
-      expectedFieldError: "合約到期日不可早於起始日",
-      expectedInvalidField: "合約到期日（選填）",
+      expectedFieldError: "到期日不可早於起始日",
+      expectedInvalidField: "到期日（選填）",
     },
     {
       name: "a past amount ending before the start date is caught before submitting",
       initial: makeSubscription({
         startDate: "2026-05-01",
         amountPeriods: [{ id: 1, amount: "330.00", endDate: "2026-03-31" }],
+        pauses: [],
       }),
       click: "儲存變更",
       expectedTitle: "編輯扣款",
       expectedCloses: 0,
       expectedFieldError: "到期日不可早於起始日",
       expectedInvalidField: "第 1 筆歷史金額的到期日",
+    },
+    {
+      name: "a pause can be added and is submitted",
+      fill: true,
+      act: () => {
+        fireEvent.click(screen.getByRole("button", { name: "新增暫停期間" }));
+        fireEvent.change(screen.getByLabelText("第 1 段暫停的結束日"), { target: { value: "2099-12-31" } });
+      },
+      click: "新增扣款",
+      expectedTitle: "新增扣款",
+      expectedInput: { ...filledInput, pauses: [{ startDate: todayKey(), endDate: "2099-12-31" }] },
+      expectedCloses: 1,
+    },
+    {
+      name: "editing keeps the pauses",
+      initial: makeSubscription({ pauses: [{ id: 1, startDate: "2026-03-01", endDate: "2026-03-31" }] }),
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedInput: {
+        name: "Netflix",
+        categoryId: "2",
+        paymentMethodId: "3",
+        currency: "TWD",
+        amount: "390",
+        amortize: false,
+        startDate: "2026-01-01",
+        contractEndDate: "",
+        amountPeriods: [],
+        pauses: [{ startDate: "2026-03-01", endDate: "2026-03-31" }],
+        note: "",
+        schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
+        reminders: noReminders,
+      },
+      expectedCloses: 1,
+    },
+    {
+      name: "a pause without an end date is caught before submitting",
+      fill: true,
+      act: () => fireEvent.click(screen.getByRole("button", { name: "新增暫停期間" })),
+      click: "新增扣款",
+      expectedTitle: "新增扣款",
+      expectedCloses: 0,
+      expectedFieldError: "請輸入暫停結束日",
+      expectedInvalidField: "第 1 段暫停的結束日",
+    },
+    {
+      name: "a pause ending after the end date is caught before submitting",
+      initial: makeSubscription({
+        contractEndDate: "2099-06-30",
+        pauses: [{ id: 1, startDate: "2099-06-01", endDate: "2099-07-31" }],
+      }),
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedCloses: 0,
+      expectedFieldError: "暫停期間需在到期日之前結束",
+      expectedInvalidField: "第 1 段暫停的結束日",
+    },
+    {
+      name: "resubscribing turns the stopped days into a pause and clears the end date",
+      initial: makeSubscription({ startDate: "2020-01-01", contractEndDate: "2020-06-30" }),
+      act: () => {
+        expect(screen.getByText("到期日當天仍扣款，之後不再扣款；取消訂閱也填這裡。")).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("恢復扣款日"), { target: { value: "2020-12-01" } });
+        fireEvent.click(screen.getByRole("button", { name: "重新訂閱" }));
+        expect(screen.getByLabelText("到期日（選填）")).toHaveValue("");
+        expect(screen.queryByLabelText("恢復扣款日")).not.toBeInTheDocument();
+      },
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedInput: {
+        name: "Netflix",
+        categoryId: "2",
+        paymentMethodId: "3",
+        currency: "TWD",
+        amount: "390",
+        amortize: false,
+        startDate: "2020-01-01",
+        contractEndDate: "",
+        amountPeriods: [],
+        pauses: [{ startDate: "2020-07-01", endDate: "2020-11-30" }],
+        note: "",
+        schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
+        reminders: noReminders,
+      },
+      expectedCloses: 1,
+    },
+    {
+      name: "overlapping pauses are caught before submitting",
+      initial: makeSubscription({
+        pauses: [
+          { id: 1, startDate: "2026-03-01", endDate: "2026-04-30" },
+          { id: 2, startDate: "2026-04-01", endDate: "2026-05-31" },
+        ],
+      }),
+      click: "儲存變更",
+      expectedTitle: "編輯扣款",
+      expectedCloses: 0,
+      expectedFieldError: "暫停期間不可重疊",
+      expectedInvalidField: "第 2 段暫停的開始日",
     },
     {
       name: "a cleared start date is caught before submitting",
@@ -286,7 +393,7 @@ describe("SubscriptionFormModal", () => {
       fill: true,
       act: () => {
         expect(screen.queryByRole("checkbox", { name: "到期前 7 天" })).not.toBeInTheDocument();
-        fireEvent.change(screen.getByLabelText("合約到期日（選填）"), { target: { value: "2099-12-31" } });
+        fireEvent.change(screen.getByLabelText("到期日（選填）"), { target: { value: "2099-12-31" } });
         fireEvent.click(screen.getByRole("checkbox", { name: "到期前 7 天" }));
         fireEvent.click(screen.getByRole("checkbox", { name: "到期當日" }));
       },
@@ -307,7 +414,7 @@ describe("SubscriptionFormModal", () => {
       }),
       act: () => {
         expect(screen.getByRole("checkbox", { name: "到期前 7 天" })).toBeChecked();
-        fireEvent.change(screen.getByLabelText("合約到期日（選填）"), { target: { value: "" } });
+        fireEvent.change(screen.getByLabelText("到期日（選填）"), { target: { value: "" } });
         expect(screen.queryByRole("checkbox", { name: "到期前 7 天" })).not.toBeInTheDocument();
       },
       click: "儲存變更",
@@ -322,6 +429,7 @@ describe("SubscriptionFormModal", () => {
         startDate: "2026-01-01",
         contractEndDate: "",
         amountPeriods: [],
+        pauses: [],
         note: "",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
         reminders: { chargeDaysBefore: [1], expiryDaysBefore: [] },
@@ -402,6 +510,12 @@ describe("SubscriptionFormModal unsaved changes", () => {
       expectedConfirm: false,
     },
     { name: "a typed name asks first", edit: () => typeName("Spotify"), close: "x", expectedConfirm: true },
+    {
+      name: "an added pause asks first",
+      edit: () => fireEvent.click(screen.getByRole("button", { name: "新增暫停期間" })),
+      close: "x",
+      expectedConfirm: true,
+    },
     {
       name: "a name typed and cleared again closes without asking",
       edit: () => {

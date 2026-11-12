@@ -40,7 +40,7 @@ describe("MonthExpiryList", () => {
       expect(container.querySelector("footer")?.textContent ?? null).toBe(tt.expectedFooter);
       if (tt.expectedRows === null) {
         expect(within(region).queryByRole("list", { name: "到期項目" })).not.toBeInTheDocument();
-        expect(screen.getByText("這個月沒有到期的合約。")).toBeVisible();
+        expect(screen.getByText("這個月沒有到期的項目。")).toBeVisible();
         return;
       }
       expandCard("本月到期");

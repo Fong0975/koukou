@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeSubscription } from "@/test/fixtures";
-import type { BillingScheduleDto } from "@/types/dto";
+import type { BillingScheduleDto, PauseDto } from "@/types/dto";
 import { isActiveOn, monthOccurrences, scheduleDaysInMonth, yearOccurrences } from "./billingOccurrences";
 import { toDateKey } from "./dateKey";
 
@@ -184,6 +184,15 @@ describe("monthOccurrences", () => {
       expected: [],
     },
     {
+      name: "skips the days of a pause, both ends included, and charges again after it",
+      items: [{ ...gym, pauses: [{ id: 1, startDate: "2026-06-06", endDate: "2026-06-13" }] }],
+      month: { year: 2026, month: 6 },
+      expected: [
+        { day: 20, name: "Gym", scheduleId: 30, amount: "100.00" },
+        { day: 27, name: "Gym", scheduleId: 30, amount: "150.00" },
+      ],
+    },
+    {
       name: "skips days of a zero-amount trial and charges the regular amount after it",
       items: [{ ...gym, amountPeriods: [{ id: 1, amount: "0.00", endDate: "2026-06-20" }] }],
       month: { year: 2026, month: 6 },
@@ -288,18 +297,39 @@ describe("yearOccurrences", () => {
 });
 
 describe("isActiveOn", () => {
-  const tests = [
+  const tests: {
+    name: string;
+    contractEndDate: string | null;
+    pauses?: PauseDto[];
+    date: string;
+    expected: boolean;
+  }[] = [
     { name: "before the start date", contractEndDate: null, date: "2025-12-31", expected: false },
     { name: "on the start date", contractEndDate: null, date: "2026-01-01", expected: true },
     { name: "far ahead without a contract end date", contractEndDate: null, date: "2099-01-01", expected: true },
     { name: "on the contract end date", contractEndDate: "2026-06-30", date: "2026-06-30", expected: true },
     { name: "the day after the contract end date", contractEndDate: "2026-06-30", date: "2026-07-01", expected: false },
     { name: "a contract ending on the start date", contractEndDate: "2026-01-01", date: "2026-01-01", expected: true },
+    {
+      name: "on the first day of a pause",
+      contractEndDate: null,
+      pauses: [{ id: 1, startDate: "2026-03-01", endDate: "2026-03-31" }],
+      date: "2026-03-01",
+      expected: false,
+    },
+    {
+      name: "the day after a pause ends",
+      contractEndDate: null,
+      pauses: [{ id: 1, startDate: "2026-03-01", endDate: "2026-03-31" }],
+      date: "2026-04-01",
+      expected: true,
+    },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(isActiveOn({ startDate: "2026-01-01", contractEndDate: tt.contractEndDate }, tt.date)).toBe(tt.expected);
+      const subscription = { startDate: "2026-01-01", contractEndDate: tt.contractEndDate, pauses: tt.pauses ?? [] };
+      expect(isActiveOn(subscription, tt.date)).toBe(tt.expected);
     });
   }
 });

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import type { SubscriptionData } from "@/lib/validation/subscriptionSchema";
-import { toAmountPeriodRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
+import { toAmountPeriodRows, toPauseRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
 
 const data: SubscriptionData = {
   name: "Netflix",
@@ -13,6 +13,10 @@ const data: SubscriptionData = {
   startDate: "2026-01-01",
   contractEndDate: null,
   amountPeriods: [{ amount: 12, endDate: "2026-03-31" }],
+  pauses: [
+    { startDate: "2026-05-01", endDate: "2026-06-30" },
+    { startDate: "2026-09-01", endDate: "2026-09-30" },
+  ],
   note: "家庭方案",
   schedules: [{ cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
   reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7] },
@@ -62,6 +66,26 @@ describe("toAmountPeriodRows", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(toAmountPeriodRows(tt.data)).toEqual(tt.expected);
+    });
+  }
+});
+
+describe("toPauseRows", () => {
+  const tests = [
+    {
+      name: "converts each pause's dates",
+      data,
+      expected: [
+        { startDate: new Date("2026-05-01T00:00:00.000Z"), endDate: new Date("2026-06-30T00:00:00.000Z") },
+        { startDate: new Date("2026-09-01T00:00:00.000Z"), endDate: new Date("2026-09-30T00:00:00.000Z") },
+      ],
+    },
+    { name: "returns no rows without pauses", data: { ...data, pauses: [] }, expected: [] },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(toPauseRows(tt.data)).toEqual(tt.expected);
     });
   }
 });

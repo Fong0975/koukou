@@ -15,6 +15,7 @@ import {
   formatReserve,
   formatReserveDetail,
   formatSchedule,
+  formatSubscriptionStatus,
   formatTimestamp,
   type ConvertedTotal,
 } from "./format";
@@ -176,6 +177,19 @@ describe("formatContractRemaining", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       expect(formatContractRemaining(tt.days)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("formatSubscriptionStatus", () => {
+  const tests = [
+    { name: "paused until a day", status: { kind: "paused", until: "2026-04-30" }, expected: "暫停中・至 2026/04/30" },
+    { name: "ended on a day", status: { kind: "ended", endDate: "2026-06-30" }, expected: "已到期・2026/06/30" },
+  ] as const;
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(formatSubscriptionStatus(tt.status)).toBe(tt.expected);
     });
   }
 });

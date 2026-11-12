@@ -16,15 +16,15 @@ describe("ContractEndNote", () => {
     {
       name: "a future end date shows the days left",
       date: "2027-03-31",
-      expected: "合約到期 2027/03/31（剩 164 天）",
+      expected: "到期 2027/03/31（剩 164 天）",
       warn: false,
     },
-    { name: "ending tomorrow", date: "2026-10-19", expected: "合約到期 2026/10/19（剩 1 天）", warn: false },
-    { name: "ending today warns", date: "2026-10-18", expected: "合約到期 2026/10/18（今天到期）", warn: true },
+    { name: "ending tomorrow", date: "2026-10-19", expected: "到期 2026/10/19（剩 1 天）", warn: false },
+    { name: "ending today warns", date: "2026-10-18", expected: "到期 2026/10/18（今天到期）", warn: true },
     {
       name: "a past end date warns",
       date: "2026-10-15",
-      expected: "合約到期 2026/10/15（已到期 3 天）",
+      expected: "到期 2026/10/15（已到期 3 天）",
       warn: true,
     },
   ];

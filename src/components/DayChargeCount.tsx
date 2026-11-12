@@ -12,12 +12,12 @@ interface DayChargeCountProps {
 }
 
 /**
- * Builds the trigger's accessible name, e.g. "15 日扣款項目（2 筆）、合約到期（1 筆）".
+ * Builds the trigger's accessible name, e.g. "15 日扣款項目（2 筆）、到期（1 筆）".
  */
 function triggerLabel(day: number, chargeCount: number, expiryCount: number): string {
   const parts = [
     ...(chargeCount > 0 ? [`扣款項目（${chargeCount} 筆）`] : []),
-    ...(expiryCount > 0 ? [`合約到期（${expiryCount} 筆）`] : []),
+    ...(expiryCount > 0 ? [`到期（${expiryCount} 筆）`] : []),
   ];
   return `${day} 日${parts.join("、")}`;
 }
@@ -108,9 +108,9 @@ export function DayChargeCount({ day, occurrences, expiries, align }: DayChargeC
         )}
         {expiries.length > 0 && (
           <NameSection
-            heading="合約到期"
+            heading="到期"
             headingClassName="text-berry"
-            label={`${day} 日合約到期`}
+            label={`${day} 日到期`}
             items={expiries.map(({ subscription }) => ({ key: String(subscription.id), subscription }))}
           />
         )}

@@ -36,10 +36,10 @@ describe("ReminderSection", () => {
       hasContractEnd: true,
       errors: {
         "reminders.chargeDaysBefore.0": "扣款提醒需介於 0–30 天前",
-        "reminders.expiryDaysBefore": "未設定合約到期日，無法設定到期提醒",
+        "reminders.expiryDaysBefore": "未設定到期日，無法設定到期提醒",
       },
       expectExpiry: true,
-      expectedErrors: ["扣款提醒需介於 0–30 天前", "未設定合約到期日，無法設定到期提醒"],
+      expectedErrors: ["扣款提醒需介於 0–30 天前", "未設定到期日，無法設定到期提醒"],
     },
     {
       name: "locks every control with a hint when disabled",
@@ -70,8 +70,8 @@ describe("ReminderSection", () => {
         else expect(control).toBeEnabled();
       }
       expect(screen.getByRole("group", { name: "扣款提醒" })).toBeInTheDocument();
-      if (tt.expectExpiry) expect(screen.getByRole("group", { name: "合約到期提醒" })).toBeInTheDocument();
-      else expect(screen.queryByRole("group", { name: "合約到期提醒" })).not.toBeInTheDocument();
+      if (tt.expectExpiry) expect(screen.getByRole("group", { name: "到期提醒" })).toBeInTheDocument();
+      else expect(screen.queryByRole("group", { name: "到期提醒" })).not.toBeInTheDocument();
 
       if (tt.click) fireEvent.click(screen.getByLabelText(tt.click));
       if (tt.expectedChange) expect(onChange).toHaveBeenCalledWith(tt.expectedChange);

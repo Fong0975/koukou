@@ -3,12 +3,14 @@ import { paymentTypeRank } from "@/lib/paymentMethodOrder";
 import type { BackupData } from "@/lib/validation/backupSchema";
 import type { BackupSubscriptionDto } from "@/types/dto";
 import { sortOrderAt } from "./reorderIds";
-import { toAmountPeriodRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
+import { toAmountPeriodRows, toPauseRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
 import {
   reminderInclude,
+  serializePause,
   serializeSubscriptionColumns,
   toAmountString,
   toRemindersDto,
+  type PauseRecord,
   type SubscriptionColumnsRecord,
   type SubscriptionRecord,
 } from "./subscriptionMapper";
@@ -19,6 +21,7 @@ export interface BackupSubscriptionRecord extends SubscriptionColumnsRecord {
   paymentMethodId: number;
   schedules: Omit<SubscriptionRecord["schedules"][number], "id">[];
   amountPeriods: Omit<SubscriptionRecord["amountPeriods"][number], "id">[];
+  pauses: PauseRecord[];
   reminders: SubscriptionRecord["reminders"];
 }
 
@@ -43,6 +46,10 @@ export const backupSubscriptionSelect = {
     select: { amount: true, endDate: true },
     orderBy: { endDate: "asc" },
   },
+  pauses: {
+    select: { startDate: true, endDate: true },
+    orderBy: { startDate: "asc" },
+  },
   reminders: reminderInclude,
 } as const;
 
@@ -61,6 +68,7 @@ export function toBackupSubscriptionDto(record: BackupSubscriptionRecord): Backu
       amount: toAmountString(period.amount),
       endDate: utcDateToDateKey(period.endDate),
     })),
+    pauses: record.pauses.map(serializePause),
     reminders: toRemindersDto(record.reminders),
   };
 }
@@ -104,6 +112,9 @@ export function toImportRows(data: BackupData) {
     ),
     amountPeriods: data.subscriptions.flatMap((subscription) =>
       toAmountPeriodRows(subscription).map((row) => ({ subscriptionId: subscription.id, ...row })),
+    ),
+    pauses: data.subscriptions.flatMap((subscription) =>
+      toPauseRows(subscription).map((row) => ({ subscriptionId: subscription.id, ...row })),
     ),
     reminders: data.subscriptions.flatMap((subscription) =>
       toReminderRows(subscription).map((row) => ({ subscriptionId: subscription.id, ...row })),

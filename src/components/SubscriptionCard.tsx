@@ -1,9 +1,11 @@
 import { formatAmount, formatSchedule } from "@/lib/format";
 import { PAYMENT_TYPE_LABELS } from "@/lib/labels";
+import type { SubscriptionStatus } from "@/lib/subscriptionStatus";
 import type { SubscriptionDto } from "@/types/dto";
 import { ContractEndNote } from "./ContractEndNote";
 import { CardIcon, PencilIcon, TrashIcon } from "./Icons";
 import { ReminderBadge } from "./ReminderBadge";
+import { SubscriptionStatusBadge } from "./SubscriptionStatusBadge";
 
 interface SubscriptionCardProps {
   item: SubscriptionDto;
@@ -11,19 +13,34 @@ interface SubscriptionCardProps {
   onDelete: (item: SubscriptionDto) => void;
   /** Whether LINE reminders go out; the bell is hidden otherwise, since nothing would be sent. */
   remindersActive: boolean;
+  /** Whether the subscription is paused or has ended today; the card is dimmed and labelled then. */
+  status?: SubscriptionStatus | null;
+  /** Shows the category under the name, for lists not grouped under category headings. */
+  showCategory?: boolean;
 }
 
 /**
  * Wide glass card for one recurring payment: name (with a bell when it has active LINE reminders), billing days,
- * payment method, contract end date and note on the left, amount and edit/delete actions on the right. Stacks
- * vertically on narrow screens. The category is not shown, since cards are listed under their category heading.
+ * payment method, end date and note on the left, amount and edit/delete actions on the right. Stacks
+ * vertically on narrow screens. The category is shown only with `showCategory`, since cards are normally listed
+ * under their category heading. A paused or ended subscription is dimmed and carries a status pill; an ended one
+ * leaves out the end date note, since the pill already shows the date.
  */
-export function SubscriptionCard({ item, onEdit, onDelete, remindersActive }: SubscriptionCardProps) {
+export function SubscriptionCard({
+  item,
+  onEdit,
+  onDelete,
+  remindersActive,
+  status = null,
+  showCategory = false,
+}: SubscriptionCardProps) {
   const amount = formatAmount(item.currency, item.amount);
 
   return (
     <article
-      className="glass stitched flex flex-col gap-3 rounded-[1.5rem] p-5 sm:flex-row sm:items-center sm:gap-5"
+      className={`glass stitched flex flex-col gap-3 rounded-[1.5rem] p-5 sm:flex-row sm:items-center sm:gap-5 ${
+        status ? "opacity-75" : ""
+      }`}
       aria-labelledby={`sub-${item.id}-name`}
     >
       <div className="min-w-0 flex-1">
@@ -32,7 +49,14 @@ export function SubscriptionCard({ item, onEdit, onDelete, remindersActive }: Su
             {item.name}
           </h4>
           {remindersActive && <ReminderBadge reminders={item.reminders} />}
+          {status && <SubscriptionStatusBadge status={status} />}
         </div>
+        {showCategory && (
+          <p className="mt-1 text-sm text-ink-soft">
+            {item.category.icon && <span aria-hidden="true">{item.category.icon} </span>}
+            {item.category.name}
+          </p>
+        )}
         <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="扣款日">
           {item.schedules.map((schedule) => (
             <li key={schedule.id} className="rounded-full bg-coin-100/90 px-2.5 py-0.5 text-sm text-coin-600">
@@ -45,7 +69,7 @@ export function SubscriptionCard({ item, onEdit, onDelete, remindersActive }: Su
           <span>{PAYMENT_TYPE_LABELS[item.paymentMethod.type]}</span>
           <span className="min-w-0 break-words text-ink">{item.paymentMethod.name}</span>
         </p>
-        {item.contractEndDate && <ContractEndNote date={item.contractEndDate} />}
+        {item.contractEndDate && status?.kind !== "ended" && <ContractEndNote date={item.contractEndDate} />}
         {item.note && <p className="mt-1 line-clamp-2 text-sm text-ink-soft">{item.note}</p>}
       </div>
 

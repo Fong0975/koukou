@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { SubscriptionStatus } from "@/lib/subscriptionStatus";
 import { makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
 import { SubscriptionCard } from "./SubscriptionCard";
@@ -22,6 +23,8 @@ describe("SubscriptionCard", () => {
     remindersActive?: boolean;
     /** Accessible name of the reminder bell, or undefined when there should be none. */
     bell?: string;
+    status?: SubscriptionStatus;
+    showCategory?: boolean;
   }[] = [
     {
       name: "renders name, amount, schedules and card",
@@ -53,7 +56,7 @@ describe("SubscriptionCard", () => {
       name: "leaves out the contract note without an end date",
       item,
       texts: ["Netflix"],
-      absentTexts: ["合約到期"],
+      absentTexts: ["到期"],
       schedules: ["每月 1 日", "每月 15 日"],
     },
     {
@@ -62,6 +65,28 @@ describe("SubscriptionCard", () => {
       item,
       texts: ["Netflix"],
       absentTexts: ["影音串流", "🎬"],
+      schedules: ["每月 1 日", "每月 15 日"],
+    },
+    {
+      name: "shows the category when asked",
+      item,
+      showCategory: true,
+      texts: ["影音串流"],
+      schedules: ["每月 1 日", "每月 15 日"],
+    },
+    {
+      name: "labels a paused subscription",
+      item,
+      status: { kind: "paused", until: "2026-04-30" },
+      texts: ["暫停中・至 2026/04/30"],
+      schedules: ["每月 1 日", "每月 15 日"],
+    },
+    {
+      name: "labels an ended subscription without repeating its end date note",
+      item: { ...item, contractEndDate: "2026-06-30" },
+      status: { kind: "ended", endDate: "2026-06-30" },
+      texts: ["已到期・2026/06/30"],
+      absentTexts: ["暫停中", "2026/06/30"],
       schedules: ["每月 1 日", "每月 15 日"],
     },
     {
@@ -92,6 +117,8 @@ describe("SubscriptionCard", () => {
           onEdit={vi.fn()}
           onDelete={vi.fn()}
           remindersActive={tt.remindersActive ?? true}
+          status={tt.status}
+          showCategory={tt.showCategory}
         />,
       );
 
@@ -109,7 +136,9 @@ describe("SubscriptionCard", () => {
       } else {
         expect(screen.queryByRole("img", { name: /LINE 提醒/ })).not.toBeInTheDocument();
       }
-      expect(screen.getByRole("article", { name: tt.item.name })).toBeInTheDocument();
+      const article = screen.getByRole("article", { name: tt.item.name });
+      if (tt.status) expect(article).toHaveClass("opacity-75");
+      else expect(article).not.toHaveClass("opacity-75");
     });
   }
 

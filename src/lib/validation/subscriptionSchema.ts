@@ -3,6 +3,7 @@ import { Currency } from "@/generated/prisma/enums";
 import { amountPeriodsSchema } from "./amountPeriodSchema";
 import { amountSchema } from "./amountSchema";
 import { optionalDate, optionalText, requiredDate, requiredId, requiredText, type IssueSink } from "./common";
+import { pausesSchema } from "./pauseSchema";
 import { checkExpiryReminders, remindersSchema } from "./reminderSchema";
 import { schedulesSchema } from "./scheduleSchema";
 
@@ -15,8 +16,9 @@ export const subscriptionFieldsSchema = z.object({
   amount: amountSchema,
   amortize: z.boolean({ error: "均攤設定格式錯誤" }).default(false),
   startDate: requiredDate("起始日"),
-  contractEndDate: optionalDate("合約到期日"),
+  contractEndDate: optionalDate("到期日"),
   amountPeriods: amountPeriodsSchema,
+  pauses: pausesSchema,
   note: optionalText("備註", 255),
   schedules: schedulesSchema,
   reminders: remindersSchema,
@@ -27,21 +29,31 @@ interface SubscriptionDates {
   startDate: string;
   contractEndDate: string | null;
   amountPeriods: { endDate: string }[];
+  pauses: { startDate: string; endDate: string }[];
 }
 
 /**
- * Reports a contract end date or a past amount's end date that falls before the start date.
+ * Reports a contract end date, a past amount's end date or a pause's start date that falls before the start date,
+ * and a pause still running after the contract end date.
  *
  * @param data - The parsed subscription.
  * @param ctx - Where the issues are reported.
  */
 export function checkSubscriptionDates(data: SubscriptionDates, ctx: IssueSink): void {
   if (data.contractEndDate !== null && data.contractEndDate < data.startDate) {
-    ctx.addIssue({ code: "custom", path: ["contractEndDate"], message: "合約到期日不可早於起始日" });
+    ctx.addIssue({ code: "custom", path: ["contractEndDate"], message: "到期日不可早於起始日" });
   }
   data.amountPeriods.forEach((period, index) => {
     if (period.endDate < data.startDate) {
       ctx.addIssue({ code: "custom", path: ["amountPeriods", index, "endDate"], message: "到期日不可早於起始日" });
+    }
+  });
+  data.pauses.forEach((pause, index) => {
+    if (pause.startDate < data.startDate) {
+      ctx.addIssue({ code: "custom", path: ["pauses", index, "startDate"], message: "暫停開始日不可早於起始日" });
+    }
+    if (data.contractEndDate !== null && pause.endDate > data.contractEndDate) {
+      ctx.addIssue({ code: "custom", path: ["pauses", index, "endDate"], message: "暫停期間需在到期日之前結束" });
     }
   });
 }

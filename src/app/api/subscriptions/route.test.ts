@@ -107,6 +107,7 @@ describe("POST /api/subscriptions", () => {
             startDate: "2026-01-01",
             contractEndDate: null,
             amountPeriods: [],
+            pauses: [],
           }),
         );
       }

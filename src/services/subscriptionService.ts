@@ -4,7 +4,7 @@ import { createLogger } from "@/lib/logger";
 import type { SubscriptionData } from "@/lib/validation/subscriptionSchema";
 import type { SubscriptionDto } from "@/types/dto";
 import { rethrowPrismaError, type PrismaErrorMessages } from "./prismaErrors";
-import { toAmountPeriodRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
+import { toAmountPeriodRows, toPauseRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
 import { subscriptionInclude, toSubscriptionDto } from "./subscriptionMapper";
 
 const logger = createLogger("subscriptionService");
@@ -20,6 +20,7 @@ const writeErrorMessages = (id?: number): PrismaErrorMessages => ({
 const childCounts = (data: SubscriptionData) => ({
   schedules: data.schedules.length,
   amountPeriods: data.amountPeriods.length,
+  pauses: data.pauses.length,
   reminders: data.reminders.chargeDaysBefore.length + data.reminders.expiryDaysBefore.length,
 });
 
@@ -51,7 +52,7 @@ export async function getSubscription(id: number): Promise<SubscriptionDto> {
 }
 
 /**
- * Creates a subscription together with its billing schedules, past amounts and reminders.
+ * Creates a subscription together with its billing schedules, past amounts, pauses and reminders.
  *
  * @param data - Validated subscription data.
  * @returns The created subscription.
@@ -64,6 +65,7 @@ export async function createSubscription(data: SubscriptionData): Promise<Subscr
         ...toSubscriptionColumns(data),
         schedules: { create: data.schedules },
         amountPeriods: { create: toAmountPeriodRows(data) },
+        pauses: { create: toPauseRows(data) },
         reminders: { create: toReminderRows(data) },
       },
       include: subscriptionInclude,
@@ -76,7 +78,7 @@ export async function createSubscription(data: SubscriptionData): Promise<Subscr
 }
 
 /**
- * Replaces a subscription's fields, its whole schedule list, all past amounts and all reminders. The
+ * Replaces a subscription's fields, its whole schedule list, all past amounts, all pauses and all reminders. The
  * nested deleteMany + create runs in one statement batch, so it is atomic.
  *
  * @param id - Subscription id.
@@ -93,6 +95,7 @@ export async function updateSubscription(id: number, data: SubscriptionData): Pr
         ...toSubscriptionColumns(data),
         schedules: { deleteMany: {}, create: data.schedules },
         amountPeriods: { deleteMany: {}, create: toAmountPeriodRows(data) },
+        pauses: { deleteMany: {}, create: toPauseRows(data) },
         reminders: { deleteMany: {}, create: toReminderRows(data) },
       },
       include: subscriptionInclude,
@@ -105,7 +108,7 @@ export async function updateSubscription(id: number, data: SubscriptionData): Pr
 }
 
 /**
- * Deletes a subscription; its schedules, past amounts and reminders are removed by the cascade rule.
+ * Deletes a subscription; its schedules, past amounts, pauses and reminders are removed by the cascade rule.
  *
  * @param id - Subscription id.
  * @throws NotFoundError when it does not exist.

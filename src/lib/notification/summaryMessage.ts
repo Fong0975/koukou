@@ -22,7 +22,7 @@ import { capList, moreText } from "./messageLayout";
 const MAX_LISTED = 30;
 
 /** Describes the card in the header, under the month. */
-const SUBTITLE = "本月扣款、預扣、合約到期一覽";
+const SUBTITLE = "本月扣款、預扣、到期一覽";
 
 /** Formats totals per currency, e.g. "NT$ 1,290 + US$ 20.00"; the currencies are never converted into one. */
 function totalsText(totals: CurrencyTotals): string {

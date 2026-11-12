@@ -38,7 +38,7 @@ function dayChips(occurrences: Occurrence[], expiries: ContractExpiry[]): Chip[]
       variant: "expiry",
       icon: subscription.category.icon,
       label: `${subscription.name} 到期`,
-      title: `${subscription.name} 合約到期`,
+      title: `${subscription.name} 到期`,
       amount: null,
     })),
     ...occurrences.map(({ subscription, scheduleId, amount }): Chip => {
@@ -56,14 +56,14 @@ function dayChips(occurrences: Occurrence[], expiries: ContractExpiry[]): Chip[]
 }
 
 /**
- * Builds the cell's accessible name, e.g. "15 日（今天）：Netflix、Spotify；合約到期：中華電信".
+ * Builds the cell's accessible name, e.g. "15 日（今天）：Netflix、Spotify；到期：中華電信".
  */
 function cellLabel(day: number, isToday: boolean, occurrences: Occurrence[], expiries: ContractExpiry[]): string {
   const date = `${day} 日${isToday ? "（今天）" : ""}`;
   const names = (items: { subscription: { name: string } }[]) => items.map((o) => o.subscription.name).join("、");
   const parts = [
     ...(occurrences.length > 0 ? [names(occurrences)] : []),
-    ...(expiries.length > 0 ? [`合約到期：${names(expiries)}`] : []),
+    ...(expiries.length > 0 ? [`到期：${names(expiries)}`] : []),
   ];
   return parts.length === 0 ? date : `${date}：${parts.join("；")}`;
 }

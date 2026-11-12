@@ -20,6 +20,7 @@ const record: BackupSubscriptionRecord = {
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   schedules: [{ cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
   amountPeriods: [{ amount: decimal(330), endDate: new Date("2026-03-31T00:00:00.000Z") }],
+  pauses: [{ startDate: new Date("2026-05-01T00:00:00.000Z"), endDate: new Date("2026-06-30T00:00:00.000Z") }],
   reminders: [{ kind: "CHARGE", daysBefore: 0 }],
 };
 
@@ -30,6 +31,11 @@ describe("toBackupSubscriptionDto", () => {
       name: "serializes a contract end date",
       record: { ...record, contractEndDate: new Date("2027-03-31T00:00:00.000Z") },
       expected: { ...makeBackup().subscriptions[0], contractEndDate: "2027-03-31" },
+    },
+    {
+      name: "serializes a subscription without pauses",
+      record: { ...record, pauses: [] },
+      expected: { ...makeBackup().subscriptions[0], pauses: [] },
     },
   ];
 
@@ -66,6 +72,13 @@ describe("toImportRows", () => {
         ],
         schedules: [{ subscriptionId: 1, cycle: "MONTHLY", dayOfWeek: null, dayOfMonth: 1, month: null }],
         amountPeriods: [{ subscriptionId: 1, amount: "330.00", endDate: new Date("2026-03-31T00:00:00.000Z") }],
+        pauses: [
+          {
+            subscriptionId: 1,
+            startDate: new Date("2026-05-01T00:00:00.000Z"),
+            endDate: new Date("2026-06-30T00:00:00.000Z"),
+          },
+        ],
         reminders: [{ subscriptionId: 1, kind: "CHARGE", daysBefore: 0 }],
         notificationSetting: backup.notificationSetting,
       },
@@ -79,6 +92,7 @@ describe("toImportRows", () => {
         subscriptions: [],
         schedules: [],
         amountPeriods: [],
+        pauses: [],
         reminders: [],
         notificationSetting: null,
       },

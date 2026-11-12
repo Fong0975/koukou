@@ -33,6 +33,7 @@ describe("subscriptionInputSchema", () => {
         startDate: "2026-01-15",
         contractEndDate: null,
         amountPeriods: [],
+        pauses: [],
         note: null,
         reminders: { chargeDaysBefore: [], expiryDaysBefore: [] },
       },
@@ -115,6 +116,48 @@ describe("subscriptionInputSchema", () => {
         ],
       },
       errorPath: "amountPeriods.1.endDate",
+    },
+    {
+      name: "accepts pauses starting on or after the start date",
+      input: {
+        ...valid,
+        pauses: [
+          { startDate: "2026-01-15", endDate: "2026-02-28" },
+          { startDate: "2026-06-01", endDate: "2026-06-30" },
+        ],
+      },
+      expected: {
+        pauses: [
+          { startDate: "2026-01-15", endDate: "2026-02-28" },
+          { startDate: "2026-06-01", endDate: "2026-06-30" },
+        ],
+      },
+    },
+    {
+      name: "accepts a pause ending on the end date",
+      input: { ...valid, contractEndDate: "2026-06-30", pauses: [{ startDate: "2026-06-01", endDate: "2026-06-30" }] },
+      expected: { pauses: [{ startDate: "2026-06-01", endDate: "2026-06-30" }] },
+    },
+    {
+      name: "rejects a pause ending after the end date",
+      input: { ...valid, contractEndDate: "2026-06-30", pauses: [{ startDate: "2026-06-01", endDate: "2026-07-01" }] },
+      errorPath: "pauses.0.endDate",
+    },
+    {
+      name: "rejects a pause starting before the start date",
+      input: { ...valid, pauses: [{ startDate: "2026-01-14", endDate: "2026-01-31" }] },
+      errorPath: "pauses.0.startDate",
+    },
+    {
+      name: "rejects overlapping pauses",
+      input: {
+        ...valid,
+        pauses: [
+          { startDate: "2026-03-01", endDate: "2026-04-30" },
+          { startDate: "2026-04-30", endDate: "2026-05-31" },
+        ],
+      },
+      errorPath: "pauses.1.startDate",
     },
     { name: "defaults currency to TWD", input: { ...valid, currency: undefined }, expected: { currency: "TWD" } },
     { name: "keeps a trimmed note", input: { ...valid, note: " 家庭方案 " }, expected: { note: "家庭方案" } },

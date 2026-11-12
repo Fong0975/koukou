@@ -53,7 +53,7 @@ export async function exportBackup(): Promise<BackupDto> {
 export async function importBackup(data: BackupData): Promise<BackupCountsDto> {
   const rows = toImportRows(data);
   try {
-    // Subscriptions go first: their schedules, past amounts and reminders cascade with them, and categories
+    // Subscriptions go first: their schedules, past amounts, pauses and reminders cascade with them, and categories
     // and payment methods cannot be deleted while still referenced.
     await prisma.$transaction([
       prisma.subscription.deleteMany(),
@@ -64,6 +64,7 @@ export async function importBackup(data: BackupData): Promise<BackupCountsDto> {
       prisma.subscription.createMany({ data: rows.subscriptions }),
       prisma.billingSchedule.createMany({ data: rows.schedules }),
       prisma.subscriptionAmountPeriod.createMany({ data: rows.amountPeriods }),
+      prisma.subscriptionPause.createMany({ data: rows.pauses }),
       prisma.subscriptionReminder.createMany({ data: rows.reminders }),
       ...(rows.notificationSetting
         ? [prisma.notificationSetting.upsert(notificationSettingUpsert(rows.notificationSetting))]

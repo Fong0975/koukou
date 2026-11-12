@@ -77,20 +77,20 @@ describe("DayChargeCount", () => {
       occurrences,
       expiries,
       open: (trigger) => fireEvent.click(trigger),
-      expectedLabel: "15 日扣款項目（2 筆）、合約到期（1 筆）",
+      expectedLabel: "15 日扣款項目（2 筆）、到期（1 筆）",
       expectedTrigger: "21",
       expectedCharges: ["扣款項目", "🎬 NetflixNT$ 390", "記帳 AppUS$ 4.99"],
-      expectedExpiries: ["合約到期", "📱 中華電信"],
+      expectedExpiries: ["到期", "📱 中華電信"],
     },
     {
       name: "a day with only an expiry",
       occurrences: [],
       expiries,
       open: (trigger) => fireEvent.click(trigger),
-      expectedLabel: "15 日合約到期（1 筆）",
+      expectedLabel: "15 日到期（1 筆）",
       expectedTrigger: "1",
       expectedCharges: null,
-      expectedExpiries: ["合約到期", "📱 中華電信"],
+      expectedExpiries: ["到期", "📱 中華電信"],
     },
   ];
 
@@ -103,7 +103,7 @@ describe("DayChargeCount", () => {
 
       expect(trigger).toHaveTextContent(tt.expectedTrigger);
       expect(section("15 日扣款項目")).toEqual(tt.expectedCharges);
-      expect(section("15 日合約到期")).toEqual(tt.expectedExpiries);
+      expect(section("15 日到期")).toEqual(tt.expectedExpiries);
     });
   }
 });

@@ -13,7 +13,7 @@ export function MonthExpiryList({ expiries }: { expiries: ContractExpiry[] }) {
   if (expiries.length === 0) {
     return (
       <CollapsibleCard title="本月到期" collapsible={false}>
-        <p className="py-3 text-ink-soft">這個月沒有到期的合約。</p>
+        <p className="py-3 text-ink-soft">這個月沒有到期的項目。</p>
       </CollapsibleCard>
     );
   }

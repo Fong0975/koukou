@@ -9,8 +9,11 @@ import {
   hasYearlySchedule,
   isDraftChanged,
   newAmountPeriodDraft,
+  newPauseDraft,
   newScheduleDraft,
   nextAmountPeriodDraft,
+  nextPauseDraft,
+  resubscribeDraft,
   toFieldErrors,
   type FieldErrors,
   type SubscriptionDraft,
@@ -117,6 +120,106 @@ describe("nextAmountPeriodDraft", () => {
   }
 });
 
+describe("newPauseDraft", () => {
+  const tests = [
+    { name: "keeps the given dates", values: { startDate: "2026-03-01", endDate: "2026-04-30" } },
+    { name: "accepts a blank end date", values: { startDate: "2026-03-01", endDate: "" } },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const first = newPauseDraft(tt.values);
+      const second = newPauseDraft(tt.values);
+      expect(first).toMatchObject(tt.values);
+      expect(first.key).toMatch(/^pause-/);
+      expect(first.key).not.toBe(second.key);
+    });
+  }
+});
+
+describe("nextPauseDraft", () => {
+  const today = "2026-10-17";
+  const pause = (startDate: string, endDate: string) => newPauseDraft({ startDate, endDate });
+
+  const tests = [
+    {
+      name: "starts today without an end date",
+      draft: { startDate: "2026-01-01", pauses: [] },
+      expected: "2026-10-17",
+    },
+    {
+      name: "starts today after a pause that ended before today",
+      draft: { startDate: "2026-01-01", pauses: [pause("2026-03-01", "2026-04-30")] },
+      expected: "2026-10-17",
+    },
+    {
+      name: "starts the day after the latest pause ending today or later, whatever the row order",
+      draft: {
+        startDate: "2026-01-01",
+        pauses: [pause("2026-12-01", "2026-12-31"), pause("2026-10-01", "2026-10-31")],
+      },
+      expected: "2027-01-01",
+    },
+    {
+      name: "ignores a pause without an end date",
+      draft: { startDate: "2026-01-01", pauses: [pause("2026-12-01", "")] },
+      expected: "2026-10-17",
+    },
+    {
+      name: "starts on a future start date",
+      draft: { startDate: "2026-12-01", pauses: [] },
+      expected: "2026-12-01",
+    },
+    {
+      name: "falls back to today when the start date is blank",
+      draft: { startDate: "", pauses: [] },
+      expected: "2026-10-17",
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(nextPauseDraft(tt.draft, today)).toMatchObject({ startDate: tt.expected, endDate: "" });
+    });
+  }
+});
+
+describe("resubscribeDraft", () => {
+  const earlier = newPauseDraft({ startDate: "2026-02-01", endDate: "2026-02-28" });
+
+  const tests = [
+    {
+      name: "turns the days between the end date and the resume date into a pause",
+      draft: { contractEndDate: "2026-06-30", pauses: [earlier] },
+      resumeDate: "2026-12-01",
+      expected: [
+        { startDate: "2026-02-01", endDate: "2026-02-28" },
+        { startDate: "2026-07-01", endDate: "2026-11-30" },
+      ],
+    },
+    {
+      name: "adds a one-day pause when it resumes two days after ending",
+      draft: { contractEndDate: "2026-06-30", pauses: [] },
+      resumeDate: "2026-07-02",
+      expected: [{ startDate: "2026-07-01", endDate: "2026-07-01" }],
+    },
+    {
+      name: "adds no pause when it resumes the day after ending",
+      draft: { contractEndDate: "2026-06-30", pauses: [earlier] },
+      resumeDate: "2026-07-01",
+      expected: [{ startDate: "2026-02-01", endDate: "2026-02-28" }],
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const result = resubscribeDraft(tt.draft, tt.resumeDate);
+      expect(result.contractEndDate).toBe("");
+      expect(result.pauses.map(({ startDate, endDate }) => ({ startDate, endDate }))).toEqual(tt.expected);
+    });
+  }
+});
+
 describe("emptyDraft", () => {
   const tests = [
     { name: "starts blank in TWD with one monthly schedule", startDate: "2026-10-17" },
@@ -136,6 +239,7 @@ describe("emptyDraft", () => {
         startDate: tt.startDate,
         contractEndDate: "",
         amountPeriods: [],
+        pauses: [],
         note: "",
         reminders: { chargeDaysBefore: [], expiryDaysBefore: [] },
       });
@@ -197,6 +301,27 @@ describe("draftFromDto", () => {
       expectedAmountPeriods: [],
     },
     {
+      name: "keeps pauses",
+      dto: {
+        ...dto,
+        pauses: [
+          { id: 1, startDate: "2026-03-01", endDate: "2026-04-30" },
+          { id: 2, startDate: "2026-08-01", endDate: "2026-08-31" },
+        ],
+      },
+      expected: {
+        pauses: [
+          expect.objectContaining({ startDate: "2026-03-01", endDate: "2026-04-30" }),
+          expect.objectContaining({ startDate: "2026-08-01", endDate: "2026-08-31" }),
+        ],
+      },
+      expectedSchedules: [{ cycle: "MONTHLY" }, { cycle: "WEEKLY" }],
+      expectedAmountPeriods: [
+        { amount: "12", endDate: "2026-03-31" },
+        { amount: "13.99", endDate: "2026-06-30" },
+      ],
+    },
+    {
       name: "keeps the amortize flag",
       dto: { ...dto, amortize: true },
       expected: { amortize: true },
@@ -231,6 +356,7 @@ describe("draftToInput", () => {
     startDate: "2026-01-01",
     contractEndDate: "2027-12-31",
     amountPeriods: [newAmountPeriodDraft({ amount: "350", endDate: "2026-05-31" })],
+    pauses: [newPauseDraft({ startDate: "2026-08-01", endDate: "" })],
     note: "",
     schedules: [],
     reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7] },
@@ -286,6 +412,7 @@ describe("draftToInput", () => {
         startDate: "2026-01-01",
         contractEndDate: "2027-12-31",
         amountPeriods: [{ amount: "350", endDate: "2026-05-31" }],
+        pauses: [{ startDate: "2026-08-01", endDate: "" }],
         note: "",
         schedules: [tt.expected],
         reminders: { chargeDaysBefore: [0, 3], expiryDaysBefore: [7] },
@@ -396,6 +523,11 @@ describe("isDraftChanged", () => {
     },
     { name: "a different cycle is a change", draft: { ...initial, schedules: [initial.schedules[0]] }, expected: true },
     { name: "amortize without a yearly schedule is no change", draft: { ...initial, amortize: true }, expected: false },
+    {
+      name: "an added pause is a change",
+      draft: { ...initial, pauses: [newPauseDraft({ startDate: "2026-08-01", endDate: "" })] },
+      expected: true,
+    },
     {
       name: "an added reminder is a change",
       draft: { ...initial, reminders: { ...initial.reminders, chargeDaysBefore: [1] } },

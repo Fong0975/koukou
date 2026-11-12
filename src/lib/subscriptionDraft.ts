@@ -1,6 +1,6 @@
 import type { BillingCycle, Currency } from "@/generated/prisma/enums";
 import { amountPeriodRanges } from "@/lib/amountPeriods";
-import { isDateKey } from "@/lib/dateKey";
+import { addDays, isDateKey } from "@/lib/dateKey";
 import { isExpiryReminderDay } from "@/lib/reminderDays";
 import type { ScheduleInput } from "@/lib/validation/scheduleSchema";
 import type { SubscriptionInput } from "@/lib/validation/subscriptionSchema";
@@ -24,6 +24,14 @@ export interface AmountPeriodDraft {
   endDate: string;
 }
 
+/** Editable pause; dates are "YYYY-MM-DD" as produced by a date input, or "" before one is picked. */
+export interface PauseDraft {
+  /** Stable React key; not sent to the server. */
+  key: string;
+  startDate: string;
+  endDate: string;
+}
+
 /** Editable subscription form state. */
 export interface SubscriptionDraft {
   name: string;
@@ -35,9 +43,10 @@ export interface SubscriptionDraft {
   /** Spread yearly charges into monthly reserves; only takes effect with a YEARLY schedule. */
   amortize: boolean;
   startDate: string;
-  /** Last day of the contract as "YYYY-MM-DD", or "" without one. */
+  /** Last charging day as "YYYY-MM-DD", or "" while it keeps charging. */
   contractEndDate: string;
   amountPeriods: AmountPeriodDraft[];
+  pauses: PauseDraft[];
   note: string;
   schedules: ScheduleDraft[];
   /** LINE reminder days; expiry ones are dropped on submit while there is no contract end date. */
@@ -111,6 +120,54 @@ export function nextAmountPeriodDraft(
 }
 
 /**
+ * Creates a pause row.
+ *
+ * @param values - Its start and end dates.
+ */
+export function newPauseDraft(values: Omit<PauseDraft, "key">): PauseDraft {
+  return { key: nextDraftKey("pause"), ...values };
+}
+
+/**
+ * Creates the pause row added by the "新增暫停期間" button, with its end date left for the person to pick.
+ * It starts today, or later when the subscription starts later or another pause ends today or later, so
+ * it does not start before the subscription or overlap another pause.
+ *
+ * @param draft - The form state the row is added to.
+ * @param today - Today's date key.
+ * @returns The new row; the caller appends it.
+ */
+export function nextPauseDraft(draft: Pick<SubscriptionDraft, "startDate" | "pauses">, today: string): PauseDraft {
+  const resumeDates = draft.pauses
+    .filter(({ endDate }) => isDateKey(endDate))
+    .map(({ endDate }) => addDays(endDate, 1));
+  const startDate = [draft.startDate, ...resumeDates]
+    .filter(isDateKey)
+    .reduce((latest, date) => (date > latest ? date : latest), today);
+  return newPauseDraft({ startDate, endDate: "" });
+}
+
+/**
+ * Starts an ended subscription charging again: the days between its end date and the resume date become a
+ * pause, so the earlier charges stay and nothing is charged while it was stopped, and the end date is cleared.
+ *
+ * @param draft - The form state; its `contractEndDate` must be a date before `resumeDate`.
+ * @param resumeDate - The first day it charges again, as "YYYY-MM-DD".
+ * @returns The fields to patch into the form; the pause is left out when it resumes the day after ending.
+ */
+export function resubscribeDraft(
+  draft: Pick<SubscriptionDraft, "contractEndDate" | "pauses">,
+  resumeDate: string,
+): Pick<SubscriptionDraft, "contractEndDate" | "pauses"> {
+  const firstStoppedDay = addDays(draft.contractEndDate, 1);
+  const gap =
+    resumeDate > firstStoppedDay
+      ? [newPauseDraft({ startDate: firstStoppedDay, endDate: addDays(resumeDate, -1) })]
+      : [];
+  return { contractEndDate: "", pauses: [...draft.pauses, ...gap] };
+}
+
+/**
  * Initial state of the "add subscription" form.
  *
  * @param startDate - Default start date ("YYYY-MM-DD"), normally today.
@@ -126,6 +183,7 @@ export function emptyDraft(startDate: string): SubscriptionDraft {
     startDate,
     contractEndDate: "",
     amountPeriods: [],
+    pauses: [],
     note: "",
     schedules: [newScheduleDraft()],
     reminders: { chargeDaysBefore: [], expiryDaysBefore: [] },
@@ -151,6 +209,7 @@ export function draftFromDto(dto: SubscriptionDto): SubscriptionDraft {
     amountPeriods: dto.amountPeriods.map((period) =>
       newAmountPeriodDraft({ amount: amountText(period.amount), endDate: period.endDate }),
     ),
+    pauses: dto.pauses.map(({ startDate, endDate }) => newPauseDraft({ startDate, endDate })),
     note: dto.note ?? "",
     schedules: dto.schedules.map((schedule) =>
       newScheduleDraft({
@@ -200,6 +259,7 @@ export function draftToInput(draft: SubscriptionDraft): SubscriptionInput {
     startDate: draft.startDate,
     contractEndDate: draft.contractEndDate,
     amountPeriods: draft.amountPeriods.map(({ amount, endDate }) => ({ amount, endDate })),
+    pauses: draft.pauses.map(({ startDate, endDate }) => ({ startDate, endDate })),
     note: draft.note,
     schedules: draft.schedules.map(scheduleToInput),
     reminders: {
