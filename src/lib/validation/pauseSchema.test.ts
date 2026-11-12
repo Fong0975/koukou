@@ -13,20 +13,21 @@ describe("pausesSchema", () => {
   }[] = [
     { name: "defaults to an empty list", input: undefined, expected: [] },
     {
-      name: "keeps dates and normalizes a blank end date to null",
-      input: [
-        { startDate: " 2026-03-01 ", endDate: "2026-04-30" },
-        { startDate: "2026-08-01", endDate: "" },
-      ],
-      expected: [
-        { startDate: "2026-03-01", endDate: "2026-04-30" },
-        { startDate: "2026-08-01", endDate: null },
-      ],
+      name: "keeps trimmed dates",
+      input: [{ startDate: " 2026-03-01 ", endDate: "2026-04-30 " }],
+      expected: [{ startDate: "2026-03-01", endDate: "2026-04-30" }],
     },
     {
-      name: "accepts a missing end date",
+      name: "rejects a blank end date",
+      input: [{ startDate: "2026-08-01", endDate: "" }],
+      errorPath: "0.endDate",
+      errorMessage: "請輸入暫停結束日",
+    },
+    {
+      name: "rejects a missing end date",
       input: [{ startDate: "2026-08-01" }],
-      expected: [{ startDate: "2026-08-01", endDate: null }],
+      errorPath: "0.endDate",
+      errorMessage: "請輸入暫停結束日",
     },
     {
       name: "accepts a single-day pause",
@@ -34,13 +35,13 @@ describe("pausesSchema", () => {
       expected: [{ startDate: "2026-03-01", endDate: "2026-03-01" }],
     },
     {
-      name: "accepts pauses in any order, with the open-ended one listed first",
+      name: "accepts pauses in any order",
       input: [
-        { startDate: "2026-08-01", endDate: null },
+        { startDate: "2026-08-01", endDate: "2026-08-31" },
         { startDate: "2026-03-01", endDate: "2026-04-30" },
       ],
       expected: [
-        { startDate: "2026-08-01", endDate: null },
+        { startDate: "2026-08-01", endDate: "2026-08-31" },
         { startDate: "2026-03-01", endDate: "2026-04-30" },
       ],
     },
@@ -80,17 +81,8 @@ describe("pausesSchema", () => {
       errorMessage: "暫停期間不可重疊",
     },
     {
-      name: "rejects an open-ended pause followed by another one",
-      input: [
-        { startDate: "2026-03-01", endDate: null },
-        { startDate: "2026-08-01", endDate: "2026-08-31" },
-      ],
-      errorPath: "0.endDate",
-      errorMessage: "只有最後一段暫停可以不填結束日",
-    },
-    {
       name: "rejects a missing start date",
-      input: [{ startDate: "", endDate: null }],
+      input: [{ startDate: "", endDate: "2026-03-31" }],
       errorPath: "0.startDate",
       errorMessage: "請輸入暫停開始日",
     },

@@ -29,7 +29,7 @@ export interface SubscriptionRecord {
     month: number | null;
   }[];
   amountPeriods: { id: number; amount: DecimalLike; endDate: Date }[];
-  pauses: { id: number; startDate: Date; endDate: Date | null }[];
+  pauses: { id: number; startDate: Date; endDate: Date }[];
   reminders: ReminderRecord[];
 }
 
@@ -104,7 +104,7 @@ export function serializeSubscriptionColumns(record: SubscriptionColumnsRecord) 
 export function serializePause(record: PauseRecord): Omit<PauseDto, "id"> {
   return {
     startDate: utcDateToDateKey(record.startDate),
-    endDate: record.endDate === null ? null : utcDateToDateKey(record.endDate),
+    endDate: utcDateToDateKey(record.endDate),
   };
 }
 

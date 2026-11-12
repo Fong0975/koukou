@@ -11,10 +11,10 @@ const items = [
   makeSubscription({ id: 2, name: "Spotify", category: music }),
   makeSubscription({ id: 3, name: "Disney+" }),
 ];
-// Pauses wide enough to cover any day the tests run on.
+// An end date long past and a pause wide enough to cover any day the tests run on.
 const withPauses = [
   items[0],
-  { ...items[1], pauses: [{ id: 1, startDate: "2000-01-01", endDate: null }] },
+  { ...items[1], contractEndDate: "2000-01-31" },
   { ...items[2], pauses: [{ id: 2, startDate: "2000-01-01", endDate: "2999-12-31" }] },
 ];
 
@@ -76,20 +76,20 @@ describe("SubscriptionList", () => {
       },
     },
     {
-      name: "gathers paused and cancelled items in a last section showing their status and category",
+      name: "gathers paused and ended items in a last section showing their status and category",
       status: "ready",
       items: withPauses,
       expectDom: () => {
         expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
           "🎬影音串流",
-          "已暫停／已取消",
+          "已暫停／已到期",
         ]);
         expect(
           within(screen.getByRole("region", { name: "影音串流" }))
             .getAllByRole("heading", { level: 4 })
             .map((h) => h.textContent),
         ).toEqual(["Netflix"]);
-        const paused = screen.getByRole("region", { name: "已暫停／已取消" });
+        const paused = screen.getByRole("region", { name: "已暫停／已到期" });
         const cards = within(paused).getAllByRole("article");
         expect(cards.map((card) => within(card).getByRole("heading", { level: 4 }).textContent)).toEqual([
           "Disney+",
@@ -97,7 +97,7 @@ describe("SubscriptionList", () => {
         ]);
         expect(cards[0]).toHaveTextContent("暫停中・至 2999/12/31");
         expect(cards[0]).toHaveTextContent("影音串流");
-        expect(cards[1]).toHaveTextContent("已取消・2000/01/01 起");
+        expect(cards[1]).toHaveTextContent("已到期・2000/01/31");
         expect(cards[1]).toHaveTextContent("音樂");
       },
     },
@@ -106,7 +106,7 @@ describe("SubscriptionList", () => {
       status: "ready",
       items: withPauses,
       click: "編輯「Spotify」",
-      expectDom: () => expect(screen.getByRole("region", { name: "已暫停／已取消" })).toBeInTheDocument(),
+      expectDom: () => expect(screen.getByRole("region", { name: "已暫停／已到期" })).toBeInTheDocument(),
       expectedHandler: { name: "onEdit", args: [withPauses[1]] },
     },
     {

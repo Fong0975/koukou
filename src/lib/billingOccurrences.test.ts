@@ -193,15 +193,6 @@ describe("monthOccurrences", () => {
       ],
     },
     {
-      name: "stops charging from the start of an open-ended pause",
-      items: [{ ...gym, pauses: [{ id: 1, startDate: "2026-06-14", endDate: null }] }],
-      month: { year: 2026, month: 6 },
-      expected: [
-        { day: 6, name: "Gym", scheduleId: 30, amount: "100.00" },
-        { day: 13, name: "Gym", scheduleId: 30, amount: "100.00" },
-      ],
-    },
-    {
       name: "skips days of a zero-amount trial and charges the regular amount after it",
       items: [{ ...gym, amountPeriods: [{ id: 1, amount: "0.00", endDate: "2026-06-20" }] }],
       month: { year: 2026, month: 6 },
@@ -332,13 +323,6 @@ describe("isActiveOn", () => {
       pauses: [{ id: 1, startDate: "2026-03-01", endDate: "2026-03-31" }],
       date: "2026-04-01",
       expected: true,
-    },
-    {
-      name: "far ahead in an open-ended pause",
-      contractEndDate: null,
-      pauses: [{ id: 1, startDate: "2026-03-01", endDate: null }],
-      date: "2099-01-01",
-      expected: false,
     },
   ];
 

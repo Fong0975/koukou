@@ -3,7 +3,7 @@ import type { LoadStatus } from "@/hooks/useSubscriptions";
 import { useToday } from "@/hooks/useToday";
 import { toDateKey } from "@/lib/dateKey";
 import { groupByCategory } from "@/lib/groupByCategory";
-import { splitByPauseStatus } from "@/lib/pauses";
+import { splitByStatus } from "@/lib/subscriptionStatus";
 import type { SubscriptionDto } from "@/types/dto";
 import { EmptyState } from "./EmptyState";
 import { LoadErrorNotice } from "./LoadErrorNotice";
@@ -25,7 +25,7 @@ export interface SubscriptionListProps {
 
 /**
  * Subscription cards grouped under category headings, with loading, error and empty states. Subscriptions
- * paused or cancelled today are gathered in a last "已暫停／已取消" section instead, each card showing its
+ * paused or ended today are gathered in a last "已暫停／已到期" section instead, each card showing its
  * status and category.
  */
 export function SubscriptionList({
@@ -55,13 +55,13 @@ export function SubscriptionList({
 
   if (items.length === 0) return <EmptyState onAdd={onAdd} />;
 
-  const { active, paused } = splitByPauseStatus(items, today === null ? null : toDateKey(today));
+  const { running, stopped } = splitByStatus(items, today === null ? null : toDateKey(today));
   const cardProps = { onEdit, onDelete, remindersActive };
-  const pausedHeadingId = `${idPrefix}-paused`;
+  const stoppedHeadingId = `${idPrefix}-stopped`;
 
   return (
     <div className="flex flex-col gap-6">
-      {groupByCategory(active).map(({ category, items: grouped }) => {
+      {groupByCategory(running).map(({ category, items: grouped }) => {
         const headingId = `${idPrefix}-category-${category.id}`;
         return (
           <section key={category.id} aria-labelledby={headingId}>
@@ -79,15 +79,15 @@ export function SubscriptionList({
           </section>
         );
       })}
-      {paused.length > 0 && (
-        <section aria-labelledby={pausedHeadingId}>
-          <h3 id={pausedHeadingId} className={HEADING_CLASS}>
-            已暫停／已取消
+      {stopped.length > 0 && (
+        <section aria-labelledby={stoppedHeadingId}>
+          <h3 id={stoppedHeadingId} className={HEADING_CLASS}>
+            已暫停／已到期
           </h3>
           <ul className="flex flex-col gap-3">
-            {paused.map(({ item, status }) => (
+            {stopped.map(({ item, status }) => (
               <li key={item.id}>
-                <SubscriptionCard item={item} {...cardProps} pauseStatus={status} showCategory />
+                <SubscriptionCard item={item} {...cardProps} status={status} showCategory />
               </li>
             ))}
           </ul>

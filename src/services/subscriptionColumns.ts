@@ -43,7 +43,7 @@ export function toAmountPeriodRows(data: Pick<SubscriptionData, "amountPeriods">
 export function toPauseRows(data: Pick<SubscriptionData, "pauses">) {
   return data.pauses.map((pause) => ({
     startDate: dateKeyToUtcDate(pause.startDate),
-    endDate: pause.endDate === null ? null : dateKeyToUtcDate(pause.endDate),
+    endDate: dateKeyToUtcDate(pause.endDate),
   }));
 }
 

@@ -70,11 +70,6 @@ describe("collectDailyReminders", () => {
       today: "2026-11-08",
     },
     {
-      name: "skips a charge once cancelled",
-      items: [charged({ pauses: [{ id: 1, startDate: "2026-11-09", endDate: null }] })],
-      today: "2026-11-08",
-    },
-    {
       name: "uses the amount that applies on the charge day",
       items: [charged({ amountPeriods: [{ id: 1, amount: "330.00", endDate: "2026-11-30" }] })],
       today: "2026-11-10",
@@ -110,11 +105,11 @@ describe("collectDailyReminders", () => {
       expiries: [{ name: "Netflix", date: "2026-11-15", daysBefore }],
     })),
     {
-      name: "skips a contract end during a pause",
+      name: "skips an end date that falls in a pause",
       items: [
         makeSubscription({
           contractEndDate: "2026-11-15",
-          pauses: [{ id: 1, startDate: "2026-11-01", endDate: null }],
+          pauses: [{ id: 1, startDate: "2026-11-01", endDate: "2026-11-15" }],
           reminders: reminders([], [7, 1, 0]),
         }),
       ],
@@ -203,10 +198,10 @@ describe("buildMonthlySummary", () => {
       },
     },
     {
-      name: "leaves cancelled subscriptions out",
-      items: [netflix, chatGpt, domain, telecom].map((item) => ({
+      name: "leaves subscriptions paused all month out",
+      items: [netflix, chatGpt].map((item) => ({
         ...item,
-        pauses: [{ id: 1, startDate: "2026-01-01", endDate: null }],
+        pauses: [{ id: 1, startDate: "2026-11-01", endDate: "2026-11-30" }],
       })),
       expected: emptyMonth,
     },

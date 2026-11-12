@@ -73,7 +73,7 @@ describe("backupSchema", () => {
     {
       name: "applies the pause rules",
       input: makeBackup({
-        subscriptions: [{ ...subscription, pauses: [{ startDate: "2025-12-01", endDate: null }] }],
+        subscriptions: [{ ...subscription, pauses: [{ startDate: "2025-12-01", endDate: "2025-12-31" }] }],
       }),
       error: { path: "subscriptions.0.pauses.0.startDate" },
     },

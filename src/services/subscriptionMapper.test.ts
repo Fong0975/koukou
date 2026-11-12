@@ -70,12 +70,12 @@ describe("toSubscriptionDto", () => {
       },
     },
     {
-      name: "serializes pauses with date-only dates and keeps an open end",
+      name: "serializes pauses with date-only dates",
       record: {
         ...baseRecord,
         pauses: [
           { id: 9, startDate: new Date("2026-03-01T00:00:00.000Z"), endDate: new Date("2026-04-30T00:00:00.000Z") },
-          { id: 10, startDate: new Date("2026-08-01T00:00:00.000Z"), endDate: null },
+          { id: 10, startDate: new Date("2026-08-01T00:00:00.000Z"), endDate: new Date("2026-08-31T00:00:00.000Z") },
         ],
       },
       expected: {
@@ -84,7 +84,7 @@ describe("toSubscriptionDto", () => {
         contractEndDate: null,
         pauses: [
           { id: 9, startDate: "2026-03-01", endDate: "2026-04-30" },
-          { id: 10, startDate: "2026-08-01", endDate: null },
+          { id: 10, startDate: "2026-08-01", endDate: "2026-08-31" },
         ],
       },
     },

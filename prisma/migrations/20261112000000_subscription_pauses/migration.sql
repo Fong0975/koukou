@@ -3,7 +3,7 @@ CREATE TABLE `subscription_pauses` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `subscription_id` INTEGER NOT NULL,
     `start_date` DATE NOT NULL,
-    `end_date` DATE NULL,
+    `end_date` DATE NOT NULL,
 
     UNIQUE INDEX `subscription_pauses_subscription_id_start_date_key`(`subscription_id`, `start_date`),
     PRIMARY KEY (`id`)

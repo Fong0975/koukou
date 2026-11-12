@@ -78,7 +78,7 @@ function expirySection(expiries: ExpiryReminder[]): FlexNode {
   }));
   return sectionCard(
     "⏰",
-    "合約到期",
+    "到期",
     countPill(`${expiries.length} 項`),
     [rowList(rows), ...(hidden ? [moreRow(moreText(hidden))] : [])],
     COIN.card,

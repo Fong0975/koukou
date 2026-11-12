@@ -120,12 +120,6 @@ describe("monthReserves", () => {
       expected: [domainReserve([2027, 10, 11], 1)],
     },
     {
-      name: "nothing is saved for once cancelled",
-      items: [{ ...domain, pauses: [{ id: 1, startDate: "2026-06-01", endDate: null }] }],
-      target: { year: 2026, month: 5 },
-      expected: [],
-    },
-    {
       name: "uses the amount that applies on the charge date",
       items: [{ ...domain, amount: "1500.00", amountPeriods: [{ id: 1, amount: "1200.00", endDate: "2026-10-11" }] }],
       target: { year: 2026, month: 5 },

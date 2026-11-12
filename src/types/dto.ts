@@ -36,13 +36,13 @@ export interface AmountPeriodDto {
 }
 
 /**
- * Days on which a subscription is paused, from `startDate` through `endDate` ("YYYY-MM-DD"), both included.
- * Without an `endDate` it stays paused from `startDate` on, i.e. it is cancelled.
+ * Days on which a subscription is paused, from `startDate` through `endDate` ("YYYY-MM-DD"), both included;
+ * it charges again the day after `endDate`.
  */
 export interface PauseDto {
   id: number;
   startDate: string;
-  endDate: string | null;
+  endDate: string;
 }
 
 /**
@@ -58,7 +58,8 @@ export interface RemindersDto {
  * Subscription with its relations, serialized for JSON (amounts as fixed 2-decimal strings,
  * dates as "YYYY-MM-DD"). `amount` is the current amount; `amountPeriods` hold the past ones,
  * ordered by end date. `amortize` spreads each YEARLY charge over the 12 months before it.
- * `contractEndDate` is the contract's last day ("YYYY-MM-DD"), which still charges, or null without one.
+ * `contractEndDate` is the last day it charges ("YYYY-MM-DD"), e.g. when the contract ends or it is cancelled,
+ * or null while it keeps charging.
  * `pauses` are the stretches without charges, ordered by start date.
  */
 export interface SubscriptionDto {

@@ -192,7 +192,7 @@ export function draftFromDto(dto: SubscriptionDto): SubscriptionDraft {
     amountPeriods: dto.amountPeriods.map((period) =>
       newAmountPeriodDraft({ amount: amountText(period.amount), endDate: period.endDate }),
     ),
-    pauses: dto.pauses.map((pause) => newPauseDraft({ startDate: pause.startDate, endDate: pause.endDate ?? "" })),
+    pauses: dto.pauses.map(({ startDate, endDate }) => newPauseDraft({ startDate, endDate })),
     note: dto.note ?? "",
     schedules: dto.schedules.map((schedule) =>
       newScheduleDraft({

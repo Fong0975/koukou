@@ -264,18 +264,18 @@ describe("draftFromDto", () => {
       expectedAmountPeriods: [],
     },
     {
-      name: "keeps pauses, showing an open end as blank",
+      name: "keeps pauses",
       dto: {
         ...dto,
         pauses: [
           { id: 1, startDate: "2026-03-01", endDate: "2026-04-30" },
-          { id: 2, startDate: "2026-08-01", endDate: null },
+          { id: 2, startDate: "2026-08-01", endDate: "2026-08-31" },
         ],
       },
       expected: {
         pauses: [
           expect.objectContaining({ startDate: "2026-03-01", endDate: "2026-04-30" }),
-          expect.objectContaining({ startDate: "2026-08-01", endDate: "" }),
+          expect.objectContaining({ startDate: "2026-08-01", endDate: "2026-08-31" }),
         ],
       },
       expectedSchedules: [{ cycle: "MONTHLY" }, { cycle: "WEEKLY" }],

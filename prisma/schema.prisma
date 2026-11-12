@@ -61,7 +61,8 @@ model Subscription {
   paymentMethodId Int                        @map("payment_method_id")
   /// First day the subscription charges; nothing is charged before it.
   startDate       DateTime                   @map("start_date") @db.Date
-  /// Last day of the contract, if any. It still charges on this day; nothing is charged after it.
+  /// Last day the subscription charges, if it ends, e.g. when the contract ends or it is cancelled.
+  /// It still charges on this day; nothing is charged after it.
   contractEndDate DateTime?                  @map("contract_end_date") @db.Date
   currency        Currency                   @default(TWD)
   amount          Decimal                    @db.Decimal(12, 2)
@@ -95,13 +96,13 @@ model SubscriptionAmountPeriod {
 }
 
 /// A stretch of days on which a subscription is paused: nothing is charged, set aside or reminded of
-/// from `startDate` through `endDate`, both included. Without an `endDate` the subscription stays
-/// paused from `startDate` on, i.e. it is cancelled until an end date is filled in.
+/// from `startDate` through `endDate`, both included, and charging resumes the day after. Stopping for
+/// good is the subscription's `contractEndDate` instead.
 model SubscriptionPause {
   id             Int          @id @default(autoincrement())
   subscriptionId Int          @map("subscription_id")
   startDate      DateTime     @map("start_date") @db.Date
-  endDate        DateTime?    @map("end_date") @db.Date
+  endDate        DateTime     @map("end_date") @db.Date
   subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@unique([subscriptionId, startDate])

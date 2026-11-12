@@ -33,9 +33,9 @@ describe("toBackupSubscriptionDto", () => {
       expected: { ...makeBackup().subscriptions[0], contractEndDate: "2027-03-31" },
     },
     {
-      name: "serializes a pause without an end date",
-      record: { ...record, pauses: [{ startDate: new Date("2026-05-01T00:00:00.000Z"), endDate: null }] },
-      expected: { ...makeBackup().subscriptions[0], pauses: [{ startDate: "2026-05-01", endDate: null }] },
+      name: "serializes a subscription without pauses",
+      record: { ...record, pauses: [] },
+      expected: { ...makeBackup().subscriptions[0], pauses: [] },
     },
   ];
 

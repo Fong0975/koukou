@@ -219,7 +219,7 @@ describe("SubscriptionFormModal", () => {
       click: "儲存變更",
       expectedTitle: "編輯扣款",
       expectedCloses: 0,
-      expectedFieldError: "合約到期日不可早於起始日",
+      expectedFieldError: "到期日不可早於起始日",
       expectedInvalidField: "合約到期日（選填）",
     },
     {
@@ -248,8 +248,8 @@ describe("SubscriptionFormModal", () => {
       expectedCloses: 1,
     },
     {
-      name: "editing keeps a cancellation without an end date",
-      initial: makeSubscription({ pauses: [{ id: 1, startDate: "2026-03-01", endDate: null }] }),
+      name: "editing keeps the pauses",
+      initial: makeSubscription({ pauses: [{ id: 1, startDate: "2026-03-01", endDate: "2026-03-31" }] }),
       click: "儲存變更",
       expectedTitle: "編輯扣款",
       expectedInput: {
@@ -262,7 +262,7 @@ describe("SubscriptionFormModal", () => {
         startDate: "2026-01-01",
         contractEndDate: "",
         amountPeriods: [],
-        pauses: [{ startDate: "2026-03-01", endDate: "" }],
+        pauses: [{ startDate: "2026-03-01", endDate: "2026-03-31" }],
         note: "",
         schedules: [{ cycle: "MONTHLY", dayOfMonth: "1" }],
         reminders: noReminders,
@@ -274,7 +274,7 @@ describe("SubscriptionFormModal", () => {
       initial: makeSubscription({
         pauses: [
           { id: 1, startDate: "2026-03-01", endDate: "2026-04-30" },
-          { id: 2, startDate: "2026-04-01", endDate: null },
+          { id: 2, startDate: "2026-04-01", endDate: "2026-05-31" },
         ],
       }),
       click: "儲存變更",

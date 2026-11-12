@@ -72,7 +72,7 @@ export function checkExpiryReminders(data: ExpiryReminderFields, ctx: IssueSink)
     ctx.addIssue({
       code: "custom",
       path: ["reminders", "expiryDaysBefore"],
-      message: "未設定合約到期日，無法設定到期提醒",
+      message: "未設定到期日，無法設定到期提醒",
     });
   }
 }

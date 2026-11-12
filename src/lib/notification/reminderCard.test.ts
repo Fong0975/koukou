@@ -44,7 +44,7 @@ describe("buildReminderCard", () => {
       name: "shows contract ends before charges",
       reminders: full,
       altText: "🔔 扣款 3 筆・到期 2 項｜11/8 (日)",
-      titles: ["合約到期", "扣款提醒"],
+      titles: ["到期", "扣款提醒"],
       shows: [
         "2 項",
         "3 筆",
@@ -67,7 +67,7 @@ describe("buildReminderCard", () => {
       name: "leaves out the charges when there are none",
       reminders: { ...full, charges: [] },
       altText: "🔔 到期 2 項｜11/8 (日)",
-      titles: ["合約到期"],
+      titles: ["到期"],
     },
     {
       name: "names tomorrow",
@@ -76,7 +76,7 @@ describe("buildReminderCard", () => {
         expiries: [{ date: "2026-11-09", daysBefore: 1, subscription: netflix }],
       },
       altText: "🔔 到期 1 項｜11/8 (日)",
-      titles: ["合約到期"],
+      titles: ["到期"],
       shows: ["明天 (11/9)"],
     },
   ];
@@ -93,7 +93,7 @@ describe("buildReminderCard", () => {
       expect(card!.altText).toBe(tt.altText);
       const sections = sectionsOf(card!.contents);
       const texts = textsOf(sections);
-      expect(["合約到期", "扣款提醒"].filter((title) => texts.includes(title))).toEqual(tt.titles);
+      expect(["到期", "扣款提醒"].filter((title) => texts.includes(title))).toEqual(tt.titles);
       expect(sections).toHaveLength(tt.titles!.length);
       for (const text of tt.shows ?? []) expect(texts).toContain(text);
     });
@@ -112,7 +112,7 @@ describe("buildReminderCard frame", () => {
       name: "counts each section on its title row",
       check: (card) => {
         const [expiry, charge] = sectionsOf(card.contents).map(titleRowOf);
-        expect(textsOf(expiry)).toEqual(["⏰", "合約到期", "2 項"]);
+        expect(textsOf(expiry)).toEqual(["⏰", "到期", "2 項"]);
         expect(textsOf(charge)).toEqual(["💳", "扣款提醒", "3 筆"]);
       },
     },
