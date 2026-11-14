@@ -1,4 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { isCatchAllCategory } from "@/lib/catchAllCategory";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import type { CategoryData } from "@/lib/validation/categorySchema";
@@ -10,9 +11,6 @@ const logger = createLogger("categoryService");
 
 /** Columns of a category returned by the API and written to backups. */
 export const categorySelect = { id: true, name: true, icon: true, sortOrder: true } as const;
-
-/** Name of the catch-all category that new categories are placed before while it is last. */
-const CATCH_ALL_NAME = "其他";
 
 const displayOrder: Prisma.CategoryOrderByWithRelationInput[] = [{ sortOrder: "asc" }, { id: "asc" }];
 
@@ -44,7 +42,7 @@ export async function createCategory(data: CategoryData): Promise<CategoryDto> {
     const category = await createInOrder({
       siblings: (tx) =>
         tx.category.findMany({ select: { id: true, name: true, sortOrder: true }, orderBy: displayOrder }),
-      staysLast: (row) => row.name === CATCH_ALL_NAME,
+      staysLast: (row) => isCatchAllCategory(row),
       create: (tx, sortOrder) => tx.category.create({ data: { ...data, sortOrder }, select: categorySelect }),
       setSortOrder,
     });

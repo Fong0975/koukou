@@ -6,9 +6,11 @@ describe("EditDeleteButtons", () => {
   const tests: {
     name: string;
     inUse: boolean;
+    lockedHint?: string;
     click: "編輯「Netflix」" | "刪除「Netflix」";
     expectedEdits: number;
     expectedDeletes: number;
+    expectedEditDisabled?: boolean;
     expectedDeleteDisabled: boolean;
     expectedTitle: string | null;
   }[] = [
@@ -48,6 +50,28 @@ describe("EditDeleteButtons", () => {
       expectedDeleteDisabled: true,
       expectedTitle: "使用中無法刪除",
     },
+    {
+      name: "a locked item can be neither edited nor deleted",
+      inUse: false,
+      lockedHint: "預設類型無法改名或刪除",
+      click: "編輯「Netflix」",
+      expectedEdits: 0,
+      expectedDeletes: 0,
+      expectedEditDisabled: true,
+      expectedDeleteDisabled: true,
+      expectedTitle: "預設類型無法改名或刪除",
+    },
+    {
+      name: "the locked hint wins over the in-use hint",
+      inUse: true,
+      lockedHint: "預設類型無法改名或刪除",
+      click: "刪除「Netflix」",
+      expectedEdits: 0,
+      expectedDeletes: 0,
+      expectedEditDisabled: true,
+      expectedDeleteDisabled: true,
+      expectedTitle: "預設類型無法改名或刪除",
+    },
   ];
 
   for (const tt of tests) {
@@ -59,6 +83,7 @@ describe("EditDeleteButtons", () => {
           name="Netflix"
           inUse={tt.inUse}
           inUseHint="使用中無法刪除"
+          lockedHint={tt.lockedHint}
           onEdit={onEdit}
           onDelete={onDelete}
         />,
@@ -69,6 +94,10 @@ describe("EditDeleteButtons", () => {
       const remove = screen.getByRole("button", { name: "刪除「Netflix」" });
       expect(remove).toHaveProperty("disabled", tt.expectedDeleteDisabled);
       expect(remove.getAttribute("title")).toBe(tt.expectedTitle);
+      expect(screen.getByRole("button", { name: "編輯「Netflix」" })).toHaveProperty(
+        "disabled",
+        tt.expectedEditDisabled ?? false,
+      );
       expect(onEdit).toHaveBeenCalledTimes(tt.expectedEdits);
       expect(onDelete).toHaveBeenCalledTimes(tt.expectedDeletes);
     });

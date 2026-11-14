@@ -12,16 +12,27 @@ interface LookupManagerListProps<T extends { id: number }> {
   renderEditForm: (item: T, done: () => void) => ReactNode;
   /** Renders a row with its controls wired to the manager state. */
   renderRow: (item: T, controls: ManagerRowControls) => ReactNode;
+  /** Tells whether the row at a position is fixed in place; it cannot move, nor can its neighbours swap with it. */
+  isPinned?: (items: readonly T[], index: number) => boolean;
 }
 
-/** A list of manager rows where each row can be moved, edited in place or deleted. */
+const NEVER_PINNED = () => false;
+
+/** A list of manager rows where each row can be moved, edited in place or deleted; pinned rows stay in place. */
 export function LookupManagerList<T extends { id: number }>({
   items,
   usedIds,
   state,
   renderEditForm,
   renderRow,
+  isPinned = NEVER_PINNED,
 }: LookupManagerListProps<T>) {
+  /** Whether the row at `index` may swap places with the row at `index + offset`. */
+  const canSwap = (index: number, offset: -1 | 1) => {
+    const other = index + offset;
+    return !state.moving && other >= 0 && other < items.length && !isPinned(items, index) && !isPinned(items, other);
+  };
+
   return (
     <ul className="grid gap-3">
       {items.map((item, index) => (
@@ -30,8 +41,8 @@ export function LookupManagerList<T extends { id: number }>({
             ? renderEditForm(item, state.stopEditing)
             : renderRow(item, {
                 inUse: usedIds.has(item.id),
-                canMoveUp: !state.moving && index > 0,
-                canMoveDown: !state.moving && index < items.length - 1,
+                canMoveUp: canSwap(index, -1),
+                canMoveDown: canSwap(index, 1),
                 onMoveUp: () => state.move(item.id, -1),
                 onMoveDown: () => state.move(item.id, 1),
                 onEdit: () => state.startEditing(item.id),

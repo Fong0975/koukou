@@ -8,6 +8,7 @@ import { CategoryManagerModal } from "./CategoryManagerModal";
 
 const streaming = makeCategory({ id: 2, name: "影音串流", icon: "🎬", sortOrder: 20 });
 const telecom = makeCategory({ id: 5, name: "電信費", icon: "📱", sortOrder: 40 });
+const other = makeCategory({ id: 7, name: "其他", icon: "📦", sortOrder: 999 });
 
 type Props = ComponentProps<typeof CategoryManagerModal>;
 
@@ -30,6 +31,8 @@ describe("CategoryManagerModal", () => {
     expectedCalls?: Partial<Record<keyof Handlers, unknown[]>>;
     expectedAlert?: string;
     expectedText?: string;
+    /** Labels of the move buttons expected to be disabled; the others must be enabled. */
+    expectedDisabledMoves?: string[];
   }[] = [
     {
       name: "lists every category with its badge",
@@ -89,6 +92,27 @@ describe("CategoryManagerModal", () => {
       steps: () => fireEvent.click(screen.getByRole("button", { name: "上移「電信費」" })),
       expectedDialogs: ["管理類型"],
       expectedCalls: { onMove: [5, -1] },
+    },
+    {
+      name: "only the ends of the list cannot move further",
+      steps: () => {},
+      expectedDialogs: ["管理類型"],
+      expectedDisabledMoves: ["上移「影音串流」", "下移「電信費」"],
+    },
+    {
+      name: "the 其他 catch-all at the end stays there",
+      categories: [streaming, telecom, other],
+      steps: () => fireEvent.click(screen.getByRole("button", { name: "上移「其他」" })),
+      expectedDialogs: ["管理類型"],
+      expectedDisabledMoves: ["上移「影音串流」", "下移「電信費」", "上移「其他」", "下移「其他」"],
+    },
+    {
+      name: "a 其他 catch-all that is not last can still move",
+      categories: [other, streaming],
+      steps: () => fireEvent.click(screen.getByRole("button", { name: "下移「其他」" })),
+      expectedDialogs: ["管理類型"],
+      expectedCalls: { onMove: [7, 1] },
+      expectedDisabledMoves: ["上移「其他」", "下移「影音串流」"],
     },
     {
       name: "a failed move shows why",
@@ -169,6 +193,13 @@ describe("CategoryManagerModal", () => {
       if (tt.expectedAlert) expect(screen.getByRole("alert")).toHaveTextContent(tt.expectedAlert);
       else expect(screen.queryByRole("alert")).not.toBeInTheDocument();
       if (tt.expectedText) expect(screen.getByText(tt.expectedText)).toBeInTheDocument();
+      if (tt.expectedDisabledMoves) {
+        const disabled = screen
+          .getAllByRole<HTMLButtonElement>("button", { name: /^(上移|下移)「/ })
+          .filter((button) => button.disabled)
+          .map((button) => button.getAttribute("aria-label"));
+        expect(disabled.sort()).toEqual([...tt.expectedDisabledMoves].sort());
+      }
     });
   }
 });

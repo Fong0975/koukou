@@ -1,6 +1,7 @@
 "use client";
 
 import { useLookupManagerState } from "@/hooks/useLookupManagerState";
+import { isPinnedCatchAll } from "@/lib/catchAllCategory";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
 import { CategoryEditForm } from "./CategoryEditForm";
@@ -23,7 +24,7 @@ interface CategoryManagerModalProps {
 
 /**
  * Dialog for adding, renaming, reordering and deleting categories. Categories in use can be
- * edited but not deleted.
+ * edited but not deleted, and the "其他" catch-all stays at the end once it is last.
  */
 export function CategoryManagerModal({
   categories,
@@ -62,6 +63,7 @@ export function CategoryManagerModal({
         state={state}
         renderEditForm={(category, done) => <CategoryEditForm category={category} onSave={onUpdate} onDone={done} />}
         renderRow={(category, controls) => <CategoryManagerRow category={category} {...controls} />}
+        isPinned={isPinnedCatchAll}
       />
     </ManagerModal>
   );

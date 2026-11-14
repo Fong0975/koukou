@@ -19,6 +19,8 @@ interface ManagerRowProps extends ManagerRowControls {
   name: string;
   /** Why the delete button is disabled while the row is in use. */
   inUseHint: string;
+  /** Set for a row that can be neither edited nor deleted; why both buttons are disabled. */
+  lockedHint?: string;
   /** The row's label. */
   children: ReactNode;
 }
@@ -27,6 +29,7 @@ interface ManagerRowProps extends ManagerRowControls {
 export function ManagerRow({
   name,
   inUseHint,
+  lockedHint,
   inUse,
   canMoveUp,
   canMoveDown,
@@ -48,7 +51,14 @@ export function ManagerRow({
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
         />
-        <EditDeleteButtons name={name} inUse={inUse} inUseHint={inUseHint} onEdit={onEdit} onDelete={onDelete} />
+        <EditDeleteButtons
+          name={name}
+          inUse={inUse}
+          inUseHint={inUseHint}
+          lockedHint={lockedHint}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       </div>
     </div>
   );

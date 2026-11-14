@@ -63,6 +63,15 @@ describe("CategoryManagerRow", () => {
       expectedDisabled: { 上移: true, 下移: true, 編輯: false, 刪除: false },
       expectedBadge: false,
     },
+    {
+      name: "the 其他 catch-all can be neither renamed nor deleted",
+      category: makeCategory({ name: "其他", icon: "📦" }),
+      inUse: false,
+      canMoveUp: false,
+      canMoveDown: false,
+      expectedDisabled: { 上移: true, 下移: true, 編輯: true, 刪除: true },
+      expectedBadge: false,
+    },
   ];
 
   for (const tt of tests) {
@@ -80,11 +89,12 @@ describe("CategoryManagerRow", () => {
 
       if (tt.click) fireEvent.click(screen.getByRole("button", { name: tt.click.label }));
 
-      expect(screen.getByText("影音串流")).toBeInTheDocument();
-      expect(screen.getByText((tt.category ?? category).icon ?? "🏷️")).toBeInTheDocument();
+      const shown = tt.category ?? category;
+      expect(screen.getByText(shown.name)).toBeInTheDocument();
+      expect(screen.getByText(shown.icon ?? "🏷️")).toBeInTheDocument();
       expect(screen.queryByText("使用中") !== null).toBe(tt.expectedBadge);
       for (const [action, disabled] of Object.entries(tt.expectedDisabled)) {
-        expect(screen.getByRole("button", { name: `${action}「影音串流」` })).toHaveProperty("disabled", disabled);
+        expect(screen.getByRole("button", { name: `${action}「${shown.name}」` })).toHaveProperty("disabled", disabled);
       }
       for (const name of Object.keys(handlers) as Handler[]) {
         expect(handlers[name]).toHaveBeenCalledTimes(tt.click?.handler === name ? 1 : 0);
