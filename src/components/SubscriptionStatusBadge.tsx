@@ -1,4 +1,4 @@
-import { formatSubscriptionStatus } from "@/lib/format";
+import { formatSubscriptionStatus } from "@/lib/format/subscription";
 import type { SubscriptionStatus } from "@/lib/subscriptionStatus";
 
 /**

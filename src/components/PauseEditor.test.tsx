@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { newPauseDraft, type FieldErrors, type PauseDraft } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import { newPauseDraft, type PauseDraft } from "@/lib/subscriptionDraft";
 import { PauseEditor } from "./PauseEditor";
 
 const FIRST = "第 1 段暫停";

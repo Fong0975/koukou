@@ -1,6 +1,7 @@
 "use client";
 
-import type { FieldErrors, SubscriptionDraft } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import type { SubscriptionDraft } from "@/lib/subscriptionDraft";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
 import { CategoryQuickAdd } from "./CategoryQuickAdd";

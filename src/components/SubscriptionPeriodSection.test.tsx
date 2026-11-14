@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { newPauseDraft, type FieldErrors, type PauseDraft } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import { newPauseDraft, type PauseDraft } from "@/lib/subscriptionDraft";
 import { SubscriptionPeriodSection, type PeriodFields } from "./SubscriptionPeriodSection";
 
 describe("SubscriptionPeriodSection", () => {

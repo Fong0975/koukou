@@ -51,7 +51,14 @@ const {
     confirmImport: vi.fn(),
     closeImport: vi.fn(),
   },
-  notification: { remindersActive: true, reload: vi.fn(), apply: vi.fn() },
+  notification: {
+    setting: null,
+    loadError: null,
+    remindersActive: true,
+    reload: vi.fn(),
+    save: vi.fn(),
+    sendTest: vi.fn(),
+  },
   formProps: vi.fn(),
   calendarProps: vi.fn(),
   listProps: vi.fn(),
@@ -192,7 +199,7 @@ vi.mock("./report/YearReportModal", () => ({
 }));
 
 vi.mock("./NotificationSettingsModal", () => ({
-  NotificationSettingsModal: (props: { onClose: () => void; onSaved: unknown }) => {
+  NotificationSettingsModal: (props: { onClose: () => void }) => {
     settingsProps(props);
     return (
       <div role="dialog" aria-label="通知設定">
@@ -381,7 +388,14 @@ describe("HomeView", () => {
         );
       }
       if (settingsProps.mock.calls.length > 0) {
-        expect(settingsProps).toHaveBeenLastCalledWith(expect.objectContaining({ onSaved: notification.apply }));
+        expect(settingsProps).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            setting: notification.setting,
+            loadError: notification.loadError,
+            onSave: notification.save,
+            onSendTest: notification.sendTest,
+          }),
+        );
       }
       if (reportProps.mock.calls.length > 0) {
         expect(reportProps).toHaveBeenLastCalledWith(

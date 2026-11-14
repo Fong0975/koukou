@@ -1,5 +1,4 @@
-import { currencyEntries, type CurrencyTotals } from "../billingSummary";
-import { formatCents } from "../format";
+import { formatCents } from "../format/money";
 import {
   amountPill,
   cardHeader,
@@ -17,6 +16,7 @@ import type { MonthlySummary, NamedTotal } from "./dueReminders";
 import type { FlexMessage, FlexNode } from "./lineMessage";
 import { formatMessageDate } from "./messageDate";
 import { capList, moreText } from "./messageLayout";
+import { currencyEntries, type CurrencyTotals } from "../money";
 
 /** Most rows or names a list shows before it ends with "…另 N 項", keeping the card well below LINE's size limit. */
 const MAX_LISTED = 30;

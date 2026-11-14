@@ -1,7 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { formatCents } from "@/lib/format";
+import { formatCents } from "@/lib/format/money";
 import type { MonthTotal } from "@/lib/yearReport";
 import { AXIS_TICK, TOOLTIP_STYLE, formatChartTwd, toChartValue } from "./chartTheme";
 import { RatesPending } from "./RatesPending";

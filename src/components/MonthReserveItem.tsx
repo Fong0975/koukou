@@ -1,6 +1,7 @@
 import type { Reserve } from "@/lib/amortization";
 import { reserveTwdCents } from "@/lib/currencyConversion";
-import { formatApproxTwd, formatReserve, formatReserveDetail } from "@/lib/format";
+import { formatApproxTwd } from "@/lib/format/money";
+import { formatReserve, formatReserveDetail } from "@/lib/format/subscription";
 import type { ExchangeRateDto } from "@/types/dto";
 import { MoneyListItem } from "./MoneyListItem";
 import { ResponsiveSegments } from "./ResponsiveSegments";

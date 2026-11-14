@@ -121,7 +121,14 @@ export function HomeView() {
       )}
 
       {dialogs.settingsOpen && (
-        <NotificationSettingsModal onClose={dialogs.closeSettings} onSaved={notification.apply} />
+        <NotificationSettingsModal
+          setting={notification.setting}
+          loadError={notification.loadError}
+          onReload={() => void notification.reload()}
+          onSave={notification.save}
+          onSendTest={notification.sendTest}
+          onClose={dialogs.closeSettings}
+        />
       )}
 
       {dialogs.formOpen && (

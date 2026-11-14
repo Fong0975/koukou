@@ -1,4 +1,4 @@
-import type { ConvertedPart } from "@/lib/format";
+import type { ConvertedPart } from "@/lib/format/money";
 import { HoverTapPopup, type PopupAlign } from "./HoverTapPopup";
 import { InfoIcon } from "./Icons";
 

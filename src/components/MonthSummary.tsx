@@ -1,5 +1,6 @@
 import type { Occurrence } from "@/lib/billingOccurrences";
-import { sumByCurrency, totalsByCategory, totalsByPaymentType, type CurrencyTotals } from "@/lib/billingSummary";
+import { totalsByCategory, totalsByPaymentType } from "@/lib/billingSummary";
+import { sumByCurrency, type CurrencyTotals } from "@/lib/money";
 import { convertedTwdCents } from "@/lib/currencyConversion";
 import type { ExchangeRateDto } from "@/types/dto";
 import { CardFooter } from "./CardFooter";

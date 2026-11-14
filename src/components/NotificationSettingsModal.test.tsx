@@ -1,20 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { flushPromises } from "@/test/async";
 import type { NotificationSettingDto } from "@/types/dto";
-
-const { hook } = vi.hoisted(() => ({
-  hook: {
-    setting: null as NotificationSettingDto | null,
-    loadError: null as string | null,
-    reload: vi.fn(),
-    save: vi.fn(),
-    sendTest: vi.fn(),
-  },
-}));
-
-vi.mock("@/hooks/useNotificationSetting", () => ({ useNotificationSetting: () => hook }));
-
 import { NotificationSettingsModal } from "./NotificationSettingsModal";
 
 const setting: NotificationSettingDto = {
@@ -27,8 +14,6 @@ const setting: NotificationSettingDto = {
 const saved: NotificationSettingDto = { ...setting, sendTime: "08:30" };
 
 describe("NotificationSettingsModal", () => {
-  beforeEach(() => vi.clearAllMocks());
-
   const tests: {
     name: string;
     setting: NotificationSettingDto | null;
@@ -62,7 +47,7 @@ describe("NotificationSettingsModal", () => {
       retry: true,
     },
     {
-      name: "reports the saved settings to the page",
+      name: "saves through the page and closes",
       setting,
       loadError: null,
       expectedText: "時區：Asia/Taipei",
@@ -73,11 +58,19 @@ describe("NotificationSettingsModal", () => {
 
   for (const tt of tests) {
     it(tt.name, async () => {
-      Object.assign(hook, { setting: tt.setting, loadError: tt.loadError });
-      hook.save.mockResolvedValue(saved);
+      const onReload = vi.fn();
+      const onSave = vi.fn(() => Promise.resolve(saved));
       const onClose = vi.fn();
-      const onSaved = vi.fn();
-      render(<NotificationSettingsModal onClose={onClose} onSaved={onSaved} />);
+      render(
+        <NotificationSettingsModal
+          setting={tt.setting}
+          loadError={tt.loadError}
+          onReload={onReload}
+          onSave={onSave}
+          onSendTest={vi.fn()}
+          onClose={onClose}
+        />,
+      );
 
       expect(screen.getByRole("dialog", { name: "通知設定" })).toBeInTheDocument();
       expect(screen.getByText(tt.expectedText)).toBeInTheDocument();
@@ -86,7 +79,7 @@ describe("NotificationSettingsModal", () => {
 
       if (tt.retry) {
         await act(async () => fireEvent.click(screen.getByRole("button", { name: "重新讀取" })));
-        expect(hook.reload).toHaveBeenCalledTimes(1);
+        expect(onReload).toHaveBeenCalledTimes(1);
       }
 
       await act(async () => {
@@ -94,8 +87,7 @@ describe("NotificationSettingsModal", () => {
         await flushPromises();
       });
       expect(onClose).toHaveBeenCalledTimes(1);
-      if (tt.submit) expect(onSaved).toHaveBeenCalledWith(saved);
-      else expect(onSaved).not.toHaveBeenCalled();
+      expect(onSave).toHaveBeenCalledTimes(tt.submit ? 1 : 0);
     });
   }
 });

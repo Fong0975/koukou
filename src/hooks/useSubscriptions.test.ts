@@ -13,7 +13,10 @@ const second = makeSubscription({ id: 2, name: "Spotify" });
 const input = { name: "x" } as SubscriptionInput;
 
 describe("useSubscriptions", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
 
   const tests: {
     name: string;

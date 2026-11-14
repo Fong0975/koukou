@@ -1,14 +1,8 @@
 import type { ExchangeRateDto, SubscriptionDto } from "@/types/dto";
 import type { Occurrence } from "./billingOccurrences";
-import {
-  chargesBySubscription,
-  currencyEntries,
-  sumByCurrency,
-  totalByCurrency,
-  type CurrencyTotals,
-  type GroupTotal,
-} from "./billingSummary";
+import { chargesBySubscription, type GroupTotal } from "./billingSummary";
 import { convertedTwdCents, needsExchangeRate } from "./currencyConversion";
+import { currencyEntries, sumByCurrency, totalByCurrency, type CurrencyTotals } from "./money";
 
 /** One month's charges added up, for the monthly chart. */
 export interface MonthTotal {

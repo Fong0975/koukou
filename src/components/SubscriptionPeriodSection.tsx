@@ -1,6 +1,7 @@
 "use client";
 
-import { resubscribeDraft, type FieldErrors, type SubscriptionDraft } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import { resubscribeDraft, type SubscriptionDraft } from "@/lib/subscriptionDraft";
 import { DateField } from "./DateField";
 import { FormSection } from "./FormSection";
 import { PauseEditor } from "./PauseEditor";

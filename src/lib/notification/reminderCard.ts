@@ -1,4 +1,4 @@
-import { formatAmountText } from "../format";
+import { formatAmountText } from "../format/money";
 import { CARD_COLORS, cardHeader, COIN_HEADER, moreRow, pill, rowBackground, rowList, sectionCard } from "./cardParts";
 import { hasNoReminders, type ChargeReminder, type DailyReminders, type ExpiryReminder } from "./dueReminders";
 import type { FlexMessage, FlexNode } from "./lineMessage";

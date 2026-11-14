@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { newAmountPeriodDraft, type AmountPeriodDraft, type FieldErrors } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import { newAmountPeriodDraft, type AmountPeriodDraft } from "@/lib/subscriptionDraft";
 import { AmountSection, type AmountFields } from "./AmountSection";
 
 describe("AmountSection", () => {

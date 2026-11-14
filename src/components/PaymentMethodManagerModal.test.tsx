@@ -78,7 +78,7 @@ describe("PaymentMethodManagerModal", () => {
         fireEvent.click(screen.getByRole("button", { name: "加入" }));
       },
       expectedDialogs: ["管理扣款方式"],
-      expectedCalls: { onCreate: [{ type: "CREDIT_CARD", name: "玉山 Pi" }] },
+      expectedCalls: { onCreate: [{ type: "CREDIT_CARD", name: "玉山 Pi", note: "" }] },
     },
     {
       name: "editing a row opens its form, which updates",

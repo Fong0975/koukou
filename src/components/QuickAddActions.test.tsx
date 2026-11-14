@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { QuickAddActions, saveOnEnter } from "./QuickAddActions";
+import { QuickAddActions } from "./QuickAddActions";
 
 describe("QuickAddActions", () => {
   const tests: {
@@ -74,25 +74,6 @@ describe("QuickAddActions", () => {
       else expect(screen.queryByRole("alert")).not.toBeInTheDocument();
       expect(handlers.onSave).toHaveBeenCalledTimes(tt.expectedCalls.onSave);
       expect(handlers.onCancel).toHaveBeenCalledTimes(tt.expectedCalls.onCancel);
-    });
-  }
-});
-
-describe("saveOnEnter", () => {
-  const tests = [
-    { name: "Enter saves and blocks the outer form submit", key: "Enter", expectedSaves: 1, expectedPrevented: true },
-    { name: "other keys are ignored", key: "a", expectedSaves: 0, expectedPrevented: false },
-  ];
-
-  for (const tt of tests) {
-    it(tt.name, () => {
-      const onSave = vi.fn();
-      render(<input aria-label="name" onKeyDown={saveOnEnter(onSave)} />);
-
-      const notPrevented = fireEvent.keyDown(screen.getByLabelText("name"), { key: tt.key });
-
-      expect(onSave).toHaveBeenCalledTimes(tt.expectedSaves);
-      expect(!notPrevented).toBe(tt.expectedPrevented);
     });
   }
 });

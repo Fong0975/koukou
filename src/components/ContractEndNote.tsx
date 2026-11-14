@@ -2,7 +2,7 @@
 
 import { useToday } from "@/hooks/useToday";
 import { daysUntil } from "@/lib/contractExpiries";
-import { formatContractRemaining, formatFullDate } from "@/lib/format";
+import { formatContractRemaining, formatFullDate } from "@/lib/format/date";
 
 /**
  * One-line note of a subscription's contract end date with the days left, e.g. "到期 2027/03/31（剩 164 天）",

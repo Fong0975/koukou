@@ -2,7 +2,7 @@ import { useId } from "react";
 import type { SubscriptionCharges } from "@/lib/billingSummary";
 import type { ChargeGroup, ChargeOrder } from "@/lib/chargeGroups";
 import { convertedTwdCents } from "@/lib/currencyConversion";
-import { formatDays } from "@/lib/format";
+import { formatDays } from "@/lib/format/subscription";
 import type { ExchangeRateDto } from "@/types/dto";
 import { ConvertedAmounts } from "./ConvertedAmounts";
 import { IconLabel } from "./IconLabel";

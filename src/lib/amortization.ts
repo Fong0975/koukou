@@ -1,9 +1,9 @@
 import type { BillingScheduleDto, SubscriptionDto } from "@/types/dto";
 import { amountOn } from "./amountPeriods";
 import { isActiveOn, scheduleDaysInMonth } from "./billingOccurrences";
-import { toCents, totalByCurrency, type CurrencyTotals } from "./billingSummary";
 import type { CalendarDate, YearMonth } from "./calendarMonth";
 import { toDateKey } from "./dateKey";
+import { toCents, totalByCurrency, type CurrencyTotals } from "./money";
 
 /** Number of months before a yearly charge that it is spread over. */
 export const AMORTIZATION_MONTHS = 12;

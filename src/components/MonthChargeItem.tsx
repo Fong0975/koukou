@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { SubscriptionCharges } from "@/lib/billingSummary";
 import { sumTwdCents } from "@/lib/currencyConversion";
-import { formatApproxTwd, formatCents } from "@/lib/format";
+import { formatApproxTwd, formatCents } from "@/lib/format/money";
 import type { ExchangeRateDto } from "@/types/dto";
 import { MoneyListItem } from "./MoneyListItem";
 

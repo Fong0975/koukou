@@ -2,7 +2,8 @@
 
 import type { BillingCycle } from "@/generated/prisma/enums";
 import { CYCLE_LABELS, WEEKDAY_LABELS } from "@/lib/labels";
-import { newScheduleDraft, type FieldErrors, type ScheduleDraft } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import { newScheduleDraft, type ScheduleDraft } from "@/lib/subscriptionDraft";
 import { CloseIcon, PlusIcon } from "./Icons";
 import { RequiredMark } from "./RequiredMark";
 

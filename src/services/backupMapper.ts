@@ -2,7 +2,7 @@ import { utcDateToDateKey } from "@/lib/dateKey";
 import { paymentTypeRank } from "@/lib/paymentMethodOrder";
 import type { BackupData } from "@/lib/validation/backupSchema";
 import type { BackupSubscriptionDto } from "@/types/dto";
-import { sortOrderAt } from "./reorderIds";
+import { sortOrderAt } from "./sortOrder";
 import { toAmountPeriodRows, toPauseRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
 import {
   reminderInclude,

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { ConvertedPart } from "@/lib/format";
+import type { ConvertedPart } from "@/lib/format/money";
 import { movePointer } from "@/test/pointer";
 import { ConvertedTotalPopup } from "./ConvertedTotalPopup";
 

@@ -2,7 +2,8 @@
 
 import type { Currency } from "@/generated/prisma/enums";
 import { amountPeriodRanges } from "@/lib/amountPeriods";
-import type { AmountPeriodDraft, FieldErrors } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import type { AmountPeriodDraft } from "@/lib/subscriptionDraft";
 import { AmountInput } from "./AmountInput";
 import { CloseIcon } from "./Icons";
 

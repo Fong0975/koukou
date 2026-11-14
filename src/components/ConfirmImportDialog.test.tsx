@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { PendingImport } from "@/hooks/useBackup";
-import { formatTimestamp } from "@/lib/format";
+import { formatTimestamp } from "@/lib/format/date";
 import { flushPromises } from "@/test/async";
 import { ConfirmImportDialog } from "./ConfirmImportDialog";
 

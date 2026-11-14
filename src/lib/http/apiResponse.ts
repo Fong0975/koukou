@@ -28,6 +28,11 @@ export function jsonData<T>(data: T, status = 200): Response {
   return Response.json({ data } satisfies ApiSuccessBody<T>, { status });
 }
 
+/** Builds an empty 204 response, e.g. after a delete. */
+export function noContent(): Response {
+  return new Response(null, { status: 204 });
+}
+
 /**
  * Builds a JSON error response.
  *

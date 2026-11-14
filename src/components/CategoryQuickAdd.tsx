@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useAsyncAction } from "@/hooks/useAsyncAction";
-import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { useLookupForm } from "@/hooks/useLookupForm";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
 import { CategoryFields } from "./CategoryFields";
-import { QuickAddActions, saveOnEnter } from "./QuickAddActions";
+import { QuickAddActions } from "./QuickAddActions";
 
 interface CategoryQuickAddProps {
   onCreate: (input: CategoryInput) => Promise<CategoryDto>;
@@ -14,30 +12,29 @@ interface CategoryQuickAddProps {
   onDone: (newValue?: string) => void;
 }
 
+const EMPTY_VALUES = { name: "", icon: "" };
+
 /** Inline form for adding a category: an optional emoji plus a name. Anything typed counts as unsaved changes. */
 export function CategoryQuickAdd({ onCreate, onDone }: CategoryQuickAddProps) {
-  const [icon, setIcon] = useState("");
-  const [name, setName] = useState("");
-  useReportUnsavedChanges(icon !== "" || name !== "");
-  const { pending, error, run } = useAsyncAction(onCreate);
-
-  const save = async () => {
-    const created = await run({ name, icon });
-    if (created) onDone(String(created.id));
-  };
+  const form = useLookupForm(EMPTY_VALUES, onCreate, (created) => onDone(String(created.id)));
 
   return (
     <div>
       <CategoryFields
-        icon={icon}
-        name={name}
-        onIconChange={setIcon}
-        onNameChange={setName}
-        onKeyDown={saveOnEnter(() => void save())}
+        icon={form.values.icon}
+        name={form.values.name}
+        onIconChange={form.setField("icon")}
+        onNameChange={form.setField("name")}
+        onKeyDown={form.onKeyDown}
         nameLabel="新的類型名稱"
         namePlaceholder="新的類型名稱，例如：健身房"
       />
-      <QuickAddActions pending={pending} error={error} onSave={() => void save()} onCancel={() => onDone()} />
+      <QuickAddActions
+        pending={form.pending}
+        error={form.error}
+        onSave={() => void form.submit()}
+        onCancel={() => onDone()}
+      />
     </div>
   );
 }

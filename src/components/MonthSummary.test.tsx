@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Occurrence } from "@/lib/billingOccurrences";
-import type { CurrencyTotals } from "@/lib/billingSummary";
+import type { CurrencyTotals } from "@/lib/money";
 import { expandCard } from "@/test/collapsibleCard";
 import { makeOccurrence, makeSubscription } from "@/test/fixtures";
 import type { ExchangeRateDto } from "@/types/dto";

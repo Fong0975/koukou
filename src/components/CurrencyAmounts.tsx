@@ -1,5 +1,5 @@
-import { currencyEntries, type CurrencyTotals } from "@/lib/billingSummary";
-import { formatCents } from "@/lib/format";
+import { currencyEntries, type CurrencyTotals } from "@/lib/money";
+import { formatCents } from "@/lib/format/money";
 
 interface CurrencyAmountsProps {
   totals: CurrencyTotals;

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { toCalendarDate } from "@/lib/calendarMonth";
 import { dateKeyToYearMonth, toDateKey } from "@/lib/dateKey";
-import { formatTimestamp } from "@/lib/format";
+import { formatTimestamp } from "@/lib/format/date";
 import { createLogger } from "@/lib/logger";
 import { buildMonthlySummary, collectDailyReminders, isFirstOfMonth } from "@/lib/notification/dueReminders";
 import { buildTestMessage } from "@/lib/notification/messageText";

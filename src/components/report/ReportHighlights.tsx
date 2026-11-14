@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatCents } from "@/lib/format";
+import { formatCents } from "@/lib/format/money";
 import type { MonthTotal, YearHighlights } from "@/lib/yearReport";
 import { ConvertedAmounts } from "../ConvertedAmounts";
 

@@ -10,6 +10,7 @@ import { useLookups } from "./useLookups";
 
 const streaming = makeCategory({ id: 2, name: "影音串流", sortOrder: 20 });
 const telecom = makeCategory({ id: 5, name: "電信", sortOrder: 40 });
+const gym = makeCategory({ id: 9, name: "健身房", sortOrder: 40 });
 const card = makePaymentMethod({ id: 3, name: "國泰 CUBE", sortOrder: 10 });
 const secondCard = makePaymentMethod({ id: 6, name: "玉山 Pi", sortOrder: 20 });
 const account = makePaymentMethod({ id: 4, type: "BANK_ACCOUNT", name: "台新 Richart", sortOrder: 10 });
@@ -34,6 +35,7 @@ describe("useLookups", () => {
     expectedRequest?: [string, unknown];
     notRequested?: string;
     expectLogged?: boolean;
+    expectedLoadError?: string;
     unmountBeforeLoad?: boolean;
   }[] = [
     {
@@ -53,6 +55,7 @@ describe("useLookups", () => {
       expectedCategories: [],
       expectedPaymentMethods: [],
       expectLogged: true,
+      expectedLoadError: "down",
     },
     {
       name: "ignores lists that arrive after unmount",
@@ -84,20 +87,21 @@ describe("useLookups", () => {
       expectedCategories: ["影音串流", "電信"],
       expectedPaymentMethods: ["國泰 CUBE"],
       expectLogged: true,
+      expectedLoadError: "down",
     },
     {
-      name: "addCategory inserts by sortOrder",
-      act: (hook) => hook.addCategory({ name: "健身房", icon: "" }),
-      created: makeCategory({ id: 9, name: "健身房", sortOrder: 30 }),
+      name: "addCategory takes the new order from the server, which may move other categories",
+      act: (hook) => {
+        respondWith(
+          () => Promise.resolve([streaming, gym, { ...telecom, sortOrder: 50 }]),
+          () => Promise.resolve([card]),
+        );
+        return hook.addCategory({ name: "健身房", icon: "" });
+      },
+      created: gym,
       expectedCategories: ["影音串流", "健身房", "電信"],
       expectedPaymentMethods: ["國泰 CUBE"],
-    },
-    {
-      name: "addCategory breaks sortOrder ties by id",
-      act: (hook) => hook.addCategory({ name: "雲端", icon: "" }),
-      created: makeCategory({ id: 1, name: "雲端", sortOrder: 20 }),
-      expectedCategories: ["雲端", "影音串流", "電信"],
-      expectedPaymentMethods: ["國泰 CUBE"],
+      expectedRequest: ["/api/categories", { method: "POST", body: { name: "健身房", icon: "" } }],
     },
     {
       name: "updateCategory replaces that category in place",
@@ -218,6 +222,7 @@ describe("useLookups", () => {
       if (tt.expectedRequest) expect(apiRequest).toHaveBeenCalledWith(...tt.expectedRequest);
       if (tt.notRequested) expect(apiRequest).not.toHaveBeenCalledWith(tt.notRequested, expect.anything());
       expect(logSpy).toHaveBeenCalledTimes(tt.expectLogged ? 1 : 0);
+      expect(result.current.loadError).toBe(tt.expectedLoadError ?? null);
     });
   }
 });

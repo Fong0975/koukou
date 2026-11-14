@@ -1,4 +1,5 @@
-import { formatAmount, formatSchedule } from "@/lib/format";
+import { formatAmount } from "@/lib/format/money";
+import { formatSchedule } from "@/lib/format/subscription";
 import { PAYMENT_TYPE_LABELS } from "@/lib/labels";
 import type { SubscriptionStatus } from "@/lib/subscriptionStatus";
 import type { SubscriptionDto } from "@/types/dto";

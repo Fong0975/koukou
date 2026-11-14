@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { NotFoundError, ValidationError } from "@/lib/errors";
-import { parseId, readJson } from "./request";
+import { idContext } from "@/test/requests";
+import { parseId, readJson, routeId } from "./request";
 
 describe("readJson", () => {
   const post = (body: string) => new Request("http://localhost/api/test", { method: "POST", body });
@@ -38,6 +39,21 @@ describe("parseId", () => {
     it(tt.name, () => {
       if (tt.expected === undefined) expect(() => parseId(tt.raw)).toThrow(NotFoundError);
       else expect(parseId(tt.raw)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("routeId", () => {
+  const tests: { name: string; raw: string; expected?: number }[] = [
+    { name: "reads the id segment", raw: "7", expected: 7 },
+    { name: "rejects a malformed segment", raw: "abc" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, async () => {
+      const promise = routeId(idContext(tt.raw));
+      if (tt.expected === undefined) await expect(promise).rejects.toBeInstanceOf(NotFoundError);
+      else await expect(promise).resolves.toBe(tt.expected);
     });
   }
 });

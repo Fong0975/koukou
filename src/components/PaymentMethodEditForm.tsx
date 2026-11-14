@@ -1,13 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import type { PaymentType } from "@/generated/prisma/enums";
-import { useAsyncAction } from "@/hooks/useAsyncAction";
-import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { useLookupForm } from "@/hooks/useLookupForm";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import type { PaymentMethodDto } from "@/types/dto";
 import { PaymentMethodFields } from "./PaymentMethodFields";
-import { QuickAddActions, saveOnEnter } from "./QuickAddActions";
+import { QuickAddActions } from "./QuickAddActions";
 
 interface PaymentMethodEditFormProps {
   paymentMethod: PaymentMethodDto;
@@ -22,42 +19,27 @@ interface PaymentMethodEditFormProps {
  * Values that differ from the payment method's count as unsaved changes.
  */
 export function PaymentMethodEditForm({ paymentMethod, onSave, onDone }: PaymentMethodEditFormProps) {
-  const [type, setType] = useState<PaymentType>(paymentMethod.type);
-  const [name, setName] = useState(paymentMethod.name);
-  const [note, setNote] = useState(paymentMethod.note ?? "");
-  useReportUnsavedChanges(
-    type !== paymentMethod.type || name !== paymentMethod.name || note !== (paymentMethod.note ?? ""),
+  const form = useLookupForm(
+    { type: paymentMethod.type, name: paymentMethod.name, note: paymentMethod.note ?? "" },
+    (values) => onSave(paymentMethod.id, values),
+    onDone,
   );
-  const { pending, error, run } = useAsyncAction(onSave);
-
-  const save = async () => {
-    const saved = await run(paymentMethod.id, { type, name, note });
-    if (saved) onDone();
-  };
-  const onKeyDown = saveOnEnter(() => void save());
 
   return (
     <div>
       <PaymentMethodFields
-        type={type}
-        name={name}
-        onTypeChange={setType}
-        onNameChange={setName}
-        onKeyDown={onKeyDown}
-      />
-      <input
-        className="field mt-2"
-        placeholder="備註（可留空）"
-        aria-label="備註（可留空）"
-        value={note}
-        maxLength={255}
-        onChange={(event) => setNote(event.target.value)}
-        onKeyDown={onKeyDown}
+        type={form.values.type}
+        name={form.values.name}
+        note={form.values.note}
+        onTypeChange={form.setField("type")}
+        onNameChange={form.setField("name")}
+        onNoteChange={form.setField("note")}
+        onKeyDown={form.onKeyDown}
       />
       <QuickAddActions
-        pending={pending}
-        error={error}
-        onSave={() => void save()}
+        pending={form.pending}
+        error={form.error}
+        onSave={() => void form.submit()}
         onCancel={onDone}
         submitLabel="儲存"
         pendingLabel="儲存中…"

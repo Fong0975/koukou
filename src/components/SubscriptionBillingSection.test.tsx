@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { newScheduleDraft, type FieldErrors, type ScheduleDraft } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import { newScheduleDraft, type ScheduleDraft } from "@/lib/subscriptionDraft";
 import { makePaymentMethod } from "@/test/fixtures";
 import { SubscriptionBillingSection, type BillingFields } from "./SubscriptionBillingSection";
 

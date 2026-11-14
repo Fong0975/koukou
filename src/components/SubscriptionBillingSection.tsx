@@ -1,7 +1,8 @@
 "use client";
 
 import { paymentMethodOptionLabel } from "@/lib/paymentMethodLabel";
-import { hasYearlySchedule, type FieldErrors, type SubscriptionDraft } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import { hasYearlySchedule, type SubscriptionDraft } from "@/lib/subscriptionDraft";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import type { PaymentMethodDto } from "@/types/dto";
 import { AmortizeToggle } from "./AmortizeToggle";

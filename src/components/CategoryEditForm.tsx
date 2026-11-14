@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useAsyncAction } from "@/hooks/useAsyncAction";
-import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { useLookupForm } from "@/hooks/useLookupForm";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
 import { CategoryFields } from "./CategoryFields";
-import { QuickAddActions, saveOnEnter } from "./QuickAddActions";
+import { QuickAddActions } from "./QuickAddActions";
 
 interface CategoryEditFormProps {
   category: CategoryDto;
@@ -20,30 +18,26 @@ interface CategoryEditFormProps {
  * Values that differ from the category's count as unsaved changes.
  */
 export function CategoryEditForm({ category, onSave, onDone }: CategoryEditFormProps) {
-  const [icon, setIcon] = useState(category.icon ?? "");
-  const [name, setName] = useState(category.name);
-  useReportUnsavedChanges(icon !== (category.icon ?? "") || name !== category.name);
-  const { pending, error, run } = useAsyncAction(onSave);
-
-  const save = async () => {
-    const saved = await run(category.id, { name, icon });
-    if (saved) onDone();
-  };
+  const form = useLookupForm(
+    { name: category.name, icon: category.icon ?? "" },
+    (values) => onSave(category.id, values),
+    onDone,
+  );
 
   return (
     <div>
       <CategoryFields
-        icon={icon}
-        name={name}
-        onIconChange={setIcon}
-        onNameChange={setName}
-        onKeyDown={saveOnEnter(() => void save())}
+        icon={form.values.icon}
+        name={form.values.name}
+        onIconChange={form.setField("icon")}
+        onNameChange={form.setField("name")}
+        onKeyDown={form.onKeyDown}
         nameLabel="類型名稱"
       />
       <QuickAddActions
-        pending={pending}
-        error={error}
-        onSave={() => void save()}
+        pending={form.pending}
+        error={form.error}
+        onSave={() => void form.submit()}
         onCancel={onDone}
         submitLabel="儲存"
         pendingLabel="儲存中…"

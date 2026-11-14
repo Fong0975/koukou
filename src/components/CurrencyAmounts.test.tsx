@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { CurrencyTotals } from "@/lib/billingSummary";
+import type { CurrencyTotals } from "@/lib/money";
 import { CurrencyAmounts } from "./CurrencyAmounts";
 
 describe("CurrencyAmounts", () => {

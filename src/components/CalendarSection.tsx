@@ -4,7 +4,7 @@ import { useId } from "react";
 import { createPortal } from "react-dom";
 import { useMonthCursor } from "@/hooks/useMonthCursor";
 import { useMonthData } from "@/hooks/useMonthData";
-import type { LoadStatus } from "@/hooks/useSubscriptions";
+import type { LoadStatus } from "@/hooks/useApiResource";
 import type { SubscriptionDto } from "@/types/dto";
 import { BillingCalendar } from "./BillingCalendar";
 import { LoadErrorNotice } from "./LoadErrorNotice";

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { useLookupManagerState } from "@/hooks/useLookupManagerState";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
 import { CategoryEditForm } from "./CategoryEditForm";
 import { CategoryManagerRow } from "./CategoryManagerRow";
 import { CategoryQuickAdd } from "./CategoryQuickAdd";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import { LookupManagerList } from "./LookupManagerList";
 import { ManagerModal } from "./ManagerModal";
 
 interface CategoryManagerModalProps {
@@ -34,9 +34,7 @@ export function CategoryManagerModal({
   onMove,
   onClose,
 }: CategoryManagerModalProps) {
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [deleting, setDeleting] = useState<CategoryDto | null>(null);
-  const move = useAsyncAction(onMove);
+  const state = useLookupManagerState<CategoryDto>(onMove);
 
   return (
     <ManagerModal
@@ -45,39 +43,26 @@ export function CategoryManagerModal({
       renderAddForm={(close) => <CategoryQuickAdd onCreate={onCreate} onDone={close} />}
       isEmpty={categories.length === 0}
       emptyText="還沒有任何類型。"
-      error={move.error}
+      error={state.moveError}
       onClose={onClose}
       confirm={
-        deleting && (
+        state.deleting && (
           <ConfirmDeleteDialog
-            item={deleting}
+            item={state.deleting}
             message="刪除後，這個類型會從選單中移除，無法復原。"
             onConfirm={onDelete}
-            onClose={() => setDeleting(null)}
+            onClose={state.stopDeleting}
           />
         )
       }
     >
-      <ul className="grid gap-3">
-        {categories.map((category, index) => (
-          <li key={category.id}>
-            {editingId === category.id ? (
-              <CategoryEditForm category={category} onSave={onUpdate} onDone={() => setEditingId(null)} />
-            ) : (
-              <CategoryManagerRow
-                category={category}
-                inUse={usedCategoryIds.has(category.id)}
-                canMoveUp={!move.pending && index > 0}
-                canMoveDown={!move.pending && index < categories.length - 1}
-                onMoveUp={() => void move.run(category.id, -1)}
-                onMoveDown={() => void move.run(category.id, 1)}
-                onEdit={() => setEditingId(category.id)}
-                onDelete={() => setDeleting(category)}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
+      <LookupManagerList
+        items={categories}
+        usedIds={usedCategoryIds}
+        state={state}
+        renderEditForm={(category, done) => <CategoryEditForm category={category} onSave={onUpdate} onDone={done} />}
+        renderRow={(category, controls) => <CategoryManagerRow category={category} {...controls} />}
+      />
     </ManagerModal>
   );
 }

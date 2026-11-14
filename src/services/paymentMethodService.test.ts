@@ -2,18 +2,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    paymentMethod: { findMany: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    $transaction: vi.fn(),
-  },
-}));
+const { prismaMock } = await vi.hoisted(async () => {
+  const { tableMock, transactionalPrismaMock } = await import("@/test/prismaTable");
+  return { prismaMock: transactionalPrismaMock({ paymentMethod: tableMock() }) };
+});
 
 vi.mock("@/lib/db", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/logger", () => import("@/test/logger"));
 
 import { loggerMock } from "@/test/logger";
 import { prismaError } from "@/test/prismaError";
+import { sortOrderWrites } from "@/test/prismaTable";
 import {
   createPaymentMethod,
   deletePaymentMethod,
@@ -57,42 +56,65 @@ describe("createPaymentMethod", () => {
   beforeEach(() => vi.clearAllMocks());
 
   const data = { type: "CREDIT_CARD" as const, name: "國泰 CUBE", note: null };
-  const tests: { name: string; setup: () => void; expected?: unknown; error?: new (...args: never[]) => Error }[] = [
+  const tests: {
+    name: string;
+    siblings: { id: number; sortOrder: number }[];
+    create: () => Promise<unknown>;
+    sortOrder?: number;
+    error?: new (...args: never[]) => Error;
+  }[] = [
     {
-      name: "creates a payment method after the reordered ones",
-      setup: () => prismaMock.paymentMethod.create.mockResolvedValue({ id: 1, ...data, sortOrder: 500 }),
-      expected: { id: 1, ...data, sortOrder: 500 },
+      name: "creates the first payment method of its type",
+      siblings: [],
+      create: () => Promise.resolve({ id: 1, ...data, sortOrder: 10 }),
+      sortOrder: 10,
+    },
+    {
+      name: "creates after the last payment method of its type",
+      siblings: [
+        { id: 3, sortOrder: 10 },
+        { id: 4, sortOrder: 500 },
+      ],
+      create: () => Promise.resolve({ id: 1, ...data, sortOrder: 510 }),
+      sortOrder: 510,
     },
     {
       name: "duplicate type + name → ConflictError",
-      setup: () => prismaMock.paymentMethod.create.mockRejectedValue(prismaError("P2002")),
+      siblings: [],
+      create: () => Promise.reject(prismaError("P2002")),
       error: ConflictError,
     },
     {
       name: "unknown errors propagate",
-      setup: () => prismaMock.paymentMethod.create.mockRejectedValue(new Error("db down")),
+      siblings: [],
+      create: () => Promise.reject(new Error("db down")),
       error: Error,
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, async () => {
-      tt.setup();
+      prismaMock.paymentMethod.findMany.mockResolvedValue(tt.siblings);
+      prismaMock.paymentMethod.create.mockImplementation(tt.create);
       const promise = createPaymentMethod(data);
       if (tt.error) {
         await expect(promise).rejects.toBeInstanceOf(tt.error);
         expect(loggerMock.info).not.toHaveBeenCalled();
       } else {
-        await expect(promise).resolves.toEqual(tt.expected);
+        await expect(promise).resolves.toEqual({ id: 1, ...data, sortOrder: tt.sortOrder });
         expect(loggerMock.info).toHaveBeenCalledWith("Payment method created", {
           id: 1,
           type: "CREDIT_CARD",
           name: "國泰 CUBE",
         });
         expect(prismaMock.paymentMethod.create).toHaveBeenCalledWith(
-          expect.objectContaining({ data: { ...data, sortOrder: 500 } }),
+          expect.objectContaining({ data: { ...data, sortOrder: tt.sortOrder } }),
         );
       }
+      expect(prismaMock.paymentMethod.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { type: "CREDIT_CARD" } }),
+      );
+      expect(prismaMock.paymentMethod.update).not.toHaveBeenCalled();
     });
   }
 });
@@ -208,22 +230,17 @@ describe("reorderPaymentMethods", () => {
   for (const tt of tests) {
     it(tt.name, async () => {
       prismaMock.paymentMethod.findMany.mockResolvedValueOnce(existing).mockResolvedValueOnce(reordered);
-      prismaMock.paymentMethod.update.mockImplementation((args: unknown) => args);
-      prismaMock.$transaction.mockResolvedValue([]);
+      prismaMock.paymentMethod.update.mockResolvedValue({});
 
       const promise = reorderPaymentMethods(tt.ids);
 
       if (tt.error) {
         await expect(promise).rejects.toBeInstanceOf(ValidationError);
-        expect(prismaMock.$transaction).not.toHaveBeenCalled();
+        expect(prismaMock.paymentMethod.update).not.toHaveBeenCalled();
         expect(loggerMock.info).not.toHaveBeenCalled();
       } else {
         await expect(promise).resolves.toEqual(reordered);
-        const updates = prismaMock.paymentMethod.update.mock.calls.map((call) => {
-          const args = call[0] as { where: { id: number }; data: { sortOrder: number } };
-          return [args.where.id, args.data.sortOrder];
-        });
-        expect(updates).toEqual(tt.expectedSortOrders);
+        expect(sortOrderWrites(prismaMock.paymentMethod.update)).toEqual(tt.expectedSortOrders);
         expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
         expect(loggerMock.info).toHaveBeenCalledWith("Payment methods reordered", { count: 3 });
       }

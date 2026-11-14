@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { errorUnder, type FieldErrors } from "@/lib/subscriptionDraft";
+import { errorUnder, type FieldErrors } from "@/lib/fieldErrors";
 import type { RemindersDto } from "@/types/dto";
 import { ChargeReminderDays } from "./ChargeReminderDays";
 import { ExpiryReminderToggles } from "./ExpiryReminderToggles";

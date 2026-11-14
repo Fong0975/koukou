@@ -3,13 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { todayKey } from "@/lib/dateKey";
+import { toFieldErrors, type FieldErrors } from "@/lib/fieldErrors";
 import {
   draftFromDto,
   draftToInput,
   emptyDraft,
   isDraftChanged,
-  toFieldErrors,
-  type FieldErrors,
   type SubscriptionDraft,
 } from "@/lib/subscriptionDraft";
 import type { CategoryInput } from "@/lib/validation/categorySchema";

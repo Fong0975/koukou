@@ -2,8 +2,8 @@ import type { Currency } from "@/generated/prisma/enums";
 import type { ExchangeRateDto } from "@/types/dto";
 import type { Reserve } from "./amortization";
 import type { Occurrence } from "./billingOccurrences";
-import { toCents } from "./billingSummary";
 import { toDateKey } from "./dateKey";
+import { toCents } from "./money";
 
 /**
  * Picks the USD→TWD rate for a day: the one published that day or, failing that, the most recent one before

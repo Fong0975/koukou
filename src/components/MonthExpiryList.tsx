@@ -1,5 +1,5 @@
 import type { ContractExpiry } from "@/lib/contractExpiries";
-import { formatChargeDate } from "@/lib/format";
+import { formatChargeDate } from "@/lib/format/date";
 import { CardFooter } from "./CardFooter";
 import { CollapsibleCard } from "./CollapsibleCard";
 

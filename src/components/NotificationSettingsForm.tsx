@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
-import { toFieldErrors, type FieldErrors } from "@/lib/subscriptionDraft";
+import { toFieldErrors, type FieldErrors } from "@/lib/fieldErrors";
 import {
   notificationSettingInputSchema,
   type NotificationSettingInput,

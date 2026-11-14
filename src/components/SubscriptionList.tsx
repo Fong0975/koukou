@@ -1,5 +1,5 @@
 import { useId } from "react";
-import type { LoadStatus } from "@/hooks/useSubscriptions";
+import type { LoadStatus } from "@/hooks/useApiResource";
 import { useToday } from "@/hooks/useToday";
 import { toDateKey } from "@/lib/dateKey";
 import { groupByCategory } from "@/lib/groupByCategory";

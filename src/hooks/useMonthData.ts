@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { monthReserves } from "@/lib/amortization";
 import { monthOccurrences, yearOccurrences } from "@/lib/billingOccurrences";
-import { sumByCurrency } from "@/lib/billingSummary";
+import { sumByCurrency } from "@/lib/money";
 import type { YearMonth } from "@/lib/calendarMonth";
 import { monthContractExpiries } from "@/lib/contractExpiries";
 import { convertedTwdCents, needsExchangeRate } from "@/lib/currencyConversion";

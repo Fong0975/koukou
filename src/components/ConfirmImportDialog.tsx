@@ -2,7 +2,7 @@
 
 import { useAsyncAction } from "@/hooks/useAsyncAction";
 import type { PendingImport } from "@/hooks/useBackup";
-import { formatTimestamp } from "@/lib/format";
+import { formatTimestamp } from "@/lib/format/date";
 import { Modal } from "./Modal";
 
 interface ConfirmImportDialogProps {

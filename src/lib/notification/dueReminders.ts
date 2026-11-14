@@ -1,10 +1,10 @@
 import type { SubscriptionDto } from "@/types/dto";
 import { monthReserves, sumReserves } from "../amortization";
 import { monthOccurrences } from "../billingOccurrences";
-import { sumByCurrency, type CurrencyTotals } from "../billingSummary";
 import type { YearMonth } from "../calendarMonth";
 import { monthContractExpiries, type ContractExpiry } from "../contractExpiries";
 import { addDays, dateKeyToYearMonth } from "../dateKey";
+import { sumByCurrency, type CurrencyTotals } from "../money";
 import { isPausedOn } from "../pauses";
 
 /** An upcoming charge a subscription asked to be reminded of. */

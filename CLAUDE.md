@@ -25,7 +25,7 @@ Keep the layers separated; ESLint enforces the database rule.
 ## Don't repeat yourself
 
 - When you notice repeated or near-identical logic, markup or styles (in the file you are editing or between it and existing code), consider extracting a shared function, hook, component, class or CSS utility instead of writing it again.
-- Look for an existing helper before writing a new one, e.g. `src/lib/format.ts`, `src/lib/labels.ts`, `src/lib/http/`, `src/lib/validation/common.ts`, `src/hooks/useAsyncAction.ts`, and the component classes in `src/app/globals.css` (`.glass`, `.btn`, `.field`, …).
+- Look for an existing helper before writing a new one, e.g. `src/lib/format/`, `src/lib/labels.ts`, `src/lib/http/`, `src/lib/validation/common.ts`, `src/hooks/useAsyncAction.ts`, and the component classes in `src/app/globals.css` (`.glass`, `.btn`, `.field`, …).
 - Repeated Tailwind class combinations used in several places should become a component or a class in `globals.css`.
 - Shared test helpers belong in `src/test/`.
 

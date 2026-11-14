@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LoadStatus } from "@/hooks/useSubscriptions";
+import type { LoadStatus } from "@/hooks/useApiResource";
 import { expandCard } from "@/test/collapsibleCard";
 import { makeSubscription } from "@/test/fixtures";
 import { reserveDetailText } from "@/test/reserveDetail";

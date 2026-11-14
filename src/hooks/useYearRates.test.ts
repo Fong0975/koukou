@@ -6,12 +6,16 @@ import type { ExchangeRateDto } from "@/types/dto";
 const { apiRequest } = vi.hoisted(() => ({ apiRequest: vi.fn() }));
 vi.mock("@/lib/apiClient", () => ({ apiRequest }));
 
+import { clearYearRatesCache } from "@/lib/yearRatesCache";
 import { useYearRates } from "./useYearRates";
 
 const ratesOf = (year: number): ExchangeRateDto[] => [{ date: `${year}-05-15`, rate: 31.514 }];
 
 describe("useYearRates", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearYearRatesCache();
+  });
   afterEach(() => vi.restoreAllMocks());
 
   /** Each step rerenders the hook with new props, waits for pending requests and checks the result. */
@@ -45,18 +49,14 @@ describe("useYearRates", () => {
       expectedPaths: [],
     },
     {
-      name: "switching years fetches the new year and drops the old one",
+      name: "switching years fetches the new year and reuses the cached old one",
       steps: [
         { year: 2026, enabled: true, expected: ratesOf(2026) },
         { year: 2025, enabled: false, expected: null },
         { year: 2027, enabled: true, expected: ratesOf(2027) },
         { year: 2026, enabled: true, expected: ratesOf(2026) },
       ],
-      expectedPaths: [
-        "/api/exchange-rates?year=2026",
-        "/api/exchange-rates?year=2027",
-        "/api/exchange-rates?year=2026",
-      ],
+      expectedPaths: ["/api/exchange-rates?year=2026", "/api/exchange-rates?year=2027"],
     },
     {
       name: "becoming enabled for the loaded year reuses its rates",

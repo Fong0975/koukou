@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Occurrence } from "@/lib/billingOccurrences";
-import { sumByCurrency } from "@/lib/billingSummary";
+import { sumByCurrency } from "@/lib/money";
 import { CHARGE_ORDER_LABELS, chargeGroups, type ChargeOrder } from "@/lib/chargeGroups";
 import { convertedTwdCents } from "@/lib/currencyConversion";
 import type { ExchangeRateDto } from "@/types/dto";

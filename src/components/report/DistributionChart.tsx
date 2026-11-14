@@ -2,7 +2,7 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { CHART_SLOTS, chartColor } from "@/lib/chartColors";
-import { formatPercent } from "@/lib/format";
+import { formatPercent } from "@/lib/format/money";
 import { foldGroupShares, type GroupShare } from "@/lib/yearReport";
 import { ConvertedAmounts } from "../ConvertedAmounts";
 import { IconLabel } from "../IconLabel";

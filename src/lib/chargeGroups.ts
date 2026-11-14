@@ -6,7 +6,7 @@ import {
   type GroupTotal,
   type SubscriptionCharges,
 } from "./billingSummary";
-import { formatChargeDate } from "./format";
+import { formatChargeDate } from "./format/date";
 
 /** How the month's charge list is grouped. */
 export type ChargeOrder = "date" | "category";

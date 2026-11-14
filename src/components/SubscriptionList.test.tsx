@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { LoadStatus } from "@/hooks/useSubscriptions";
+import type { LoadStatus } from "@/hooks/useApiResource";
 import { makeCategory, makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
 import { SubscriptionList } from "./SubscriptionList";

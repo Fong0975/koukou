@@ -2,18 +2,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    category: { findMany: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    $transaction: vi.fn(),
-  },
-}));
+const { prismaMock } = await vi.hoisted(async () => {
+  const { tableMock, transactionalPrismaMock } = await import("@/test/prismaTable");
+  return { prismaMock: transactionalPrismaMock({ category: tableMock() }) };
+});
 
 vi.mock("@/lib/db", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/logger", () => import("@/test/logger"));
 
 import { loggerMock } from "@/test/logger";
 import { prismaError } from "@/test/prismaError";
+import { sortOrderWrites } from "@/test/prismaTable";
 import { createCategory, deleteCategory, listCategories, reorderCategories, updateCategory } from "./categoryService";
 
 describe("listCategories", () => {
@@ -51,38 +50,67 @@ describe("createCategory", () => {
   beforeEach(() => vi.clearAllMocks());
 
   const data = { name: "健身房", icon: "🏋️" };
-  const tests: { name: string; setup: () => void; expected?: unknown; error?: new (...args: never[]) => Error }[] = [
+  const seeded = [
+    { id: 6, name: "水電瓦斯", sortOrder: 60 },
+    { id: 7, name: "其他", sortOrder: 999 },
+  ];
+  const reordered = [
+    { id: 7, name: "其他", sortOrder: 10 },
+    { id: 6, name: "水電瓦斯", sortOrder: 20 },
+  ];
+  const tests: {
+    name: string;
+    siblings: { id: number; name: string; sortOrder: number }[];
+    create: () => Promise<unknown>;
+    sortOrder?: number;
+    moves?: [number, number][];
+    error?: new (...args: never[]) => Error;
+  }[] = [
     {
-      name: "creates with sortOrder before 其他",
-      setup: () => prismaMock.category.create.mockResolvedValue({ id: 9, ...data, sortOrder: 500 }),
-      expected: { id: 9, ...data, sortOrder: 500 },
+      name: "creates before 其他 and moves it one step down",
+      siblings: seeded,
+      create: () => Promise.resolve({ id: 9, ...data, sortOrder: 999 }),
+      sortOrder: 999,
+      moves: [[7, 1009]],
+    },
+    {
+      name: "creates after the last category once 其他 is not last",
+      siblings: reordered,
+      create: () => Promise.resolve({ id: 9, ...data, sortOrder: 30 }),
+      sortOrder: 30,
+      moves: [],
     },
     {
       name: "duplicate name → ConflictError",
-      setup: () => prismaMock.category.create.mockRejectedValue(prismaError("P2002")),
+      siblings: seeded,
+      create: () => Promise.reject(prismaError("P2002")),
       error: ConflictError,
     },
     {
       name: "unknown errors propagate",
-      setup: () => prismaMock.category.create.mockRejectedValue(new Error("db down")),
+      siblings: seeded,
+      create: () => Promise.reject(new Error("db down")),
       error: Error,
     },
   ];
 
   for (const tt of tests) {
     it(tt.name, async () => {
-      tt.setup();
+      prismaMock.category.findMany.mockResolvedValue(tt.siblings);
+      prismaMock.category.create.mockImplementation(tt.create);
       const promise = createCategory(data);
       if (tt.error) {
         await expect(promise).rejects.toBeInstanceOf(tt.error);
         expect(loggerMock.info).not.toHaveBeenCalled();
       } else {
-        await expect(promise).resolves.toEqual(tt.expected);
+        await expect(promise).resolves.toEqual({ id: 9, ...data, sortOrder: tt.sortOrder });
         expect(loggerMock.info).toHaveBeenCalledWith("Category created", { id: 9, name: "健身房" });
         expect(prismaMock.category.create).toHaveBeenCalledWith(
-          expect.objectContaining({ data: { ...data, sortOrder: 500 } }),
+          expect.objectContaining({ data: { ...data, sortOrder: tt.sortOrder } }),
         );
+        expect(sortOrderWrites(prismaMock.category.update)).toEqual(tt.moves);
       }
+      expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
     });
   }
 });
@@ -192,22 +220,17 @@ describe("reorderCategories", () => {
   for (const tt of tests) {
     it(tt.name, async () => {
       prismaMock.category.findMany.mockResolvedValueOnce(existing).mockResolvedValueOnce(reordered);
-      prismaMock.category.update.mockImplementation((args: unknown) => args);
-      prismaMock.$transaction.mockResolvedValue([]);
+      prismaMock.category.update.mockResolvedValue({});
 
       const promise = reorderCategories(tt.ids);
 
       if (tt.error) {
         await expect(promise).rejects.toBeInstanceOf(ValidationError);
-        expect(prismaMock.$transaction).not.toHaveBeenCalled();
+        expect(prismaMock.category.update).not.toHaveBeenCalled();
         expect(loggerMock.info).not.toHaveBeenCalled();
       } else {
         await expect(promise).resolves.toEqual(reordered);
-        const updates = prismaMock.category.update.mock.calls.map((call) => {
-          const args = call[0] as { where: { id: number }; data: { sortOrder: number } };
-          return [args.where.id, args.data.sortOrder];
-        });
-        expect(updates).toEqual(tt.expectedSortOrders);
+        expect(sortOrderWrites(prismaMock.category.update)).toEqual(tt.expectedSortOrders);
         expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
         expect(loggerMock.info).toHaveBeenCalledWith("Categories reordered", { count: 3 });
       }

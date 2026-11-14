@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import type { PaymentType } from "@/generated/prisma/enums";
-import { useAsyncAction } from "@/hooks/useAsyncAction";
-import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { useLookupForm } from "@/hooks/useLookupForm";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import type { PaymentMethodDto } from "@/types/dto";
 import { PaymentMethodFields } from "./PaymentMethodFields";
-import { QuickAddActions, saveOnEnter } from "./QuickAddActions";
+import { QuickAddActions } from "./QuickAddActions";
 
 interface PaymentMethodQuickAddProps {
   onCreate: (input: PaymentMethodInput) => Promise<PaymentMethodDto>;
@@ -15,33 +13,32 @@ interface PaymentMethodQuickAddProps {
   onDone: (newValue?: string) => void;
 }
 
-const DEFAULT_TYPE: PaymentType = "CREDIT_CARD";
+const EMPTY_VALUES: { type: PaymentType; name: string; note: string } = { type: "CREDIT_CARD", name: "", note: "" };
 
 /**
- * Inline form for adding a payment method: its type plus the card or account name. A typed name or a
- * changed type counts as unsaved changes.
+ * Inline form for adding a payment method: its type, the card or account name and an optional note.
+ * Anything typed or a changed type counts as unsaved changes.
  */
 export function PaymentMethodQuickAdd({ onCreate, onDone }: PaymentMethodQuickAddProps) {
-  const [type, setType] = useState<PaymentType>(DEFAULT_TYPE);
-  const [name, setName] = useState("");
-  useReportUnsavedChanges(type !== DEFAULT_TYPE || name !== "");
-  const { pending, error, run } = useAsyncAction(onCreate);
-
-  const save = async () => {
-    const created = await run({ type, name });
-    if (created) onDone(String(created.id));
-  };
+  const form = useLookupForm(EMPTY_VALUES, onCreate, (created) => onDone(String(created.id)));
 
   return (
     <div>
       <PaymentMethodFields
-        type={type}
-        name={name}
-        onTypeChange={setType}
-        onNameChange={setName}
-        onKeyDown={saveOnEnter(() => void save())}
+        type={form.values.type}
+        name={form.values.name}
+        note={form.values.note}
+        onTypeChange={form.setField("type")}
+        onNameChange={form.setField("name")}
+        onNoteChange={form.setField("note")}
+        onKeyDown={form.onKeyDown}
       />
-      <QuickAddActions pending={pending} error={error} onSave={() => void save()} onCancel={() => onDone()} />
+      <QuickAddActions
+        pending={form.pending}
+        error={form.error}
+        onSave={() => void form.submit()}
+        onCancel={() => onDone()}
+      />
     </div>
   );
 }

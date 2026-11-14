@@ -2,7 +2,8 @@
 
 import { useId } from "react";
 import { todayKey } from "@/lib/dateKey";
-import { nextPauseDraft, type FieldErrors, type PauseDraft } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import { nextPauseDraft, type PauseDraft } from "@/lib/subscriptionDraft";
 import { CloseIcon, PlusIcon } from "./Icons";
 
 interface PauseEditorProps {

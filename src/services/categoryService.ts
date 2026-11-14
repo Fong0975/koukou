@@ -1,14 +1,25 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import type { CategoryData } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
+import { createInOrder, saveDisplayOrder, type SetSortOrder } from "./lookupTable";
 import { rethrowPrismaError } from "./prismaErrors";
-import { assertSameIds, sortOrderAt } from "./reorderIds";
 
 const logger = createLogger("categoryService");
 
 /** Columns of a category returned by the API and written to backups. */
 export const categorySelect = { id: true, name: true, icon: true, sortOrder: true } as const;
+
+/** Name of the catch-all category that new categories are placed before while it is last. */
+const CATCH_ALL_NAME = "其他";
+
+const displayOrder: Prisma.CategoryOrderByWithRelationInput[] = [{ sortOrder: "asc" }, { id: "asc" }];
+
+const setSortOrder: SetSortOrder = (tx, id, sortOrder) => tx.category.update({ where: { id }, data: { sortOrder } });
+
+const notFound = "找不到這個類型";
+const conflict = (name: string) => `類型「${name}」已存在`;
 
 /**
  * Lists all categories ordered for display.
@@ -16,16 +27,13 @@ export const categorySelect = { id: true, name: true, icon: true, sortOrder: tru
  * @returns Categories sorted by sortOrder, then id.
  */
 export async function listCategories(): Promise<CategoryDto[]> {
-  const categories = await prisma.category.findMany({
-    select: categorySelect,
-    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-  });
+  const categories = await prisma.category.findMany({ select: categorySelect, orderBy: displayOrder });
   logger.debug("Categories listed", { count: categories.length });
   return categories;
 }
 
 /**
- * Creates a category; new categories are placed before the "其他" catch-all (sortOrder 999).
+ * Creates a category at the end of the list, or just before the "其他" catch-all while it is last.
  *
  * @param data - Validated category data.
  * @returns The created category.
@@ -33,14 +41,17 @@ export async function listCategories(): Promise<CategoryDto[]> {
  */
 export async function createCategory(data: CategoryData): Promise<CategoryDto> {
   try {
-    const category = await prisma.category.create({
-      data: { ...data, sortOrder: 500 },
-      select: categorySelect,
+    const category = await createInOrder({
+      siblings: (tx) =>
+        tx.category.findMany({ select: { id: true, name: true, sortOrder: true }, orderBy: displayOrder }),
+      staysLast: (row) => row.name === CATCH_ALL_NAME,
+      create: (tx, sortOrder) => tx.category.create({ data: { ...data, sortOrder }, select: categorySelect }),
+      setSortOrder,
     });
     logger.info("Category created", { id: category.id, name: category.name });
     return category;
   } catch (error) {
-    rethrowPrismaError(error, { conflict: `類型「${data.name}」已存在` });
+    rethrowPrismaError(error, { conflict: conflict(data.name) });
   }
 }
 
@@ -58,7 +69,7 @@ export async function updateCategory(id: number, data: CategoryData): Promise<Ca
     logger.info("Category updated", { id, name: category.name });
     return category;
   } catch (error) {
-    rethrowPrismaError(error, { notFound: "找不到這個類型", conflict: `類型「${data.name}」已存在` });
+    rethrowPrismaError(error, { notFound, conflict: conflict(data.name) });
   }
 }
 
@@ -73,7 +84,7 @@ export async function deleteCategory(id: number): Promise<void> {
     await prisma.category.delete({ where: { id } });
     logger.info("Category deleted", { id });
   } catch (error) {
-    rethrowPrismaError(error, { notFound: "找不到這個類型", foreignKey: "仍有扣款項目使用這個類型，無法刪除" });
+    rethrowPrismaError(error, { notFound, foreignKey: "仍有扣款項目使用這個類型，無法刪除" });
   }
 }
 
@@ -85,15 +96,10 @@ export async function deleteCategory(id: number): Promise<void> {
  * @throws ValidationError when ids is not exactly the set of existing category ids.
  */
 export async function reorderCategories(ids: number[]): Promise<CategoryDto[]> {
-  const existing = await prisma.category.findMany({ select: { id: true } });
-  assertSameIds(
+  await saveDisplayOrder(
     ids,
-    existing.map((category) => category.id),
+    { listIds: (tx) => tx.category.findMany({ select: { id: true } }), setSortOrder },
     "類型排序與目前的類型不一致，請重新整理後再試",
-  );
-
-  await prisma.$transaction(
-    ids.map((id, index) => prisma.category.update({ where: { id }, data: { sortOrder: sortOrderAt(index) } })),
   );
   logger.info("Categories reordered", { count: ids.length });
   return listCategories();

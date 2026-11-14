@@ -1,5 +1,5 @@
-import type { CurrencyTotals } from "@/lib/billingSummary";
-import { formatConvertedTotal } from "@/lib/format";
+import type { CurrencyTotals } from "@/lib/money";
+import { formatConvertedTotal } from "@/lib/format/money";
 import { ConvertedTotalPopup } from "./ConvertedTotalPopup";
 import { CurrencyAmounts } from "./CurrencyAmounts";
 import type { PopupAlign } from "./HoverTapPopup";

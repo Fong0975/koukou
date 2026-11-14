@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { newAmountPeriodDraft, type AmountPeriodDraft, type FieldErrors } from "@/lib/subscriptionDraft";
+import type { FieldErrors } from "@/lib/fieldErrors";
+import { newAmountPeriodDraft, type AmountPeriodDraft } from "@/lib/subscriptionDraft";
 import { AmountPeriodEditor } from "./AmountPeriodEditor";
 
 const FIRST = "第 1 筆歷史金額";

@@ -1,6 +1,6 @@
 import type { Occurrence } from "@/lib/billingOccurrences";
 import type { ContractExpiry } from "@/lib/contractExpiries";
-import { formatAmountText } from "@/lib/format";
+import { formatAmountText } from "@/lib/format/money";
 import type { SubscriptionDto } from "@/types/dto";
 import { HoverTapPopup, type PopupAlign } from "./HoverTapPopup";
 
