@@ -83,11 +83,7 @@ export function SelectWithQuickAdd(props: SelectWithQuickAddProps) {
           {error}
         </p>
       )}
-      {adding && (
-        <div className="mt-2 rounded-2xl border border-dashed border-leaf-500/35 bg-leaf-50/70 p-3">
-          {renderAddForm(done)}
-        </div>
-      )}
+      {adding && <div className="inline-panel mt-2">{renderAddForm(done)}</div>}
     </div>
   );
 }

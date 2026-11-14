@@ -403,6 +403,31 @@ body {
     color: var(--color-leaf-800);
   }
 
+  /* Explanation under a form field. */
+  .field-hint {
+    @apply mt-1.5 text-sm text-ink-soft;
+  }
+
+  /* A checkbox in the app's green. */
+  .checkbox {
+    @apply size-4 accent-leaf-600;
+  }
+
+  /* Dashed panel holding a form opened in place, e.g. a quick-add or the resubscribe form. */
+  .inline-panel {
+    @apply rounded-2xl border border-dashed border-leaf-500/35 bg-leaf-50/70 p-3;
+  }
+
+  /* Rows of a card's list, separated by thin lines. */
+  .divided-list {
+    @apply flex flex-col divide-y divide-leaf-500/15;
+  }
+
+  /* Rows of an editable list such as the pauses or past amounts, set in under a rule on the left. */
+  .row-editor-list {
+    @apply mt-3 flex flex-col gap-2 border-l-2 border-leaf-500/20 pl-3;
+  }
+
   /* Bordered box grouping a form option with its explanation, e.g. a checkbox and its hint. */
   .option-box {
     border: 1px solid rgb(78 154 74 / 0.3);

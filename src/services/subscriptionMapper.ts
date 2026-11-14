@@ -1,6 +1,7 @@
 import type { BillingCycle, Currency, PaymentType, ReminderKind } from "@/generated/prisma/enums";
 import { utcDateToDateKey } from "@/lib/dateKey";
-import type { PauseDto, RemindersDto, SubscriptionDto } from "@/types/dto";
+import type { AmountPeriodDto, PauseDto, RemindersDto, SubscriptionDto } from "@/types/dto";
+import { categorySelect, paymentMethodSelect } from "./lookupSelects";
 
 /** Structural shape of a Prisma Decimal, enough to serialize it. */
 interface DecimalLike {
@@ -36,6 +37,9 @@ export interface SubscriptionRecord {
 /** Structural shape of a pause row, without the id a backup leaves out. */
 export type PauseRecord = Omit<SubscriptionRecord["pauses"][number], "id">;
 
+/** Structural shape of an amount period row, without the id a backup leaves out. */
+export type AmountPeriodRecord = Omit<SubscriptionRecord["amountPeriods"][number], "id">;
+
 /** Structural shape of a reminder row loaded with {@link reminderInclude}. */
 export interface ReminderRecord {
   kind: ReminderKind;
@@ -48,26 +52,47 @@ export const reminderInclude = {
   orderBy: { daysBefore: "asc" },
 } as const;
 
-/** Prisma `include` that loads everything {@link toSubscriptionDto} needs. */
-export const subscriptionInclude = {
-  category: { select: { id: true, name: true, icon: true, sortOrder: true } },
-  paymentMethod: { select: { id: true, type: true, name: true, note: true, sortOrder: true } },
+/** Prisma relation queries for a subscription's child rows, without their ids, which backups leave out. */
+export const childRowQueries = {
   schedules: {
-    select: { id: true, cycle: true, dayOfWeek: true, dayOfMonth: true, month: true },
+    select: { cycle: true, dayOfWeek: true, dayOfMonth: true, month: true },
     orderBy: { id: "asc" },
   },
   amountPeriods: {
-    select: { id: true, amount: true, endDate: true },
+    select: { amount: true, endDate: true },
     orderBy: { endDate: "asc" },
   },
   pauses: {
-    select: { id: true, startDate: true, endDate: true },
+    select: { startDate: true, endDate: true },
     orderBy: { startDate: "asc" },
   },
   reminders: reminderInclude,
 } as const;
 
-/** Serializes a DECIMAL(12, 2) value as a fixed 2-decimal string. */
+/** Prisma `include` that loads everything {@link toSubscriptionDto} needs. */
+export const subscriptionInclude = {
+  category: { select: categorySelect },
+  paymentMethod: { select: paymentMethodSelect },
+  schedules: {
+    ...childRowQueries.schedules,
+    select: { id: true, ...childRowQueries.schedules.select },
+  },
+  amountPeriods: {
+    ...childRowQueries.amountPeriods,
+    select: { id: true, ...childRowQueries.amountPeriods.select },
+  },
+  pauses: {
+    ...childRowQueries.pauses,
+    select: { id: true, ...childRowQueries.pauses.select },
+  },
+  reminders: childRowQueries.reminders,
+} as const;
+
+/**
+ * Formats an amount with exactly two decimals, as DECIMAL(12, 2) columns store it and the API returns it.
+ *
+ * @param amount - A Prisma Decimal read from the database, or a validated number about to be written.
+ */
 export const toAmountString = (amount: DecimalLike) => amount.toFixed(2);
 
 /** The scalar columns of a subscription record that every serialized form carries. */
@@ -109,6 +134,15 @@ export function serializePause(record: PauseRecord): Omit<PauseDto, "id"> {
 }
 
 /**
+ * Serializes an amount period's amount and DATE column.
+ *
+ * @param record - The amount period row.
+ */
+export function serializeAmountPeriod(record: AmountPeriodRecord): Omit<AmountPeriodDto, "id"> {
+  return { amount: toAmountString(record.amount), endDate: utcDateToDateKey(record.endDate) };
+}
+
+/**
  * Groups reminder rows by kind into ascending day lists.
  *
  * @param rows - The subscription's reminder rows.
@@ -131,11 +165,7 @@ export function toRemindersDto(rows: ReminderRecord[]): RemindersDto {
 export function toSubscriptionDto(record: SubscriptionRecord): SubscriptionDto {
   return {
     ...serializeSubscriptionColumns(record),
-    amountPeriods: record.amountPeriods.map((period) => ({
-      id: period.id,
-      amount: toAmountString(period.amount),
-      endDate: utcDateToDateKey(period.endDate),
-    })),
+    amountPeriods: record.amountPeriods.map((period) => ({ id: period.id, ...serializeAmountPeriod(period) })),
     pauses: record.pauses.map((pause) => ({ id: pause.id, ...serializePause(pause) })),
     category: record.category,
     paymentMethod: record.paymentMethod,

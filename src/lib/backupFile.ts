@@ -1,5 +1,4 @@
-import { toCalendarDate } from "./calendarMonth";
-import { toDateKey } from "./dateKey";
+import { localDateKey } from "./dateKey";
 
 /**
  * Names a backup file after the local day it is written, e.g. "koukou-backup-20261019.json".
@@ -7,7 +6,7 @@ import { toDateKey } from "./dateKey";
  * @param date - When the backup is written.
  */
 export function backupFileName(date: Date): string {
-  return `koukou-backup-${toDateKey(toCalendarDate(date)).replaceAll("-", "")}.json`;
+  return `koukou-backup-${localDateKey(date).replaceAll("-", "")}.json`;
 }
 
 /**

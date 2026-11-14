@@ -40,7 +40,7 @@ export function DateField({ id, label, value, onChange, error, hint, required = 
         aria-invalid={Boolean(error)}
         aria-required={required || undefined}
       />
-      {hint && <p className="mt-1.5 text-sm text-ink-soft">{hint}</p>}
+      {hint && <p className="field-hint">{hint}</p>}
       {error && <p className="field-error">{error}</p>}
     </div>
   );

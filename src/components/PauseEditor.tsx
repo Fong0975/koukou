@@ -3,8 +3,10 @@
 import { useId } from "react";
 import { todayKey } from "@/lib/dateKey";
 import type { FieldErrors } from "@/lib/fieldErrors";
+import { patchRow, removeRow } from "@/lib/keyedRows";
 import { nextPauseDraft, type PauseDraft } from "@/lib/subscriptionDraft";
-import { CloseIcon, PlusIcon } from "./Icons";
+import { PlusIcon } from "./Icons";
+import { RowEditorItem } from "./RowEditorItem";
 
 interface PauseEditorProps {
   /** Subscription start date; a new pause starts no earlier. */
@@ -22,9 +24,7 @@ interface PauseEditorProps {
  */
 export function PauseEditor({ startDate, pauses, onChange, errors }: PauseEditorProps) {
   const labelId = useId();
-  const patch = (key: string, values: Partial<PauseDraft>) =>
-    onChange(pauses.map((pause) => (pause.key === key ? { ...pause, ...values } : pause)));
-  const remove = (key: string) => onChange(pauses.filter((pause) => pause.key !== key));
+  const patch = (key: string, values: Partial<PauseDraft>) => onChange(patchRow(pauses, key, values));
   const add = () => onChange([...pauses, nextPauseDraft({ startDate, pauses }, todayKey())]);
 
   return (
@@ -34,44 +34,38 @@ export function PauseEditor({ startDate, pauses, onChange, errors }: PauseEditor
       </span>
       <p className="text-sm text-ink-soft">暫停期間不扣款，結束日隔天自動恢復；要停止扣款請設定到期日。</p>
       {pauses.length > 0 && (
-        <ul aria-labelledby={labelId} className="mt-3 flex flex-col gap-2 border-l-2 border-leaf-500/20 pl-3">
+        <ul aria-labelledby={labelId} className="row-editor-list">
           {pauses.map((pause, index) => {
             const rowLabel = `第 ${index + 1} 段暫停`;
             const startError = errors[`pauses.${index}.startDate`];
             const endError = errors[`pauses.${index}.endDate`];
             return (
-              <li key={pause.key}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    type="date"
-                    className="field w-auto font-num"
-                    aria-label={`${rowLabel}的開始日`}
-                    aria-invalid={Boolean(startError)}
-                    min={startDate || undefined}
-                    value={pause.startDate}
-                    onChange={(event) => patch(pause.key, { startDate: event.target.value })}
-                  />
-                  <span className="text-sm text-ink-soft">～</span>
-                  <input
-                    type="date"
-                    className="field w-auto font-num"
-                    aria-label={`${rowLabel}的結束日`}
-                    aria-invalid={Boolean(endError)}
-                    min={pause.startDate || undefined}
-                    value={pause.endDate}
-                    onChange={(event) => patch(pause.key, { endDate: event.target.value })}
-                  />
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    onClick={() => remove(pause.key)}
-                    aria-label={`移除${rowLabel}`}
-                  >
-                    <CloseIcon />
-                  </button>
-                </div>
-                {(startError ?? endError) && <p className="field-error">{startError ?? endError}</p>}
-              </li>
+              <RowEditorItem
+                key={pause.key}
+                removeLabel={`移除${rowLabel}`}
+                onRemove={() => onChange(removeRow(pauses, pause.key))}
+                error={startError ?? endError}
+              >
+                <input
+                  type="date"
+                  className="field w-auto font-num"
+                  aria-label={`${rowLabel}的開始日`}
+                  aria-invalid={Boolean(startError)}
+                  min={startDate || undefined}
+                  value={pause.startDate}
+                  onChange={(event) => patch(pause.key, { startDate: event.target.value })}
+                />
+                <span className="text-sm text-ink-soft">～</span>
+                <input
+                  type="date"
+                  className="field w-auto font-num"
+                  aria-label={`${rowLabel}的結束日`}
+                  aria-invalid={Boolean(endError)}
+                  min={pause.startDate || undefined}
+                  value={pause.endDate}
+                  onChange={(event) => patch(pause.key, { endDate: event.target.value })}
+                />
+              </RowEditorItem>
             );
           })}
         </ul>

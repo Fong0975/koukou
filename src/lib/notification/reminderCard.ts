@@ -1,14 +1,24 @@
 import { formatAmountText } from "../format/money";
-import { CARD_COLORS, cardHeader, COIN_HEADER, moreRow, pill, rowBackground, rowList, sectionCard } from "./cardParts";
+import {
+  CARD_COLORS,
+  cardHeader,
+  COIN_HEADER,
+  flexCard,
+  moreRows,
+  pill,
+  rowList,
+  sectionCard,
+  stripedRow,
+} from "./cardParts";
 import { hasNoReminders, type ChargeReminder, type DailyReminders, type ExpiryReminder } from "./dueReminders";
 import type { FlexMessage, FlexNode } from "./lineMessage";
 import { formatMessageDate, formatMonthDay, formatPaddedDate, whenText } from "./messageDate";
-import { capList, moreText } from "./messageLayout";
-
-/** Most rows a list shows before it ends with "…另 N 項", keeping the card well below LINE's size limit. */
-const MAX_LISTED = 30;
+import { capList } from "./messageLayout";
 
 const COIN = CARD_COLORS.coin;
+
+/** Rows whose cells differ in height keep them vertically centred. */
+const CENTERED = { alignItems: "center" };
 
 /**
  * Says what the card holds and when, e.g. "扣款 2 筆・到期 1 項｜12/1 (二)". It is also the card's
@@ -66,23 +76,11 @@ function expiryWhen({ date, daysBefore }: ExpiryReminder): FlexNode {
  * @param expiries - The contract ends, in order.
  */
 function expirySection(expiries: ExpiryReminder[]): FlexNode {
-  const { shown, hidden } = capList(expiries, MAX_LISTED);
-  const rows = shown.map((expiry, index) => ({
-    type: "box",
-    layout: "horizontal",
-    alignItems: "center",
-    backgroundColor: rowBackground(COIN.rows, index),
-    paddingAll: "10px",
-    spacing: "md",
-    contents: [nameText(expiry.subscription.name), expiryWhen(expiry)],
-  }));
-  return sectionCard(
-    "⏰",
-    "到期",
-    countPill(`${expiries.length} 項`),
-    [rowList(rows), ...(hidden ? [moreRow(moreText(hidden))] : [])],
-    COIN.card,
+  const { shown, hidden } = capList(expiries);
+  const rows = shown.map((expiry, index) =>
+    stripedRow(COIN.rows, index, [nameText(expiry.subscription.name), expiryWhen(expiry)], CENTERED),
   );
+  return sectionCard("⏰", "到期", countPill(`${expiries.length} 項`), [rowList(rows), ...moreRows(hidden)], COIN.card);
 }
 
 /**
@@ -102,14 +100,10 @@ function groupByDate(charges: ChargeReminder[]): ChargeReminder[][] {
 
 /** One charge: its name and payment method on the left, its amount on the right. */
 function chargeRow({ subscription, amount }: ChargeReminder, index: number): FlexNode {
-  return {
-    type: "box",
-    layout: "horizontal",
-    alignItems: "center",
-    backgroundColor: rowBackground(COIN.rows, index),
-    paddingAll: "10px",
-    spacing: "md",
-    contents: [
+  return stripedRow(
+    COIN.rows,
+    index,
+    [
       {
         type: "box",
         layout: "vertical",
@@ -128,7 +122,8 @@ function chargeRow({ subscription, amount }: ChargeReminder, index: number): Fle
         flex: 0,
       },
     ],
-  };
+    CENTERED,
+  );
 }
 
 /**
@@ -157,12 +152,12 @@ function chargeGroup(group: ChargeReminder[]): FlexNode[] {
  * @param charges - The charges, sorted by date.
  */
 function chargeSection(charges: ChargeReminder[]): FlexNode {
-  const { shown, hidden } = capList(charges, MAX_LISTED);
+  const { shown, hidden } = capList(charges);
   return sectionCard(
     "💳",
     "扣款提醒",
     countPill(`${charges.length} 筆`),
-    [...groupByDate(shown).flatMap(chargeGroup), ...(hidden ? [moreRow(moreText(hidden))] : [])],
+    [...groupByDate(shown).flatMap(chargeGroup), ...moreRows(hidden)],
     COIN.card,
   );
 }
@@ -176,21 +171,14 @@ function chargeSection(charges: ChargeReminder[]): FlexNode {
  */
 export function buildReminderCard(reminders: DailyReminders): FlexMessage | null {
   if (hasNoReminders(reminders)) return null;
-  const sections = [
-    reminders.expiries.length > 0 && expirySection(reminders.expiries),
-    reminders.charges.length > 0 && chargeSection(reminders.charges),
-  ].filter((section): section is FlexNode => typeof section === "object");
   const line = summaryLine(reminders);
-
-  return {
-    type: "flex",
+  return flexCard({
     altText: `🔔 ${line}`,
-    contents: {
-      type: "bubble",
-      size: "mega",
-      styles: { body: { backgroundColor: COIN.page } },
-      header: cardHeader("🔔", "今日提醒", line, COIN_HEADER),
-      body: { type: "box", layout: "vertical", spacing: "md", paddingAll: "12px", contents: sections },
-    },
-  };
+    header: cardHeader("🔔", "今日提醒", line, COIN_HEADER),
+    background: COIN.page,
+    sections: [
+      reminders.expiries.length > 0 && expirySection(reminders.expiries),
+      reminders.charges.length > 0 && chargeSection(reminders.charges),
+    ],
+  });
 }

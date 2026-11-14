@@ -1,9 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import { decimal } from "@/test/decimal";
 import type { SubscriptionDto } from "@/types/dto";
 import { toRemindersDto, toSubscriptionDto, type SubscriptionRecord } from "./subscriptionMapper";
-
-const decimal = (value: number) => ({ toFixed: (digits: number) => value.toFixed(digits) });
 
 const baseRecord: SubscriptionRecord = {
   id: 1,

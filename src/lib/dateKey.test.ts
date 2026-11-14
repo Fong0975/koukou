@@ -1,10 +1,15 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { CalendarDate } from "./calendarMonth";
 import {
   addDays,
   dateKeyToUtcDate,
   dateKeyToYearMonth,
+  daysUntil,
   isDateKey,
+  localClockTime,
+  localDateKey,
+  pad2,
   toDateKey,
   todayKey,
   utcDateToDateKey,
@@ -100,6 +105,65 @@ describe("dateKeyToUtcDate / utcDateToDateKey", () => {
       const date = dateKeyToUtcDate(tt.key);
       expect(date.toISOString()).toBe(`${tt.key}T00:00:00.000Z`);
       expect(utcDateToDateKey(date)).toBe(tt.key);
+    });
+  }
+});
+
+describe("daysUntil", () => {
+  const today: CalendarDate = { year: 2026, month: 10, day: 18 };
+  const tests = [
+    { name: "today", date: "2026-10-18", expected: 0 },
+    { name: "tomorrow", date: "2026-10-19", expected: 1 },
+    { name: "across a month end", date: "2026-11-02", expected: 15 },
+    { name: "across a year end", date: "2027-01-01", expected: 75 },
+    { name: "yesterday", date: "2026-10-17", expected: -1 },
+    { name: "earlier in the month", date: "2026-10-01", expected: -17 },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(daysUntil(today, tt.date)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("pad2", () => {
+  const tests = [
+    { name: "pads a single digit", value: 5, expected: "05" },
+    { name: "keeps two digits", value: 12, expected: "12" },
+    { name: "pads zero", value: 0, expected: "00" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(pad2(tt.value)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("localDateKey", () => {
+  const tests = [
+    { name: "uses the local date late in the day", date: new Date(2026, 9, 17, 23, 59), expected: "2026-10-17" },
+    { name: "pads month and day", date: new Date(2026, 0, 5, 0, 0), expected: "2026-01-05" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(localDateKey(tt.date)).toBe(tt.expected);
+    });
+  }
+});
+
+describe("localClockTime", () => {
+  const tests = [
+    { name: "pads hours and minutes", date: new Date(2026, 9, 17, 8, 5), expected: "08:05" },
+    { name: "uses a 24-hour clock", date: new Date(2026, 9, 17, 23, 59), expected: "23:59" },
+    { name: "midnight", date: new Date(2026, 9, 17, 0, 0), expected: "00:00" },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(localClockTime(tt.date)).toBe(tt.expected);
     });
   }
 });

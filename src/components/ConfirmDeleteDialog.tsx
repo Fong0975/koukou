@@ -1,7 +1,6 @@
 "use client";
 
-import { useAsyncAction } from "@/hooks/useAsyncAction";
-import { Modal } from "./Modal";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ConfirmDeleteDialogProps {
   item: { id: number; name: string };
@@ -15,27 +14,18 @@ interface ConfirmDeleteDialogProps {
  * Asks before deleting an item; stays open and shows the reason if deletion fails.
  */
 export function ConfirmDeleteDialog({ item, message, onConfirm, onClose }: ConfirmDeleteDialogProps) {
-  const { pending, error, run } = useAsyncAction(async () => {
-    await onConfirm(item.id);
-    onClose();
-  });
-
   return (
-    <Modal title={`刪除「${item.name}」？`} onClose={onClose} widthClass="max-w-sm">
+    <ConfirmDialog
+      title={`刪除「${item.name}」？`}
+      confirmLabel="刪除"
+      pendingLabel="刪除中…"
+      onConfirm={async () => {
+        await onConfirm(item.id);
+        onClose();
+      }}
+      onClose={onClose}
+    >
       <p className="text-ink-soft">{message}</p>
-      {error && (
-        <p role="alert" className="field-error">
-          {error}
-        </p>
-      )}
-      <div className="mt-6 flex justify-end gap-2">
-        <button type="button" className="btn btn-ghost" onClick={onClose}>
-          取消
-        </button>
-        <button type="button" className="btn btn-danger" onClick={() => void run()} disabled={pending}>
-          {pending ? "刪除中…" : "刪除"}
-        </button>
-      </div>
-    </Modal>
+    </ConfirmDialog>
   );
 }

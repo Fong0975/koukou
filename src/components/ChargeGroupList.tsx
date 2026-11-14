@@ -47,7 +47,7 @@ export function ChargeGroupList({ group, order, rates }: ChargeGroupListProps) {
           className="items-end text-ink-soft"
         />
       </div>
-      <ul aria-labelledby={titleId} className="flex flex-col divide-y divide-leaf-500/15">
+      <ul aria-labelledby={titleId} className="divided-list">
         {group.charges.map((charge) => (
           <MonthChargeItem
             key={charge.subscription.id}

@@ -4,13 +4,11 @@ import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import type { CategoryData } from "@/lib/validation/categorySchema";
 import type { CategoryDto } from "@/types/dto";
+import { categorySelect } from "./lookupSelects";
 import { createInOrder, saveDisplayOrder, type SetSortOrder } from "./lookupTable";
 import { rethrowPrismaError } from "./prismaErrors";
 
 const logger = createLogger("categoryService");
-
-/** Columns of a category returned by the API and written to backups. */
-export const categorySelect = { id: true, name: true, icon: true, sortOrder: true } as const;
 
 const displayOrder: Prisma.CategoryOrderByWithRelationInput[] = [{ sortOrder: "asc" }, { id: "asc" }];
 

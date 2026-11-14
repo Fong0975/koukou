@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { sumReserves, type Reserve } from "@/lib/amortization";
 import { convertedReserveTwdCents } from "@/lib/currencyConversion";
 import type { ExchangeRateDto } from "@/types/dto";
@@ -22,6 +23,8 @@ interface MonthReserveListProps {
  * @param props.rates - The year's exchange rates.
  */
 export function MonthReserveList({ reserves, rates }: MonthReserveListProps) {
+  const totals = useMemo(() => sumReserves(reserves), [reserves]);
+  const twdCents = useMemo(() => convertedReserveTwdCents(reserves, rates), [reserves, rates]);
   if (reserves.length === 0) return null;
 
   return (
@@ -30,16 +33,11 @@ export function MonthReserveList({ reserves, rates }: MonthReserveListProps) {
       header={<p className="mt-1 text-sm text-ink-soft">年繳項目均攤到扣款前 12 個月，本月應先預留的金額</p>}
       footer={
         <CardFooter label="預留小計">
-          <ConvertedAmounts
-            totals={sumReserves(reserves)}
-            twdCents={convertedReserveTwdCents(reserves, rates)}
-            layout="popup"
-            className="items-end font-semibold"
-          />
+          <ConvertedAmounts totals={totals} twdCents={twdCents} layout="popup" className="items-end font-semibold" />
         </CardFooter>
       }
     >
-      <ul aria-label="本月預扣" className="flex flex-col divide-y divide-leaf-500/15">
+      <ul aria-label="本月預扣" className="divided-list">
         {reserves.map((reserve) => (
           <MonthReserveItem key={reserve.key} reserve={reserve} rates={rates} />
         ))}

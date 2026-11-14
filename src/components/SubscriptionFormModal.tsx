@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useAsyncAction } from "@/hooks/useAsyncAction";
+import { useValidatedSubmit } from "@/hooks/useValidatedSubmit";
 import { todayKey } from "@/lib/dateKey";
-import { toFieldErrors, type FieldErrors } from "@/lib/fieldErrors";
 import {
   draftFromDto,
   draftToInput,
@@ -46,8 +45,7 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
     props;
   const [initialDraft] = useState<SubscriptionDraft>(() => (initial ? draftFromDto(initial) : emptyDraft(todayKey())));
   const [draft, setDraft] = useState(initialDraft);
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const submission = useAsyncAction(async (input: SubscriptionInput) => {
+  const submission = useValidatedSubmit(subscriptionInputSchema, async (input: SubscriptionInput) => {
     await onSubmit(input);
     onClose();
   });
@@ -56,19 +54,11 @@ export function SubscriptionFormModal(props: SubscriptionFormModalProps) {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const input = draftToInput(draft);
-    const parsed = subscriptionInputSchema.safeParse(input);
-    if (!parsed.success) {
-      setErrors(toFieldErrors(parsed.error.issues));
-      return;
-    }
-    setErrors({});
-    await submission.run(input);
+    await submission.submit(draftToInput(draft));
   };
 
-  const serverErrors = toFieldErrors(submission.apiError?.details ?? []);
-  const fieldErrors: FieldErrors = { ...serverErrors, ...errors };
-  const showFormError = submission.error && Object.keys(serverErrors).length === 0;
+  const { fieldErrors } = submission;
+  const showFormError = submission.error && Object.keys(submission.serverErrors).length === 0;
 
   return (
     <GuardedModal

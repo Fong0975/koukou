@@ -1,7 +1,7 @@
 "use client";
 
 import { useToday } from "@/hooks/useToday";
-import { daysUntil } from "@/lib/contractExpiries";
+import { daysUntil } from "@/lib/dateKey";
 import { formatContractRemaining, formatFullDate } from "@/lib/format/date";
 
 /**

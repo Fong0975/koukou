@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { toCalendarDate } from "@/lib/calendarMonth";
-import { dateKeyToYearMonth, toDateKey } from "@/lib/dateKey";
+import { dateKeyToYearMonth, localDateKey } from "@/lib/dateKey";
 import { formatTimestamp } from "@/lib/format/date";
 import { createLogger } from "@/lib/logger";
 import { buildMonthlySummary, collectDailyReminders, isFirstOfMonth } from "@/lib/notification/dueReminders";
@@ -52,7 +51,7 @@ export async function runDailyReminder(now: Date = new Date()): Promise<Reminder
   if (!setting.enabled) return "disabled";
   if (!isSendTimeReached(now, setting.sendTime)) return "not-due";
 
-  const today = toDateKey(toCalendarDate(now));
+  const today = localDateKey(now);
   const summaryDue = setting.monthlySummaryEnabled && isFirstOfMonth(today);
   const [summaryPrevious, dailyPrevious] = await Promise.all([
     summaryDue ? findDispatch(today, "SUMMARY") : null,

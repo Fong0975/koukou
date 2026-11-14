@@ -6,9 +6,8 @@ import { createLogger } from "@/lib/logger";
 import type { BackupData } from "@/lib/validation/backupSchema";
 import type { BackupCountsDto, BackupDto } from "@/types/dto";
 import { backupSubscriptionSelect, toBackupSubscriptionDto, toImportRows } from "./backupMapper";
-import { categorySelect } from "./categoryService";
+import { categorySelect, paymentMethodSelect } from "./lookupSelects";
 import { notificationSettingUpsert, readNotificationSetting } from "./notificationSettingService";
-import { paymentMethodSelect } from "./paymentMethodService";
 import { rethrowPrismaError } from "./prismaErrors";
 
 const logger = createLogger("backupService");

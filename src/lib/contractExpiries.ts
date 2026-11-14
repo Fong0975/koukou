@@ -1,6 +1,6 @@
 import type { SubscriptionDto } from "@/types/dto";
-import type { CalendarDate, YearMonth } from "./calendarMonth";
-import { dateKeyToUtcDate, toDateKey } from "./dateKey";
+import type { YearMonth } from "./calendarMonth";
+import { toDateKey } from "./dateKey";
 import { isPausedOn } from "./pauses";
 
 /** A subscription whose contract ends on a specific day of a month. */
@@ -10,8 +10,6 @@ export interface ContractExpiry {
   date: string;
   subscription: SubscriptionDto;
 }
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Lists the subscriptions whose contract ends in a month.
@@ -30,17 +28,4 @@ export function monthContractExpiries(items: SubscriptionDto[], target: YearMont
       return [{ day: Number(date.slice(8)), date, subscription }];
     })
     .sort((a, b) => a.day - b.day || a.subscription.name.localeCompare(b.subscription.name));
-}
-
-/**
- * Counts the whole days from today to a date. Both are read as UTC midnights, so daylight saving shifts
- * never add or drop a day.
- *
- * @param today - Today's date.
- * @param dateKey - The target day as "YYYY-MM-DD".
- * @returns 0 for today, positive for later days, negative for days already past.
- */
-export function daysUntil(today: CalendarDate, dateKey: string): number {
-  const diff = dateKeyToUtcDate(dateKey).getTime() - dateKeyToUtcDate(toDateKey(today)).getTime();
-  return Math.round(diff / MS_PER_DAY);
 }

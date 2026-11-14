@@ -2,7 +2,14 @@ import { toCalendarDate, type CalendarDate, type YearMonth } from "./calendarMon
 
 const DATE_KEY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-const pad2 = (value: number) => String(value).padStart(2, "0");
+/**
+ * Zero-pads a number to two digits, e.g. 5 → "05".
+ *
+ * @param value - A non-negative number below 100.
+ */
+export const pad2 = (value: number): string => String(value).padStart(2, "0");
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Checks that a string is a real calendar date written as "YYYY-MM-DD".
@@ -28,9 +35,27 @@ export function toDateKey({ year, month, day }: CalendarDate): string {
   return `${String(year).padStart(4, "0")}-${pad2(month)}-${pad2(day)}`;
 }
 
+/**
+ * The date key of a moment in the local time zone.
+ *
+ * @param date - The moment.
+ */
+export function localDateKey(date: Date): string {
+  return toDateKey(toCalendarDate(date));
+}
+
+/**
+ * The time of a moment in the local time zone as "HH:mm" on a 24-hour clock.
+ *
+ * @param date - The moment.
+ */
+export function localClockTime(date: Date): string {
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
 /** Today's date key in the local time zone. */
 export function todayKey(): string {
-  return toDateKey(toCalendarDate(new Date()));
+  return localDateKey(new Date());
 }
 
 /**
@@ -70,4 +95,17 @@ export function dateKeyToUtcDate(key: string): Date {
  */
 export function utcDateToDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Counts the whole days from today to a date. Both are read as UTC midnights, so daylight saving shifts
+ * never add or drop a day.
+ *
+ * @param today - Today's date.
+ * @param dateKey - The target day as "YYYY-MM-DD".
+ * @returns 0 for today, positive for later days, negative for days already past.
+ */
+export function daysUntil(today: CalendarDate, dateKey: string): number {
+  const diff = dateKeyToUtcDate(dateKey).getTime() - dateKeyToUtcDate(toDateKey(today)).getTime();
+  return Math.round(diff / MS_PER_DAY);
 }

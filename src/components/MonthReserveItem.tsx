@@ -1,8 +1,8 @@
 import type { Reserve } from "@/lib/amortization";
 import { reserveTwdCents } from "@/lib/currencyConversion";
-import { formatApproxTwd } from "@/lib/format/money";
 import { formatReserve, formatReserveDetail } from "@/lib/format/subscription";
 import type { ExchangeRateDto } from "@/types/dto";
+import { ApproxTwdLine } from "./ApproxTwdLine";
 import { MoneyListItem } from "./MoneyListItem";
 import { ResponsiveSegments } from "./ResponsiveSegments";
 
@@ -30,9 +30,11 @@ export function MonthReserveItem({ reserve, rates }: MonthReserveItemProps) {
       subtitle={<ResponsiveSegments {...formatReserveDetail(chargeDate.year, installment, average)} />}
     >
       <p className="font-semibold">{amount}</p>
-      {rates && subscription.currency !== "TWD" && (
-        <p className="text-xs text-ink-soft">{formatApproxTwd(reserveTwdCents(reserve, rates))}</p>
-      )}
+      <ApproxTwdLine
+        currency={subscription.currency}
+        rates={rates}
+        toTwdCents={(loaded) => reserveTwdCents(reserve, loaded)}
+      />
     </MoneyListItem>
   );
 }

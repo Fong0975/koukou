@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { useReportUnsavedChanges } from "@/hooks/useUnsavedChanges";
-import { toFieldErrors, type FieldErrors } from "@/lib/fieldErrors";
+import { useValidatedSubmit } from "@/hooks/useValidatedSubmit";
 import {
   notificationSettingInputSchema,
   type NotificationSettingInput,
@@ -39,8 +38,7 @@ export function NotificationSettingsForm({ setting, onSave, onSendTest, onClose 
       values.monthlySummaryEnabled !== setting.monthlySummaryEnabled ||
       values.sendTime !== setting.sendTime,
   );
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const saving = useAsyncAction(async (input: NotificationSettingInput) => {
+  const saving = useValidatedSubmit(notificationSettingInputSchema, async (input: NotificationSettingInput) => {
     await onSave(input);
     onClose();
   });
@@ -50,16 +48,10 @@ export function NotificationSettingsForm({ setting, onSave, onSendTest, onClose 
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const parsed = notificationSettingInputSchema.safeParse(values);
-    if (!parsed.success) {
-      setErrors(toFieldErrors(parsed.error.issues));
-      return;
-    }
-    setErrors({});
-    await saving.run(values);
+    await saving.submit(values);
   };
 
-  const sendTimeError = errors.sendTime ?? toFieldErrors(saving.apiError?.details ?? []).sendTime;
+  const sendTimeError = saving.fieldErrors.sendTime;
   const formError = saving.error && !sendTimeError ? saving.error : null;
   // The main switch gates every reminder, so its options are locked while it is off or LINE is not set up.
   const optionsLocked = !setting.lineConfigured || !values.enabled;
@@ -103,7 +95,7 @@ export function NotificationSettingsForm({ setting, onSave, onSendTest, onClose 
         {sendTimeError ? (
           <p className="field-error">{sendTimeError}</p>
         ) : (
-          <p className="mt-1.5 text-sm text-ink-soft">時區：{setting.timeZone}</p>
+          <p className="field-hint">時區：{setting.timeZone}</p>
         )}
       </div>
 

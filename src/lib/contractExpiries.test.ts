@@ -2,8 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { makeSubscription } from "@/test/fixtures";
 import type { SubscriptionDto } from "@/types/dto";
-import type { CalendarDate, YearMonth } from "./calendarMonth";
-import { daysUntil, monthContractExpiries } from "./contractExpiries";
+import type { YearMonth } from "./calendarMonth";
+import { monthContractExpiries } from "./contractExpiries";
 
 describe("monthContractExpiries", () => {
   const phone = makeSubscription({ id: 1, name: "Phone", contractEndDate: "2026-10-31" });
@@ -60,24 +60,6 @@ describe("monthContractExpiries", () => {
       const result = monthContractExpiries(tt.items, tt.target);
 
       expect(result.map((expiry) => [expiry.subscription.name, expiry.day, expiry.date])).toEqual(tt.expected);
-    });
-  }
-});
-
-describe("daysUntil", () => {
-  const today: CalendarDate = { year: 2026, month: 10, day: 18 };
-  const tests = [
-    { name: "today", date: "2026-10-18", expected: 0 },
-    { name: "tomorrow", date: "2026-10-19", expected: 1 },
-    { name: "across a month end", date: "2026-11-02", expected: 15 },
-    { name: "across a year end", date: "2027-01-01", expected: 75 },
-    { name: "yesterday", date: "2026-10-17", expected: -1 },
-    { name: "earlier in the month", date: "2026-10-01", expected: -17 },
-  ];
-
-  for (const tt of tests) {
-    it(tt.name, () => {
-      expect(daysUntil(today, tt.date)).toBe(tt.expected);
     });
   }
 });

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { formatContext, formatLine, formatTimestamp, type LogContext, type LogRecord } from "./format";
+import { formatContext, formatLine, formatLogTimestamp, type LogContext, type LogRecord } from "./format";
 
 // Built from local fields so the rendered wall-clock time does not depend on the machine's time zone.
 const time = new Date(2026, 7, 29, 12, 54, 38, 286);
@@ -9,7 +9,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("formatTimestamp", () => {
+describe("formatLogTimestamp", () => {
   const tests = [
     { name: "positive offset", date: time, offsetMinutes: -480, expected: "2026-08-29T12:54:38.286+08:00" },
     { name: "negative offset with minutes", date: time, offsetMinutes: 210, expected: "2026-08-29T12:54:38.286-03:30" },
@@ -25,7 +25,7 @@ describe("formatTimestamp", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       vi.spyOn(Date.prototype, "getTimezoneOffset").mockReturnValue(tt.offsetMinutes);
-      expect(formatTimestamp(tt.date)).toBe(tt.expected);
+      expect(formatLogTimestamp(tt.date)).toBe(tt.expected);
     });
   }
 });

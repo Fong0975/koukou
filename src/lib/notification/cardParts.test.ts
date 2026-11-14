@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import type { FlexNode } from "./lineMessage";
-import { cardHeader, COIN_HEADER, expiryRow, pill, pillRow, rowBackground, sectionCard } from "./cardParts";
+import { cardHeader, COIN_HEADER, flexCard, moreRows, pill, rowBackground, sectionCard, stripedRow } from "./cardParts";
 
 describe("pill", () => {
   const tests = [
@@ -39,32 +39,6 @@ describe("sectionCard", () => {
   }
 });
 
-describe("pillRow", () => {
-  const tests = [{ name: "holds the pill on a line of its own" }];
-
-  for (const tt of tests) {
-    it(tt.name, () => {
-      const node = pill("NT$ 1", "#111111", "#222222");
-      expect(pillRow(node)).toEqual({ type: "box", layout: "horizontal", contents: [node] });
-    });
-  }
-});
-
-describe("expiryRow", () => {
-  const tests = [
-    { name: "uses the darker background on even rows", index: 0, background: "#E6EEE1" },
-    { name: "uses the lighter background on odd rows", index: 1, background: "#F1F6ED" },
-  ];
-
-  for (const tt of tests) {
-    it(tt.name, () => {
-      const row = expiryRow("11/8 (日)", "中華電信", tt.index);
-      expect(row.backgroundColor).toBe(tt.background);
-      expect((row.contents as FlexNode[]).map((node) => node.text)).toEqual(["11/8 (日)", "｜", "中華電信"]);
-    });
-  }
-});
-
 describe("rowBackground", () => {
   const rows = ["#111111", "#222222"] as const;
   const tests = [
@@ -94,6 +68,68 @@ describe("cardHeader", () => {
         { text: "今日提醒", color: COIN_HEADER.titleColor },
         { text: "扣款 1 筆", color: COIN_HEADER.subtitleColor },
       ]);
+    });
+  }
+});
+
+describe("moreRows", () => {
+  const tests = [
+    { name: "adds nothing under a whole list", hidden: 0, expected: [] },
+    { name: "says how many items were left out", hidden: 3, expected: ["…另 3 項"] },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(moreRows(tt.hidden).map((node) => node.text)).toEqual(tt.expected);
+    });
+  }
+});
+
+describe("stripedRow", () => {
+  const rows = ["#111111", "#222222"] as const;
+  const cell: FlexNode = { type: "text", text: "cell" };
+  const tests = [
+    { name: "uses the first shade on even rows", index: 0, extra: {}, expected: { backgroundColor: "#111111" } },
+    {
+      name: "keeps extra box properties",
+      index: 1,
+      extra: { alignItems: "center" },
+      expected: { backgroundColor: "#222222", alignItems: "center" },
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(stripedRow(rows, tt.index, [cell], tt.extra)).toMatchObject({
+        type: "box",
+        layout: "horizontal",
+        paddingAll: "10px",
+        contents: [cell],
+        ...tt.expected,
+      });
+    });
+  }
+});
+
+describe("flexCard", () => {
+  const header: FlexNode = { type: "box", layout: "vertical", contents: [] };
+  const section: FlexNode = { type: "text", text: "section" };
+  const hero: FlexNode = { type: "image", url: "https://example.com/a.jpg" };
+  const tests: { name: string; hero?: FlexNode; sections: (FlexNode | false)[]; expectedSections: FlexNode[] }[] = [
+    { name: "leaves out sections marked false", sections: [false, section], expectedSections: [section] },
+    { name: "adds the picture under the header", hero, sections: [section], expectedSections: [section] },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const card = flexCard({ altText: "alt", header, hero: tt.hero, background: "#FFFFFF", sections: tt.sections });
+      const bubble = card.contents as FlexNode & { body: FlexNode };
+
+      expect(card.altText).toBe("alt");
+      expect(bubble.header).toBe(header);
+      expect(bubble.hero).toBe(tt.hero);
+      expect(bubble.styles).toEqual({ body: { backgroundColor: "#FFFFFF" } });
+      expect(bubble.body.contents).toEqual(tt.expectedSections);
     });
   }
 });

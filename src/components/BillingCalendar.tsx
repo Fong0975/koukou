@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import { buildMonthGrid, groupByDay, type CalendarDate, type YearMonth } from "@/lib/calendarMonth";
 import type { ContractExpiry } from "@/lib/contractExpiries";
@@ -31,8 +32,9 @@ function popupAlign(column: number): PopupAlign {
  * @param props.expiries - The month's contract expiries.
  */
 export function BillingCalendar({ month, today, occurrences, expiries }: BillingCalendarProps) {
-  const byDay = groupByDay(occurrences);
-  const expiriesOnDay = groupByDay(expiries);
+  const byDay = useMemo(() => groupByDay(occurrences), [occurrences]);
+  const expiriesOnDay = useMemo(() => groupByDay(expiries), [expiries]);
+  const weeks = useMemo(() => buildMonthGrid(month), [month]);
   const todayDay = today.year === month.year && today.month === month.month ? today.day : null;
 
   return (
@@ -50,7 +52,7 @@ export function BillingCalendar({ month, today, occurrences, expiries }: Billing
         </tr>
       </thead>
       <tbody>
-        {buildMonthGrid(month).map((week, row) => (
+        {weeks.map((week, row) => (
           <tr key={row}>
             {week.map((day, column) =>
               day === null ? (

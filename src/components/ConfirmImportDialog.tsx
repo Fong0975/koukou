@@ -1,9 +1,8 @@
 "use client";
 
-import { useAsyncAction } from "@/hooks/useAsyncAction";
 import type { PendingImport } from "@/hooks/useBackup";
 import { formatTimestamp } from "@/lib/format/date";
-import { Modal } from "./Modal";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ConfirmImportDialogProps {
   pending: PendingImport;
@@ -21,10 +20,6 @@ interface ConfirmImportDialogProps {
  */
 export function ConfirmImportDialog({ pending, onConfirm, onClose }: ConfirmImportDialogProps) {
   const { fileName, preview } = pending;
-  const action = useAsyncAction(async () => {
-    await onConfirm();
-    onClose();
-  });
 
   // Rows without a value, e.g. a file missing its export time, are left out.
   const rows = [
@@ -37,7 +32,16 @@ export function ConfirmImportDialog({ pending, onConfirm, onClose }: ConfirmImpo
   ].filter((row) => row.value);
 
   return (
-    <Modal title="匯入備份？" onClose={onClose} widthClass="max-w-sm">
+    <ConfirmDialog
+      title="匯入備份？"
+      confirmLabel="匯入"
+      pendingLabel="匯入中…"
+      onConfirm={async () => {
+        await onConfirm();
+        onClose();
+      }}
+      onClose={onClose}
+    >
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
         {rows.map(({ label, value }) => (
           <div key={label} className="contents">
@@ -47,19 +51,6 @@ export function ConfirmImportDialog({ pending, onConfirm, onClose }: ConfirmImpo
         ))}
       </dl>
       <p className="mt-4 text-ink-soft">匯入後，目前所有的類型、扣款方式和扣款項目都會被備份檔的內容取代，無法復原。</p>
-      {action.error && (
-        <p role="alert" className="field-error">
-          {action.error}
-        </p>
-      )}
-      <div className="mt-6 flex justify-end gap-2">
-        <button type="button" className="btn btn-ghost" onClick={onClose}>
-          取消
-        </button>
-        <button type="button" className="btn btn-danger" onClick={() => void action.run()} disabled={action.pending}>
-          {action.pending ? "匯入中…" : "匯入"}
-        </button>
-      </div>
-    </Modal>
+    </ConfirmDialog>
   );
 }

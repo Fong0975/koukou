@@ -29,7 +29,7 @@ const pad = (value: number, width = 2) => String(value).padStart(width, "0");
  *
  * @param date - The moment to format.
  */
-export function formatTimestamp(date: Date): string {
+export function formatLogTimestamp(date: Date): string {
   const offsetMinutes = -date.getTimezoneOffset();
   const sign = offsetMinutes >= 0 ? "+" : "-";
   const absOffset = Math.abs(offsetMinutes);
@@ -67,7 +67,7 @@ export function formatContext(context?: LogContext): string {
  */
 export function formatLine({ time, level, source, message, context, error }: LogRecord): string {
   const text = [message, formatContext(context)].filter(Boolean).join(" ");
-  const line = [formatTimestamp(time), level.padEnd(LEVEL_WIDTH), source, text].join(" | ");
+  const line = [formatLogTimestamp(time), level.padEnd(LEVEL_WIDTH), source, text].join(" | ");
   if (error === undefined) return line;
   const details = inspect(error).replace(/^/gm, "    ");
   return `${line}\n${details}`;

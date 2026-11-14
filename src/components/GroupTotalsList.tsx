@@ -1,6 +1,7 @@
 import type { GroupTotal } from "@/lib/billingSummary";
 import type { ExchangeRateDto } from "@/types/dto";
 import { GroupTotalItems } from "./GroupTotalItems";
+import { TotalsSection } from "./TotalsSection";
 
 interface GroupTotalsListProps {
   title: string;
@@ -18,9 +19,8 @@ interface GroupTotalsListProps {
  */
 export function GroupTotalsList({ title, groups, rates }: GroupTotalsListProps) {
   return (
-    <div>
-      <h3 className="mb-2 text-sm text-ink-soft">{title}</h3>
+    <TotalsSection title={title}>
       <GroupTotalItems label={title} groups={groups} rates={rates} />
-    </div>
+    </TotalsSection>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useBackup } from "@/hooks/useBackup";
 import { useHomeDialogs } from "@/hooks/useHomeDialogs";
 import { useLookupManagement } from "@/hooks/useLookupManagement";
@@ -35,10 +35,11 @@ export function HomeView() {
   const { editing } = dialogs;
   const [toolbarSlot, setToolbarSlot] = useState<HTMLElement | null>(null);
 
-  const retry = () => void subscriptions.reload();
+  const { reload: reloadSubscriptions, update, create } = subscriptions;
+  // Stable so the memoized calendar does not re-render whenever a dialog opens or closes.
+  const retry = useCallback(() => void reloadSubscriptions(), [reloadSubscriptions]);
 
-  const handleSubmit = (input: SubscriptionInput) =>
-    editing ? subscriptions.update(editing.id, input) : subscriptions.create(input);
+  const handleSubmit = (input: SubscriptionInput) => (editing ? update(editing.id, input) : create(input));
 
   const management = useLookupManagement(subscriptions.items, subscriptions.reload, lookups);
 

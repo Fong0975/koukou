@@ -2,11 +2,12 @@
 
 import { useMemo } from "react";
 import { monthReserves } from "@/lib/amortization";
-import { monthOccurrences, yearOccurrences } from "@/lib/billingOccurrences";
-import { sumByCurrency } from "@/lib/money";
+import { yearOccurrences } from "@/lib/billingOccurrences";
 import type { YearMonth } from "@/lib/calendarMonth";
 import { monthContractExpiries } from "@/lib/contractExpiries";
 import { convertedTwdCents, needsExchangeRate } from "@/lib/currencyConversion";
+import { dateKeyToYearMonth } from "@/lib/dateKey";
+import { sumByCurrency } from "@/lib/money";
 import type { SubscriptionDto } from "@/types/dto";
 import { useYearRates } from "./useYearRates";
 
@@ -21,11 +22,16 @@ import { useYearRates } from "./useYearRates";
  *   or when not needed).
  */
 export function useMonthData(items: SubscriptionDto[], cursor: YearMonth | null) {
-  const occurrences = useMemo(() => (cursor ? monthOccurrences(items, cursor) : []), [items, cursor]);
-  const reserves = useMemo(() => (cursor ? monthReserves(items, cursor) : []), [items, cursor]);
-  const expiries = useMemo(() => (cursor ? monthContractExpiries(items, cursor) : []), [items, cursor]);
   const year = cursor?.year;
   const yearCharges = useMemo(() => (year === undefined ? [] : yearOccurrences(items, year)), [items, year]);
+  // The year's charges are already worked out for its totals, so the month's are picked from them.
+  const occurrences = useMemo(
+    () =>
+      cursor ? yearCharges.filter((occurrence) => dateKeyToYearMonth(occurrence.date).month === cursor.month) : [],
+    [yearCharges, cursor],
+  );
+  const reserves = useMemo(() => (cursor ? monthReserves(items, cursor) : []), [items, cursor]);
+  const expiries = useMemo(() => (cursor ? monthContractExpiries(items, cursor) : []), [items, cursor]);
   const yearTotal = useMemo(() => sumByCurrency(yearCharges), [yearCharges]);
   const needsRates = useMemo(
     () => needsExchangeRate(yearCharges) || needsExchangeRate(reserves),

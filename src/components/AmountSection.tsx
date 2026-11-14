@@ -61,7 +61,7 @@ export function AmountSection({ currency, amount, amountPeriods, startDate, onCh
       </div>
       {errors.amount && <p className="field-error">{errors.amount}</p>}
       {amountPeriods.length > 0 && (
-        <p className="mt-1.5 text-sm text-ink-soft">
+        <p className="field-hint">
           目前金額自 <span className="font-num">{currentStart}</span> 起適用
         </p>
       )}

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, ValidationError } from "@/lib/errors";
 import { backupSchema } from "@/lib/validation/backupSchema";
 import { makeBackup } from "@/test/backup";
+import { decimal } from "@/test/decimal";
 import { loggerMock } from "@/test/logger";
 import { prismaError } from "@/test/prismaError";
 
@@ -35,8 +36,6 @@ vi.mock("@/lib/appVersion", () => ({ APP_VERSION_LABEL: "v1.0.12" }));
 import { exportBackup, importBackup } from "./backupService";
 
 type ErrorCtor = new (...args: never[]) => Error;
-
-const decimal = (value: number) => ({ toFixed: (digits: number) => value.toFixed(digits) });
 
 beforeEach(() => {
   vi.clearAllMocks();

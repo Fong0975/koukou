@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { Occurrence } from "@/lib/billingOccurrences";
 import { totalsByCategory, totalsByPaymentType } from "@/lib/billingSummary";
 import { sumByCurrency, type CurrencyTotals } from "@/lib/money";
@@ -32,7 +33,16 @@ interface MonthSummaryProps {
  * @param props.rates - That year's exchange rates.
  */
 export function MonthSummary({ occurrences, year, yearTotal, yearTwdCents, rates }: MonthSummaryProps) {
-  const subscriptionCount = new Set(occurrences.map((o) => o.subscription.id)).size;
+  const summary = useMemo(
+    () => ({
+      subscriptionCount: new Set(occurrences.map((o) => o.subscription.id)).size,
+      totals: sumByCurrency(occurrences),
+      byCategory: totalsByCategory(occurrences),
+      byPaymentType: totalsByPaymentType(occurrences),
+    }),
+    [occurrences],
+  );
+  const twdCents = useMemo(() => convertedTwdCents(occurrences, rates), [occurrences, rates]);
 
   return (
     <CollapsibleCard
@@ -41,8 +51,8 @@ export function MonthSummary({ occurrences, year, yearTotal, yearTwdCents, rates
         <div className="mt-3">
           <p className="text-sm text-ink-soft">本月總計</p>
           <ConvertedAmounts
-            totals={sumByCurrency(occurrences)}
-            twdCents={convertedTwdCents(occurrences, rates)}
+            totals={summary.totals}
+            twdCents={twdCents}
             layout="popup"
             popupAlign="start"
             className="items-start text-3xl font-semibold"
@@ -51,7 +61,7 @@ export function MonthSummary({ occurrences, year, yearTotal, yearTwdCents, rates
       }
       toggle={
         <span className="text-sm text-ink-soft">
-          共 {occurrences.length} 次扣款，來自 {subscriptionCount} 個項目
+          共 {occurrences.length} 次扣款，來自 {summary.subscriptionCount} 個項目
         </span>
       }
       footer={
@@ -68,8 +78,8 @@ export function MonthSummary({ occurrences, year, yearTotal, yearTwdCents, rates
     >
       {occurrences.length > 0 && (
         <div className="flex flex-col gap-5">
-          <GroupTotalsList title="依類別" groups={totalsByCategory(occurrences)} rates={rates} />
-          <PaymentTypeTotalsList title="依付款方式" sections={totalsByPaymentType(occurrences)} rates={rates} />
+          <GroupTotalsList title="依類別" groups={summary.byCategory} rates={rates} />
+          <PaymentTypeTotalsList title="依付款方式" sections={summary.byPaymentType} rates={rates} />
         </div>
       )}
     </CollapsibleCard>

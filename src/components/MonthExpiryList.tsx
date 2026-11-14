@@ -27,7 +27,7 @@ export function MonthExpiryList({ expiries }: { expiries: ContractExpiry[] }) {
         </CardFooter>
       }
     >
-      <ul aria-label="到期項目" className="flex flex-col divide-y divide-leaf-500/15">
+      <ul aria-label="到期項目" className="divided-list">
         {expiries.map(({ date, subscription }) => (
           <li key={subscription.id} className="py-3">
             <p className="break-words">{subscription.name}</p>

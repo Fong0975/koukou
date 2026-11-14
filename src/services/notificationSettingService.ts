@@ -1,6 +1,5 @@
-import { toCalendarDate } from "@/lib/calendarMonth";
 import { DEFAULT_SEND_TIME } from "@/lib/constants/reminders";
-import { toDateKey } from "@/lib/dateKey";
+import { localDateKey } from "@/lib/dateKey";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import { isSendTimeReached } from "@/lib/notification/sendTime";
@@ -85,7 +84,7 @@ export async function updateNotificationSetting(
   logger.info("Notification settings updated", { ...setting });
 
   if (!previous.enabled && setting.enabled && isSendTimeReached(now, setting.sendTime)) {
-    const today = toDateKey(toCalendarDate(now));
+    const today = localDateKey(now);
     await skipDayIfUntried(today);
     logger.info("Notifications switched on after today's send time; first message tomorrow", { date: today });
   }

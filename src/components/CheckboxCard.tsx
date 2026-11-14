@@ -10,26 +10,29 @@ interface CheckboxCardProps {
   onChange: (checked: boolean) => void;
   /** Locks the checkbox; the box is greyed out by `.option-box:has(:disabled)`. */
   disabled?: boolean;
+  /** Draws the bordered box; without it the checkbox and its text sit inline in the form. */
+  bordered?: boolean;
 }
 
 /**
- * Checkbox in a bordered box, with its label and an explanation beneath it.
+ * Checkbox with its label and an explanation beneath it, in a bordered box unless `bordered` is false.
  *
  * @param props.label - The checkbox's accessible name.
  * @param props.hint - What turning it on does.
  * @param props.checked - Whether it is on.
  * @param props.onChange - Called with the new state.
  * @param props.disabled - Whether it can be changed.
+ * @param props.bordered - Whether to draw the box.
  */
-export function CheckboxCard({ label, hint, checked, onChange, disabled = false }: CheckboxCardProps) {
+export function CheckboxCard({ label, hint, checked, onChange, disabled = false, bordered = true }: CheckboxCardProps) {
   const labelId = useId();
   const hintId = useId();
 
   return (
-    <label className="option-box flex items-start gap-3">
+    <label className={`flex items-start gap-3 ${bordered ? "option-box" : "cursor-pointer"}`}>
       <input
         type="checkbox"
-        className="mt-1 size-4 accent-leaf-600"
+        className="checkbox mt-1"
         checked={checked}
         disabled={disabled}
         aria-labelledby={labelId}

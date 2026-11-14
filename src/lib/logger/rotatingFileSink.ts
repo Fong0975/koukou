@@ -1,6 +1,6 @@
 import nodeFs from "node:fs";
 import path from "node:path";
-import { formatTimestamp } from "./format";
+import { formatLogTimestamp } from "./format";
 
 /** Destination for rendered log lines. */
 export interface LogSink {
@@ -30,7 +30,7 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&
 
 /** Turns a date into the compact local stamp used in archive names, e.g. `20260829T125438`. */
 function archiveStamp(date: Date): string {
-  return formatTimestamp(date).slice(0, 19).replace(/[-:]/g, "");
+  return formatLogTimestamp(date).slice(0, 19).replace(/[-:]/g, "");
 }
 
 /** Sorts archives oldest first by stamp, then by the `-n` collision suffix. */

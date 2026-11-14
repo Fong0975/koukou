@@ -2,13 +2,11 @@ import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import type { PaymentMethodData } from "@/lib/validation/paymentMethodSchema";
 import type { PaymentMethodDto } from "@/types/dto";
+import { paymentMethodSelect } from "./lookupSelects";
 import { createInOrder, saveDisplayOrder, type SetSortOrder } from "./lookupTable";
 import { rethrowPrismaError } from "./prismaErrors";
 
 const logger = createLogger("paymentMethodService");
-
-/** Columns of a payment method returned by the API and written to backups. */
-export const paymentMethodSelect = { id: true, type: true, name: true, note: true, sortOrder: true } as const;
 
 const setSortOrder: SetSortOrder = (tx, id, sortOrder) =>
   tx.paymentMethod.update({ where: { id }, data: { sortOrder } });

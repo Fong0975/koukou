@@ -1,10 +1,17 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { capList, moreText } from "./messageLayout";
+import { capList, MAX_LISTED, moreText } from "./messageLayout";
 
 describe("capList", () => {
-  const tests = [
+  const longList = Array.from({ length: MAX_LISTED + 2 }, (_, index) => index);
+  const tests: { name: string; items: number[]; cap?: number; shown: number[]; hidden: number }[] = [
     { name: "keeps a short list whole", items: [1, 2], cap: 5, shown: [1, 2], hidden: 0 },
+    {
+      name: "cuts at MAX_LISTED by default",
+      items: longList,
+      shown: longList.slice(0, MAX_LISTED),
+      hidden: 2,
+    },
     { name: "cuts a long list", items: [1, 2, 3, 4], cap: 2, shown: [1, 2], hidden: 2 },
     { name: "keeps nothing at cap 0", items: [1, 2], cap: 0, shown: [], hidden: 2 },
   ];

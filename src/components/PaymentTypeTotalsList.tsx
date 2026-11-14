@@ -1,6 +1,7 @@
 import type { PaymentTypeTotals } from "@/lib/billingSummary";
 import type { ExchangeRateDto } from "@/types/dto";
 import { GroupTotalItems } from "./GroupTotalItems";
+import { TotalsSection } from "./TotalsSection";
 
 interface PaymentTypeTotalsListProps {
   title: string;
@@ -18,8 +19,7 @@ interface PaymentTypeTotalsListProps {
  */
 export function PaymentTypeTotalsList({ title, sections, rates }: PaymentTypeTotalsListProps) {
   return (
-    <div>
-      <h3 className="mb-2 text-sm text-ink-soft">{title}</h3>
+    <TotalsSection title={title}>
       <div className="flex flex-col gap-3">
         {sections.map((section) => (
           <div key={section.type}>
@@ -28,6 +28,6 @@ export function PaymentTypeTotalsList({ title, sections, rates }: PaymentTypeTot
           </div>
         ))}
       </div>
-    </div>
+    </TotalsSection>
   );
 }

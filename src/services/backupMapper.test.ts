@@ -2,9 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { backupSchema } from "@/lib/validation/backupSchema";
 import { makeBackup } from "@/test/backup";
+import { decimal } from "@/test/decimal";
 import { toBackupSubscriptionDto, toImportRows, type BackupSubscriptionRecord } from "./backupMapper";
-
-const decimal = (value: number) => ({ toFixed: (digits: number) => value.toFixed(digits) });
 
 const record: BackupSubscriptionRecord = {
   id: 1,

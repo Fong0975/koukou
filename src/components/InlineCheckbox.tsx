@@ -18,7 +18,7 @@ export function InlineCheckbox({ label, checked, onChange }: InlineCheckboxProps
     <label className="inline-flex items-center gap-2 text-sm">
       <input
         type="checkbox"
-        className="size-4 accent-leaf-600"
+        className="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
       />

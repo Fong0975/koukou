@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import type { SubscriptionCharges } from "@/lib/billingSummary";
 import { sumTwdCents } from "@/lib/currencyConversion";
-import { formatApproxTwd, formatCents } from "@/lib/format/money";
+import { formatCents } from "@/lib/format/money";
 import type { ExchangeRateDto } from "@/types/dto";
+import { ApproxTwdLine } from "./ApproxTwdLine";
 import { MoneyListItem } from "./MoneyListItem";
 
 interface MonthChargeItemProps {
@@ -27,9 +28,11 @@ export function MonthChargeItem({ charge, subtitle, rates }: MonthChargeItemProp
   return (
     <MoneyListItem title={subscription.name} subtitle={subtitle}>
       <p className="font-semibold">{formatCents(subscription.currency, totalCents)}</p>
-      {rates && subscription.currency !== "TWD" && (
-        <p className="text-xs text-ink-soft">{formatApproxTwd(sumTwdCents(occurrences, rates))}</p>
-      )}
+      <ApproxTwdLine
+        currency={subscription.currency}
+        rates={rates}
+        toTwdCents={(loaded) => sumTwdCents(occurrences, loaded)}
+      />
       {count > 1 && (
         <p className="text-xs text-ink-soft">
           {unitCents === null ? `共 ${count} 次` : `${formatCents(subscription.currency, unitCents)} × ${count}`}

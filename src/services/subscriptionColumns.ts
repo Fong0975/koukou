@@ -1,8 +1,6 @@
 import { dateKeyToUtcDate } from "@/lib/dateKey";
 import type { SubscriptionData } from "@/lib/validation/subscriptionSchema";
-
-/** Formats a validated amount for a DECIMAL(12, 2) column. */
-export const toDecimalColumn = (amount: number) => amount.toFixed(2);
+import { toAmountString } from "./subscriptionMapper";
 
 /**
  * Maps validated input to the scalar columns of a subscription.
@@ -15,7 +13,7 @@ export function toSubscriptionColumns(data: SubscriptionData) {
     categoryId: data.categoryId,
     paymentMethodId: data.paymentMethodId,
     currency: data.currency,
-    amount: toDecimalColumn(data.amount),
+    amount: toAmountString(data.amount),
     amortize: data.amortize,
     startDate: dateKeyToUtcDate(data.startDate),
     contractEndDate: data.contractEndDate === null ? null : dateKeyToUtcDate(data.contractEndDate),
@@ -30,7 +28,7 @@ export function toSubscriptionColumns(data: SubscriptionData) {
  */
 export function toAmountPeriodRows(data: Pick<SubscriptionData, "amountPeriods">) {
   return data.amountPeriods.map((period) => ({
-    amount: toDecimalColumn(period.amount),
+    amount: toAmountString(period.amount),
     endDate: dateKeyToUtcDate(period.endDate),
   }));
 }

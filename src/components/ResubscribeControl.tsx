@@ -28,7 +28,7 @@ export function ResubscribeControl({ endDate, onResubscribe }: ResubscribeContro
   };
 
   return (
-    <div className="mt-2 rounded-2xl border border-dashed border-leaf-500/35 bg-leaf-50/70 p-3">
+    <div className="inline-panel mt-2">
       <p className="text-sm text-ink-soft">已過到期日，不再扣款。要重新訂閱，請選擇恢復扣款的日期：</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <input

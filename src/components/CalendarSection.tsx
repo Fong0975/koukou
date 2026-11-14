@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { memo, useId } from "react";
 import { createPortal } from "react-dom";
 import { useMonthCursor } from "@/hooks/useMonthCursor";
 import { useMonthData } from "@/hooks/useMonthData";
@@ -29,9 +29,16 @@ interface CalendarSectionProps {
 /**
  * Home screen calendar: month navigation and the month's charges and contract expiries on a calendar, with
  * the expiring contracts and amortized reserves on the left below it and the charge list and totals on the
- * right (stacked in that order on narrow screens), plus loading and error states.
+ * right (stacked in that order on narrow screens), plus loading and error states. Memoized, since the home
+ * screen re-renders whenever one of its dialogs opens or closes.
  */
-export function CalendarSection({ items, status, loadError, onRetry, toolbarSlot }: CalendarSectionProps) {
+export const CalendarSection = memo(function CalendarSection({
+  items,
+  status,
+  loadError,
+  onRetry,
+  toolbarSlot,
+}: CalendarSectionProps) {
   const { today, cursor, setCursor } = useMonthCursor();
   const titleId = useId();
   const { occurrences, reserves, expiries, yearTotal, yearTwdCents, rates } = useMonthData(items, cursor);
@@ -69,4 +76,4 @@ export function CalendarSection({ items, status, loadError, onRetry, toolbarSlot
       </div>
     </div>
   );
-}
+});

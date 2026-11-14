@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal } from "./Modal";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ConfirmCloseDialogProps {
   /** Closes the dialog being edited, discarding its changes. */
@@ -18,16 +18,8 @@ interface ConfirmCloseDialogProps {
  */
 export function ConfirmCloseDialog({ onConfirm, onCancel }: ConfirmCloseDialogProps) {
   return (
-    <Modal title="確定要關閉嗎？" onClose={onCancel} widthClass="max-w-sm">
+    <ConfirmDialog title="確定要關閉嗎？" confirmLabel="關閉" onConfirm={onConfirm} onClose={onCancel}>
       <p className="text-ink-soft">還有尚未儲存的變更，關閉後將會遺失。</p>
-      <div className="mt-6 flex justify-end gap-2">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          取消
-        </button>
-        <button type="button" className="btn btn-danger" onClick={onConfirm}>
-          關閉
-        </button>
-      </div>
-    </Modal>
+    </ConfirmDialog>
   );
 }

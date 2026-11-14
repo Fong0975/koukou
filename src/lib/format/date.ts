@@ -1,5 +1,4 @@
-import { toCalendarDate } from "../calendarMonth";
-import { dateKeyToUtcDate, toDateKey } from "../dateKey";
+import { dateKeyToUtcDate, localClockTime, localDateKey } from "../dateKey";
 import { WEEKDAY_LABELS } from "../labels";
 
 /**
@@ -40,6 +39,5 @@ export function formatFullDate(date: string): string {
 export function formatTimestamp(timestamp: string): string {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return timestamp;
-  const time = [date.getHours(), date.getMinutes()].map((part) => String(part).padStart(2, "0")).join(":");
-  return `${formatFullDate(toDateKey(toCalendarDate(date)))} ${time}`;
+  return `${formatFullDate(localDateKey(date))} ${localClockTime(date)}`;
 }

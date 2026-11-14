@@ -54,11 +54,7 @@ export function ManagerModal({
           )
         }
       >
-        {adding && (
-          <div className="mb-4 rounded-2xl border border-dashed border-leaf-500/35 bg-leaf-50/70 p-3">
-            {renderAddForm(() => setAdding(false))}
-          </div>
-        )}
+        {adding && <div className="inline-panel mb-4">{renderAddForm(() => setAdding(false))}</div>}
         {error && (
           <p role="alert" className="field-error mb-3">
             {error}

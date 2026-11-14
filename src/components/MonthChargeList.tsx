@@ -31,6 +31,8 @@ export function MonthChargeList({ occurrences, rates }: MonthChargeListProps) {
   const [order, setOrder] = useState<ChargeOrder>("date");
   const groups = useMemo(() => chargeGroups(occurrences, order), [occurrences, order]);
   const isEmpty = groups.length === 0;
+  const totals = useMemo(() => sumByCurrency(occurrences), [occurrences]);
+  const twdCents = useMemo(() => convertedTwdCents(occurrences, rates), [occurrences, rates]);
 
   return (
     <CollapsibleCard
@@ -39,12 +41,7 @@ export function MonthChargeList({ occurrences, rates }: MonthChargeListProps) {
       footer={
         !isEmpty && (
           <CardFooter label="扣款小計">
-            <ConvertedAmounts
-              totals={sumByCurrency(occurrences)}
-              twdCents={convertedTwdCents(occurrences, rates)}
-              layout="popup"
-              className="items-end font-semibold"
-            />
+            <ConvertedAmounts totals={totals} twdCents={twdCents} layout="popup" className="items-end font-semibold" />
           </CardFooter>
         )
       }
