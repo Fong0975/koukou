@@ -26,7 +26,7 @@ export const CARD_COLORS = {
 } as const;
 
 /** The colors one card is drawn in. */
-export interface CardHeaderStyle {
+interface CardHeaderStyle {
   startColor: string;
   endColor: string;
   iconBackground: string;

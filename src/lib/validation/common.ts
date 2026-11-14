@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isDateKey } from "@/lib/dateKey";
+import { isDateKey } from "@/lib/date/dateKey";
 
 /**
  * Trimmed, required text with a maximum length.

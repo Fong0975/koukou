@@ -1,5 +1,5 @@
 import type { BillingCycle, Currency, PaymentType, ReminderKind } from "@/generated/prisma/enums";
-import { utcDateToDateKey } from "@/lib/dateKey";
+import { utcDateToDateKey } from "@/lib/date/dateKey";
 import type { AmountPeriodDto, PauseDto, RemindersDto, SubscriptionDto } from "@/types/dto";
 import { categorySelect, paymentMethodSelect } from "./lookupSelects";
 
@@ -41,7 +41,7 @@ export type PauseRecord = Omit<SubscriptionRecord["pauses"][number], "id">;
 export type AmountPeriodRecord = Omit<SubscriptionRecord["amountPeriods"][number], "id">;
 
 /** Structural shape of a reminder row loaded with {@link reminderInclude}. */
-export interface ReminderRecord {
+interface ReminderRecord {
   kind: ReminderKind;
   daysBefore: number;
 }

@@ -80,7 +80,7 @@ interface BackupLists {
  * @param data - The parsed backup.
  * @param ctx - Where the issues are reported.
  */
-export function checkBackupIntegrity(data: BackupLists, ctx: IssueSink): void {
+function checkBackupIntegrity(data: BackupLists, ctx: IssueSink): void {
   const duplicateId = () => "編號重複";
   checkUnique(ctx, "categories", data.categories, "id", (c) => c.id, duplicateId);
   checkUnique(
@@ -140,4 +140,3 @@ export const backupSchema = z
   .superRefine(checkBackupIntegrity);
 
 export type BackupData = z.output<typeof backupSchema>;
-export type BackupSubscriptionData = BackupData["subscriptions"][number];

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { YearHighlights } from "@/lib/yearReport";
+import type { YearHighlights } from "@/lib/billing/yearReport";
 import { ReportHighlights } from "./ReportHighlights";
 
 /** The tiles as label → value pairs. */

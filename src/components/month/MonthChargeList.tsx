@@ -1,0 +1,67 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type { Occurrence } from "@/lib/billing/billingOccurrences";
+import { sumByCurrency } from "@/lib/billing/money";
+import { CHARGE_ORDER_LABELS, chargeGroups, type ChargeOrder } from "@/lib/billing/chargeGroups";
+import { convertedTwdCents } from "@/lib/billing/currencyConversion";
+import type { ExchangeRateDto } from "@/types/dto";
+import { CardFooter } from "../ui/CardFooter";
+import { ChargeGroupSection } from "./ChargeGroupSection";
+import { CollapsibleCard } from "../ui/CollapsibleCard";
+import { ConvertedAmounts } from "./ConvertedAmounts";
+import { SegmentedControl } from "../ui/SegmentedControl";
+
+interface MonthChargeListProps {
+  occurrences: Occurrence[];
+  /** USD→TWD rates for showing the approximate TWD of foreign charges, or null to omit it. */
+  rates: ExchangeRateDto[] | null;
+}
+
+/**
+ * Collapsible card of the month's charges, grouped by charge date or by category as picked at the top of the
+ * body. Each group has a heading with its subtotal, followed by one row per subscription; only dates or
+ * categories with charges are shown. A footer holds the month's subtotal, in TWD when exchange rates are
+ * available.
+ *
+ * @param props.occurrences - The month's charges.
+ * @param props.rates - The year's exchange rates.
+ */
+export function MonthChargeList({ occurrences, rates }: MonthChargeListProps) {
+  const [order, setOrder] = useState<ChargeOrder>("date");
+  const groups = useMemo(() => chargeGroups(occurrences, order), [occurrences, order]);
+  const isEmpty = groups.length === 0;
+  const totals = useMemo(() => sumByCurrency(occurrences), [occurrences]);
+  const twdCents = useMemo(() => convertedTwdCents(occurrences, rates), [occurrences, rates]);
+
+  return (
+    <CollapsibleCard
+      title="本月扣款"
+      collapsible={!isEmpty}
+      footer={
+        !isEmpty && (
+          <CardFooter label="扣款小計">
+            <ConvertedAmounts totals={totals} twdCents={twdCents} layout="popup" className="items-end font-semibold" />
+          </CardFooter>
+        )
+      }
+    >
+      {isEmpty ? (
+        <p className="py-3 text-ink-soft">這個月沒有扣款。</p>
+      ) : (
+        <div className="flex flex-col gap-5">
+          <SegmentedControl
+            labels={CHARGE_ORDER_LABELS}
+            value={order}
+            onChange={setOrder}
+            aria-label="排序方式"
+            className="self-end"
+          />
+          {groups.map((group) => (
+            <ChargeGroupSection key={group.key} group={group} order={order} rates={rates} />
+          ))}
+        </div>
+      )}
+    </CollapsibleCard>
+  );
+}

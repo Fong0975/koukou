@@ -47,7 +47,7 @@ export const scheduleSchema = z
   }));
 
 export type ScheduleInput = z.input<typeof scheduleSchema>;
-export type ScheduleData = z.output<typeof scheduleSchema>;
+type ScheduleData = z.output<typeof scheduleSchema>;
 
 /**
  * Builds a stable identity key used to detect duplicate schedules.

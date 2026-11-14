@@ -1,4 +1,4 @@
-import { dateKeyToUtcDate, localClockTime, localDateKey } from "../dateKey";
+import { dateKeyToUtcDate, localClockTime, localDateKey } from "../date/dateKey";
 import { WEEKDAY_LABELS } from "../labels";
 
 /**

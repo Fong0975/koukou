@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ZodType } from "zod";
-import { type FieldErrors, toFieldErrors } from "@/lib/fieldErrors";
+import { type FieldErrors, toFieldErrors } from "@/lib/form/fieldErrors";
 import { useAsyncAction } from "./useAsyncAction";
 
 /**

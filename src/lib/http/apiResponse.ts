@@ -9,12 +9,12 @@ export interface ApiErrorDetail {
 }
 
 /** Error envelope returned by every API endpoint. */
-export interface ApiErrorBody {
+interface ApiErrorBody {
   error: { code: string; message: string; details?: ApiErrorDetail[] };
 }
 
 /** Success envelope returned by every API endpoint that has a body. */
-export interface ApiSuccessBody<T> {
+interface ApiSuccessBody<T> {
   data: T;
 }
 

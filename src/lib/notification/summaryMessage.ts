@@ -1,5 +1,5 @@
 import { formatCents } from "../format/money";
-import { currencyEntries, type CurrencyTotals } from "../money";
+import { currencyEntries, type CurrencyTotals } from "../billing/money";
 import { cardHeader, CARD_COLORS, flexCard, LEAF_HEADER, moreRows, pill, rowList, sectionCard } from "./cardParts";
 import type { MonthlySummary, NamedTotal } from "./dueReminders";
 import type { FlexMessage, FlexNode } from "./lineMessage";

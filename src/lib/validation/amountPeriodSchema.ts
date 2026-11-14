@@ -11,9 +11,6 @@ export const amountPeriodSchema = z.object({
   endDate: requiredDate("到期日"),
 });
 
-export type AmountPeriodInput = z.input<typeof amountPeriodSchema>;
-export type AmountPeriodData = z.output<typeof amountPeriodSchema>;
-
 /**
  * Past amounts of a subscription, in any order; each end date may appear only once
  * because the periods are ordered and told apart by it.

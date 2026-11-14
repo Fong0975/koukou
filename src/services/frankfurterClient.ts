@@ -4,7 +4,7 @@ import { UpstreamError } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import type { ExchangeRateDto } from "@/types/dto";
 
-const logger = createLogger("services/frankfurterClient");
+const logger = createLogger("frankfurterClient");
 
 const BASE_URL = "https://api.frankfurter.dev/v2";
 const UPSTREAM_MESSAGE = "無法取得匯率，請稍後再試";

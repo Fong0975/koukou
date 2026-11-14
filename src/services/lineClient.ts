@@ -5,7 +5,7 @@ import { createLogger } from "@/lib/logger";
 import type { LineMessage } from "@/lib/notification/lineMessage";
 import { readSecret } from "@/lib/secret";
 
-const logger = createLogger("services/lineClient");
+const logger = createLogger("lineClient");
 
 const PUSH_URL = "https://api.line.me/v2/bot/message/push";
 

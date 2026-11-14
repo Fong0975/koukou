@@ -15,6 +15,7 @@ docker-compose*.yml
 # Environment files: secrets stay out of the image, and Next.js would load them at runtime.
 .env
 .env.*
+*.pem
 
 # Development tools
 .vscode

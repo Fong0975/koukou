@@ -1,4 +1,4 @@
-import { paymentTypeRank } from "@/lib/paymentMethodOrder";
+import { paymentTypeRank } from "@/lib/lookups/paymentMethodOrder";
 import type { BackupData } from "@/lib/validation/backupSchema";
 import type { BackupSubscriptionDto } from "@/types/dto";
 import { sortOrderAt } from "./sortOrder";
@@ -69,7 +69,7 @@ function compareNames(a: string, b: string): number {
  *
  * @param methods - The payment methods of a validated backup.
  */
-export function withPaymentMethodSortOrder(methods: BackupData["paymentMethods"]) {
+function withPaymentMethodSortOrder(methods: BackupData["paymentMethods"]) {
   const legacyOrder = [...methods].sort(
     (a, b) => paymentTypeRank(a.type) - paymentTypeRank(b.type) || compareNames(a.name, b.name) || a.id - b.id,
   );

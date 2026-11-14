@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCents } from "@/lib/format/money";
-import type { MonthTotal } from "@/lib/yearReport";
+import type { MonthTotal } from "@/lib/billing/yearReport";
 import { AXIS_TICK, TOOLTIP_STYLE, formatChartTwd, toChartValue } from "./chartTheme";
 import { RatesPending } from "./RatesPending";
 

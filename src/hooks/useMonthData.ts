@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { monthReserves } from "@/lib/amortization";
-import { yearOccurrences } from "@/lib/billingOccurrences";
-import type { YearMonth } from "@/lib/calendarMonth";
-import { monthContractExpiries } from "@/lib/contractExpiries";
-import { convertedTwdCents, needsExchangeRate } from "@/lib/currencyConversion";
-import { dateKeyToYearMonth } from "@/lib/dateKey";
-import { sumByCurrency } from "@/lib/money";
+import { monthReserves } from "@/lib/billing/amortization";
+import { yearOccurrences } from "@/lib/billing/billingOccurrences";
+import type { YearMonth } from "@/lib/date/calendarMonth";
+import { monthContractExpiries } from "@/lib/billing/contractExpiries";
+import { convertedTwdCents, needsExchangeRate } from "@/lib/billing/currencyConversion";
+import { dateKeyToYearMonth } from "@/lib/date/dateKey";
+import { sumByCurrency } from "@/lib/billing/money";
 import type { SubscriptionDto } from "@/types/dto";
 import { useYearRates } from "./useYearRates";
 

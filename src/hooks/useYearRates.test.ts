@@ -6,7 +6,7 @@ import type { ExchangeRateDto } from "@/types/dto";
 const { apiRequest } = vi.hoisted(() => ({ apiRequest: vi.fn() }));
 vi.mock("@/lib/apiClient", () => ({ apiRequest }));
 
-import { clearYearRatesCache } from "@/lib/yearRatesCache";
+import { clearYearRatesCache } from "@/lib/billing/yearRatesCache";
 import { useYearRates } from "./useYearRates";
 
 const ratesOf = (year: number): ExchangeRateDto[] => [{ date: `${year}-05-15`, rate: 31.514 }];

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import type { CurrencyTotals } from "../money";
+import type { CurrencyTotals } from "../billing/money";
 import {
   formatAmount,
   formatAmountText,

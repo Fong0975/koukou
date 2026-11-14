@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchYearRates } from "@/lib/yearRatesCache";
+import { fetchYearRates } from "@/lib/billing/yearRatesCache";
 import type { ExchangeRateDto } from "@/types/dto";
 
 /** Rates of the year they were fetched for. */

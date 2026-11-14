@@ -1,8 +1,8 @@
 import type { Currency } from "@/generated/prisma/enums";
 import type { BillingScheduleDto } from "@/types/dto";
-import { AMORTIZATION_MONTHS } from "../amortization";
+import { AMORTIZATION_MONTHS } from "../billing/amortization";
 import { CURRENCY_PREFIX, CYCLE_LABELS, WEEKDAY_LABELS } from "../labels";
-import type { SubscriptionStatus } from "../subscriptionStatus";
+import type { SubscriptionStatus } from "../billing/subscriptionStatus";
 import { formatFullDate } from "./date";
 
 /**
@@ -49,7 +49,7 @@ export function formatSubscriptionStatus(status: SubscriptionStatus): string {
 }
 
 /** A monthly reserve split into its rounded-up amount and the exact average, for separate styling. */
-export interface FormattedReserve {
+interface FormattedReserve {
   /** The rounded-up whole amount, e.g. "NT$ 84". */
   amount: string;
   /** The exact average to one decimal place, e.g. "NT$ 83.3", or the same as `amount` when the average is whole. */
@@ -74,7 +74,7 @@ export function formatReserve(currency: Currency, reserveCents: number, averageC
 }
 
 /** A reserve's description, split into segments that should each stay on one line. */
-export interface ReserveDetail {
+interface ReserveDetail {
   /** For wide screens, e.g. ["2027 年度", "第 3/12 期", "月均 NT$ 83.3"]. */
   full: string[];
   /** The same facts in fewer words for narrow screens, e.g. ["2027 年 3/12 期", "NT$ 83.3/月"]. */

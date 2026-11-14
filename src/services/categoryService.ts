@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { isCatchAllCategory } from "@/lib/catchAllCategory";
+import { isCatchAllCategory } from "@/lib/lookups/catchAllCategory";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import type { CategoryData } from "@/lib/validation/categorySchema";

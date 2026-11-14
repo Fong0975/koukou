@@ -1,6 +1,6 @@
-import type { RankedSubscription } from "@/lib/yearReport";
-import { ConvertedAmounts } from "../ConvertedAmounts";
-import { IconLabel } from "../IconLabel";
+import type { RankedSubscription } from "@/lib/billing/yearReport";
+import { ConvertedAmounts } from "../month/ConvertedAmounts";
+import { IconLabel } from "../ui/IconLabel";
 
 /**
  * Subscriptions ranked by what they charged over the year, each with its category, charge count, total and a

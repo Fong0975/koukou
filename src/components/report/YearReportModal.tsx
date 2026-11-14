@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useYearReport } from "@/hooks/useYearReport";
 import type { SubscriptionDto } from "@/types/dto";
-import { Modal } from "../Modal";
+import { Modal } from "../ui/Modal";
 import { DistributionChart } from "./DistributionChart";
 import { MonthlyBarChart } from "./MonthlyBarChart";
 import { ReportHighlights } from "./ReportHighlights";

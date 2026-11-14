@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { RankedSubscription } from "@/lib/yearReport";
+import type { RankedSubscription } from "@/lib/billing/yearReport";
 import { makeCategory, makeSubscription } from "@/test/fixtures";
 import { SubscriptionRanking } from "./SubscriptionRanking";
 

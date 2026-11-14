@@ -1,4 +1,4 @@
-import { dateKeyToUtcDate } from "@/lib/dateKey";
+import { dateKeyToUtcDate } from "@/lib/date/dateKey";
 import type { SubscriptionData } from "@/lib/validation/subscriptionSchema";
 import { toAmountString } from "./subscriptionMapper";
 

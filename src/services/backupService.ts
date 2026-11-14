@@ -1,5 +1,5 @@
 import { APP_VERSION_LABEL } from "@/lib/appVersion";
-import { countBackupRecords } from "@/lib/backupCounts";
+import { countBackupRecords } from "@/lib/backup/backupCounts";
 import { BACKUP_FORMAT, BACKUP_VERSION } from "@/lib/constants/backupFormat";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";

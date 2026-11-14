@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { expect, it, vi } from "vitest";
-import { GuardedModal } from "@/components/GuardedModal";
+import { GuardedModal } from "@/components/ui/GuardedModal";
 
 /** Title of the question asked before closing a dialog with unsaved changes. */
 export const CONFIRM_CLOSE_TITLE = "確定要關閉嗎？";
@@ -24,7 +24,7 @@ export function isConfirmCloseShown(): boolean {
 }
 
 /** One case of `runUnsavedChangesCases`. */
-export interface UnsavedChangesCase {
+interface UnsavedChangesCase {
   name: string;
   /** Edits the form before the dialog's close button is clicked; omitted to leave it untouched. */
   edit?: () => void;

@@ -39,7 +39,7 @@ interface SubscriptionDates {
  * @param data - The parsed subscription.
  * @param ctx - Where the issues are reported.
  */
-export function checkSubscriptionDates(data: SubscriptionDates, ctx: IssueSink): void {
+function checkSubscriptionDates(data: SubscriptionDates, ctx: IssueSink): void {
   if (data.contractEndDate !== null && data.contractEndDate < data.startDate) {
     ctx.addIssue({ code: "custom", path: ["contractEndDate"], message: "到期日不可早於起始日" });
   }

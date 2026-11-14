@@ -1,9 +1,9 @@
 import type { Currency } from "@/generated/prisma/enums";
 import { CURRENCY_PREFIX } from "../labels";
-import { currencyEntries, type CurrencyTotals } from "../money";
+import { currencyEntries, type CurrencyTotals } from "../billing/money";
 
 /** Amount split into a currency prefix and a grouped number, for separate styling. */
-export interface FormattedAmount {
+interface FormattedAmount {
   prefix: string;
   value: string;
 }

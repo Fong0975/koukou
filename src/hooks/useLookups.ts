@@ -2,8 +2,8 @@
 
 import { useCallback } from "react";
 import { apiRequest } from "@/lib/apiClient";
-import { moveId } from "@/lib/moveId";
-import { movePaymentMethodWithinType, sortPaymentMethods } from "@/lib/paymentMethodOrder";
+import { moveId } from "@/lib/form/moveId";
+import { movePaymentMethodWithinType, sortPaymentMethods } from "@/lib/lookups/paymentMethodOrder";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import type { CategoryDto, PaymentMethodDto } from "@/types/dto";

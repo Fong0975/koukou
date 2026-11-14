@@ -1,11 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type * as BackupFile from "@/lib/backupFile";
+import type * as BackupFile from "@/lib/backup/backupFile";
 import { makeBackup } from "@/test/backup";
 
 const { apiRequest, downloadJson } = vi.hoisted(() => ({ apiRequest: vi.fn(), downloadJson: vi.fn() }));
 vi.mock("@/lib/apiClient", () => ({ apiRequest }));
-vi.mock("@/lib/backupFile", async (importOriginal) => ({
+vi.mock("@/lib/backup/backupFile", async (importOriginal) => ({
   ...(await importOriginal<typeof BackupFile>()),
   downloadJson,
 }));

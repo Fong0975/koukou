@@ -1,5 +1,5 @@
-import type { Occurrence } from "@/lib/billingOccurrences";
-import { toDateKey } from "@/lib/dateKey";
+import type { Occurrence } from "@/lib/billing/billingOccurrences";
+import { toDateKey } from "@/lib/date/dateKey";
 import type { CategoryDto, PaymentMethodDto, SubscriptionDto } from "@/types/dto";
 
 /**

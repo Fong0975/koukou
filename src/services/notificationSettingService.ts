@@ -1,5 +1,5 @@
 import { DEFAULT_SEND_TIME } from "@/lib/constants/reminders";
-import { localDateKey } from "@/lib/dateKey";
+import { localDateKey } from "@/lib/date/dateKey";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import { isSendTimeReached } from "@/lib/notification/sendTime";
@@ -14,7 +14,7 @@ const logger = createLogger("notificationSettingService");
 const SETTING_ID = 1;
 
 /** Settings in effect before they are first saved. */
-export const DEFAULT_NOTIFICATION_SETTING: NotificationSettingValuesDto = {
+const DEFAULT_NOTIFICATION_SETTING: NotificationSettingValuesDto = {
   enabled: false,
   monthlySummaryEnabled: true,
   sendTime: DEFAULT_SEND_TIME,
