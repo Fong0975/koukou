@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** Upper bound of a DECIMAL(12, 2) column. */
-export const MAX_AMOUNT = 9_999_999_999.99;
+const MAX_AMOUNT = 9_999_999_999.99;
 
 /**
  * Non-negative money amount with at most two decimals that fits a DECIMAL(12, 2) column.

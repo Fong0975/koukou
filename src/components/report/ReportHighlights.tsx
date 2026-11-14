@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { formatCents } from "@/lib/format";
-import type { MonthTotal, YearHighlights } from "@/lib/yearReport";
-import { ConvertedAmounts } from "../ConvertedAmounts";
+import { formatCents } from "@/lib/format/money";
+import type { MonthTotal, YearHighlights } from "@/lib/billing/yearReport";
+import { ConvertedAmounts } from "../month/ConvertedAmounts";
 
 /** Shown in place of a TWD figure that is not known yet. */
 const UNKNOWN = "—";

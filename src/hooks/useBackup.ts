@@ -2,8 +2,8 @@
 
 import { useCallback, useState } from "react";
 import { apiRequest } from "@/lib/apiClient";
-import { backupFileName, downloadJson, readJsonFile } from "@/lib/backupFile";
-import { readBackupPreview, type BackupPreview } from "@/lib/backupPreview";
+import { backupFileName, downloadJson, readJsonFile } from "@/lib/backup/backupFile";
+import { readBackupPreview, type BackupPreview } from "@/lib/backup/backupPreview";
 import type { BackupCountsDto, BackupDto } from "@/types/dto";
 
 /** A backup file chosen for import, waiting for the user to confirm. */

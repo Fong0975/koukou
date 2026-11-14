@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { YearMonth } from "@/lib/calendarMonth";
+import type { YearMonth } from "@/lib/date/calendarMonth";
 import { useMonthCursor } from "./useMonthCursor";
 
 describe("useMonthCursor", () => {

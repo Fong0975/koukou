@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { YearMonth } from "@/lib/calendarMonth";
+import type { YearMonth } from "@/lib/date/calendarMonth";
 import { makeSubscription } from "@/test/fixtures";
 import type { ExchangeRateDto, SubscriptionDto } from "@/types/dto";
 

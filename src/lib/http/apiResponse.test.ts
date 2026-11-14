@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { ConflictError, NotFoundError, UpstreamError, ValidationError } from "@/lib/errors";
-import { type ApiError, jsonData, jsonError, toApiError, withErrorHandling } from "./apiResponse";
+import { type ApiError, jsonData, jsonError, noContent, toApiError, withErrorHandling } from "./apiResponse";
 
 const { logRequest } = vi.hoisted(() => ({ logRequest: vi.fn() }));
 vi.mock("./requestLog", () => ({ logRequest }));
@@ -22,6 +22,18 @@ describe("jsonData", () => {
       const response = jsonData(tt.data, tt.status);
       expect(response.status).toBe(tt.expectedStatus);
       await expect(response.json()).resolves.toEqual({ data: tt.data });
+    });
+  }
+});
+
+describe("noContent", () => {
+  const tests = [{ name: "returns an empty 204", expectedStatus: 204 }];
+
+  for (const tt of tests) {
+    it(tt.name, async () => {
+      const response = noContent();
+      expect(response.status).toBe(tt.expectedStatus);
+      await expect(response.text()).resolves.toBe("");
     });
   }
 });

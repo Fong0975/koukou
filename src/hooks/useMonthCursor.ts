@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { YearMonth } from "@/lib/calendarMonth";
+import type { YearMonth } from "@/lib/date/calendarMonth";
 import { useToday } from "./useToday";
 
 /**

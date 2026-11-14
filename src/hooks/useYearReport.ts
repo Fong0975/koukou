@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { yearOccurrences } from "@/lib/billingOccurrences";
-import { totalsByCategory, totalsByPaymentMethod } from "@/lib/billingSummary";
-import { needsExchangeRate } from "@/lib/currencyConversion";
-import { groupShares, monthlyTotals, subscriptionRanking, yearHighlights } from "@/lib/yearReport";
+import { yearOccurrences } from "@/lib/billing/billingOccurrences";
+import { totalsByCategory, totalsByPaymentMethod } from "@/lib/billing/billingSummary";
+import { needsExchangeRate } from "@/lib/billing/currencyConversion";
+import { groupShares, monthlyTotals, subscriptionRanking, yearHighlights } from "@/lib/billing/yearReport";
 import type { SubscriptionDto } from "@/types/dto";
 import { useYearRates } from "./useYearRates";
 

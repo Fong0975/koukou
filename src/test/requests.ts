@@ -1,3 +1,5 @@
+import type { IdRouteContext } from "@/lib/http/request";
+
 /**
  * Builds a request for route handler tests.
  *
@@ -16,6 +18,6 @@ export function makeRequest(method: string, body?: unknown): Request {
  *
  * @param id - The raw id segment.
  */
-export function idContext(id: string): { params: Promise<{ id: string }> } {
+export function idContext(id: string): IdRouteContext {
   return { params: Promise.resolve({ id }) };
 }

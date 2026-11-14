@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** First year the exchange rate service has USD→TWD data for. */
-export const MIN_RATE_YEAR = 1999;
+const MIN_RATE_YEAR = 1999;
 
 const INVALID_YEAR = "年份格式錯誤";
 

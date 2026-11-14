@@ -1,5 +1,5 @@
 import { RATE_BASE, RATE_QUOTE } from "@/lib/constants/exchangeRate";
-import { dateKeyToUtcDate, utcDateToDateKey } from "@/lib/dateKey";
+import { dateKeyToUtcDate, utcDateToDateKey } from "@/lib/date/dateKey";
 import { prisma } from "@/lib/db";
 import type { ExchangeRateDto } from "@/types/dto";
 

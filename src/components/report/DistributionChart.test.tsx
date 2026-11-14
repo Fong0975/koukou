@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { GroupShare } from "@/lib/yearReport";
+import type { GroupShare } from "@/lib/billing/yearReport";
 import { DistributionChart } from "./DistributionChart";
 
 const music: GroupShare = { key: 1, label: "音樂", icon: "🎵", totals: { TWD: 25000 }, twdCents: 25000, share: 0.25 };

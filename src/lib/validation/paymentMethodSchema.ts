@@ -14,4 +14,3 @@ export const paymentMethodOrderSchema = z.object({ ids: orderedIds("扣款方式
 
 export type PaymentMethodInput = z.input<typeof paymentMethodInputSchema>;
 export type PaymentMethodData = z.output<typeof paymentMethodInputSchema>;
-export type PaymentMethodOrderData = z.output<typeof paymentMethodOrderSchema>;

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { BACKUP_FORMAT, BACKUP_VERSION } from "@/lib/constants/backupFormat";
 import { categoryInputSchema } from "./categorySchema";
-import { MAX_INT_ID, type IssueSink } from "./common";
+import { duplicateIndexes, MAX_INT_ID, type IssueSink } from "./common";
 import { notificationSettingInputSchema } from "./notificationSettingSchema";
 import { paymentMethodInputSchema } from "./paymentMethodSchema";
 import { checkSubscription, subscriptionFieldsSchema } from "./subscriptionSchema";
@@ -62,12 +62,9 @@ function checkUnique<T>(
   keyOf: (item: T) => string | number,
   message: (item: T) => string,
 ): void {
-  const seen = new Set<string | number>();
-  items.forEach((item, index) => {
-    const key = keyOf(item);
-    if (seen.has(key)) ctx.addIssue({ code: "custom", path: [list, index, field], message: message(item) });
-    seen.add(key);
-  });
+  for (const index of duplicateIndexes(items, keyOf)) {
+    ctx.addIssue({ code: "custom", path: [list, index, field], message: message(items[index]) });
+  }
 }
 
 interface BackupLists {
@@ -83,7 +80,7 @@ interface BackupLists {
  * @param data - The parsed backup.
  * @param ctx - Where the issues are reported.
  */
-export function checkBackupIntegrity(data: BackupLists, ctx: IssueSink): void {
+function checkBackupIntegrity(data: BackupLists, ctx: IssueSink): void {
   const duplicateId = () => "編號重複";
   checkUnique(ctx, "categories", data.categories, "id", (c) => c.id, duplicateId);
   checkUnique(
@@ -143,4 +140,3 @@ export const backupSchema = z
   .superRefine(checkBackupIntegrity);
 
 export type BackupData = z.output<typeof backupSchema>;
-export type BackupSubscriptionData = BackupData["subscriptions"][number];

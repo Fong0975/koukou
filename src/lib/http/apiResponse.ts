@@ -9,12 +9,12 @@ export interface ApiErrorDetail {
 }
 
 /** Error envelope returned by every API endpoint. */
-export interface ApiErrorBody {
+interface ApiErrorBody {
   error: { code: string; message: string; details?: ApiErrorDetail[] };
 }
 
 /** Success envelope returned by every API endpoint that has a body. */
-export interface ApiSuccessBody<T> {
+interface ApiSuccessBody<T> {
   data: T;
 }
 
@@ -26,6 +26,11 @@ export interface ApiSuccessBody<T> {
  */
 export function jsonData<T>(data: T, status = 200): Response {
   return Response.json({ data } satisfies ApiSuccessBody<T>, { status });
+}
+
+/** Builds an empty 204 response, e.g. after a delete. */
+export function noContent(): Response {
+  return new Response(null, { status: 204 });
 }
 
 /**

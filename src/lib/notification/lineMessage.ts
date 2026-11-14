@@ -5,7 +5,7 @@ export interface FlexNode {
 }
 
 /** A plain text message. */
-export interface TextMessage {
+interface TextMessage {
   type: "text";
   /** At most 5000 characters. */
   text: string;

@@ -1,7 +1,7 @@
 import { createLogger, type Logger } from "@/lib/logger";
 
 /** Collaborators of {@link initializeDatabase}, injectable for testing. */
-export interface DbInitDeps {
+interface DbInitDeps {
   runMigrations: () => Promise<unknown>;
   logger: Pick<Logger, "info" | "error">;
 }
@@ -12,7 +12,7 @@ export interface DbInitDeps {
  */
 async function loadDefaultDeps(): Promise<DbInitDeps> {
   const { runMigrations } = await import("@/services/migrationService");
-  return { runMigrations: () => runMigrations(), logger: createLogger("dbInit") };
+  return { runMigrations: () => runMigrations(), logger: createLogger("dbInitService") };
 }
 
 /**

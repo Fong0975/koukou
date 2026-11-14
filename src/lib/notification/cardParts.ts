@@ -1,4 +1,5 @@
-import type { FlexNode } from "./lineMessage";
+import type { FlexMessage, FlexNode } from "./lineMessage";
+import { moreText } from "./messageLayout";
 
 /** Colors of the LINE cards, taken from the web app's palette. */
 export const CARD_COLORS = {
@@ -25,7 +26,7 @@ export const CARD_COLORS = {
 } as const;
 
 /** The colors one card is drawn in. */
-export interface CardHeaderStyle {
+interface CardHeaderStyle {
   startColor: string;
   endColor: string;
   iconBackground: string;
@@ -116,26 +117,14 @@ export function pill(label: string, background: string, color: string): FlexNode
   };
 }
 
-/** A pill showing an amount, in the summary card's green. */
-export const amountPill = (label: string) => pill(label, CARD_COLORS.leaf.pill, CARD_COLORS.leaf.pillText);
-
 /**
  * A small text in the card's secondary color.
  *
  * @param text - The text.
  * @param margin - Space above it.
  */
-function softText(text: string, margin?: string): FlexNode {
+export function softText(text: string, margin?: string): FlexNode {
   return { type: "text", text, size: "sm", color: CARD_COLORS.inkSoft, wrap: true, ...(margin ? { margin } : {}) };
-}
-
-/**
- * The names of a section, set in slightly from the title.
- *
- * @param text - The names, already joined.
- */
-export function namesBlock(text: string): FlexNode {
-  return { type: "box", layout: "vertical", paddingStart: "4px", contents: [softText(text)] };
 }
 
 /**
@@ -144,6 +133,13 @@ export function namesBlock(text: string): FlexNode {
  * @param text - The text, e.g. "…另 3 項".
  */
 export const moreRow = (text: string) => softText(text, "sm");
+
+/**
+ * The line under a cut list that says how many items it left out, or nothing when the list is whole.
+ *
+ * @param hidden - How many items were left out.
+ */
+export const moreRows = (hidden: number): FlexNode[] => (hidden > 0 ? [moreRow(moreText(hidden))] : []);
 
 /**
  * A rounded card with an icon and title on top, and its content below.
@@ -186,13 +182,6 @@ export function sectionCard(
 }
 
 /**
- * A pill on its own line, left-aligned and only as wide as its text.
- *
- * @param node - The pill.
- */
-export const pillRow = (node: FlexNode): FlexNode => ({ type: "box", layout: "horizontal", contents: [node] });
-
-/**
  * Picks the background of a list row, alternating between two shades so rows stay apart.
  *
  * @param rows - The two shades of a palette.
@@ -214,23 +203,65 @@ export const rowList = (rows: FlexNode[]): FlexNode => ({
 });
 
 /**
- * One row of the summary's expiry list: a date and a name.
+ * One row of a list: its contents side by side on a background that alternates with the next row's.
  *
- * @param date - The formatted date.
- * @param name - The subscription's name.
+ * @param rows - The two shades of a palette.
  * @param index - The row's position, which picks its background.
+ * @param contents - The row's components.
+ * @param extra - More properties of the row box, e.g. its alignment.
  */
-export function expiryRow(date: string, name: string, index: number): FlexNode {
+export function stripedRow(
+  rows: readonly [string, string],
+  index: number,
+  contents: FlexNode[],
+  extra: Record<string, unknown> = {},
+): FlexNode {
   return {
     type: "box",
     layout: "horizontal",
-    backgroundColor: rowBackground(CARD_COLORS.leaf.rows, index),
+    ...extra,
+    backgroundColor: rowBackground(rows, index),
     paddingAll: "10px",
     spacing: "md",
-    contents: [
-      { type: "text", text: date, size: "sm", color: CARD_COLORS.inkSoft, flex: 3 },
-      { type: "text", text: "｜", size: "sm", color: CARD_COLORS.leaf.divider, flex: 0 },
-      { type: "text", text: name, size: "sm", color: CARD_COLORS.ink, flex: 6, wrap: true },
-    ],
+    contents,
+  };
+}
+
+/** What {@link flexCard} builds a card from. */
+export interface FlexCardParts {
+  /** Shown in the notification and chat list in place of the card. */
+  altText: string;
+  header: FlexNode;
+  /** A picture under the header, if any. */
+  hero?: FlexNode;
+  /** The fill color behind the sections. */
+  background: string;
+  /** The sections, where `false` marks one left out because it has nothing to report. */
+  sections: (FlexNode | false)[];
+}
+
+/**
+ * Builds a card of stacked sections, leaving out the ones marked `false`.
+ *
+ * @param parts - The card's header, picture, background and sections.
+ */
+export function flexCard({ altText, header, hero, background, sections }: FlexCardParts): FlexMessage {
+  return {
+    type: "flex",
+    altText,
+    contents: {
+      type: "bubble",
+      size: "mega",
+      styles: { body: { backgroundColor: background } },
+      header,
+      ...(hero ? { hero } : {}),
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        paddingAll: "12px",
+        contents: sections.filter((section): section is FlexNode => section !== false),
+      },
+    },
   };
 }

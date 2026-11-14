@@ -1,11 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { CHART_SLOTS, chartColor } from "@/lib/chartColors";
-import { formatPercent } from "@/lib/format";
-import { foldGroupShares, type GroupShare } from "@/lib/yearReport";
-import { ConvertedAmounts } from "../ConvertedAmounts";
-import { IconLabel } from "../IconLabel";
+import { formatPercent } from "@/lib/format/money";
+import { foldGroupShares, type GroupShare } from "@/lib/billing/yearReport";
+import { ConvertedAmounts } from "../month/ConvertedAmounts";
+import { IconLabel } from "../ui/IconLabel";
 import { TOOLTIP_STYLE, formatChartTwd, toChartValue } from "./chartTheme";
 import { RatesPending } from "./RatesPending";
 import { ReportSection } from "./ReportSection";
@@ -24,8 +25,12 @@ interface DistributionChartProps {
  * @param props.groups - The groups, in display order; the donut waits for rates while any lacks a TWD total.
  */
 export function DistributionChart({ title, groups }: DistributionChartProps) {
-  const shown = foldGroupShares(groups, CHART_SLOTS);
+  const shown = useMemo(() => foldGroupShares(groups, CHART_SLOTS), [groups]);
   const converted = shown.every((group) => group.twdCents !== null);
+  const data = useMemo(
+    () => shown.map((group) => ({ name: group.label, twd: toChartValue(group.twdCents ?? 0) })),
+    [shown],
+  );
 
   return (
     <ReportSection title={title}>
@@ -34,7 +39,7 @@ export function DistributionChart({ title, groups }: DistributionChartProps) {
           <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 176 }}>
             <PieChart>
               <Pie
-                data={shown.map((group) => ({ name: group.label, twd: toChartValue(group.twdCents ?? 0) }))}
+                data={data}
                 dataKey="twd"
                 nameKey="name"
                 startAngle={90}
@@ -48,7 +53,7 @@ export function DistributionChart({ title, groups }: DistributionChartProps) {
                   <Cell key={group.key} fill={chartColor(slot)} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value) => formatChartTwd(value)} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={formatChartTwd} />
             </PieChart>
           </ResponsiveContainer>
         </div>

@@ -1,18 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { apiRequest } from "@/lib/apiClient";
-import { moveId } from "@/lib/moveId";
-import { movePaymentMethodWithinType, sortPaymentMethods } from "@/lib/paymentMethodOrder";
+import { moveId } from "@/lib/form/moveId";
+import { movePaymentMethodWithinType, sortPaymentMethods } from "@/lib/lookups/paymentMethodOrder";
 import type { CategoryInput } from "@/lib/validation/categorySchema";
 import type { PaymentMethodInput } from "@/lib/validation/paymentMethodSchema";
 import type { CategoryDto, PaymentMethodDto } from "@/types/dto";
+import { useApiResource } from "./useApiResource";
 
-/** Fetches both option lists. */
-const fetchLookups = () =>
-  Promise.all([apiRequest<CategoryDto[]>("/api/categories"), apiRequest<PaymentMethodDto[]>("/api/payment-methods")]);
+interface Lookups {
+  categories: CategoryDto[];
+  paymentMethods: PaymentMethodDto[];
+}
 
-const logLoadError = (error: unknown) => console.error("[koukou] Failed to load form options:", error);
+/** Fetches both option lists; payment methods come back ordered by type, then sortOrder. */
+async function fetchLookups(): Promise<Lookups> {
+  const [categories, paymentMethods] = await Promise.all([
+    apiRequest<CategoryDto[]>("/api/categories"),
+    apiRequest<PaymentMethodDto[]>("/api/payment-methods"),
+  ]);
+  return { categories, paymentMethods: sortPaymentMethods(paymentMethods) };
+}
+
+const NO_LOOKUPS: Lookups = { categories: [], paymentMethods: [] };
 
 /**
  * Loads the category and payment method option lists used by the subscription form,
@@ -21,44 +32,47 @@ const logLoadError = (error: unknown) => console.error("[koukou] Failed to load 
  * `reload` fetches both lists again, e.g. after a backup replaced them.
  */
 export function useLookups() {
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodDto[]>([]);
+  const { data, status, loadError, reload, setData } = useApiResource(fetchLookups, NO_LOOKUPS, "form options");
+  const { categories, paymentMethods } = data;
 
-  const apply = useCallback(([loadedCategories, loadedPaymentMethods]: [CategoryDto[], PaymentMethodDto[]]) => {
-    setCategories(loadedCategories);
-    setPaymentMethods(sortPaymentMethods(loadedPaymentMethods));
-  }, []);
+  const setCategories = useCallback(
+    (update: (prev: CategoryDto[]) => CategoryDto[]) =>
+      setData((prev) => ({ ...prev, categories: update(prev.categories) })),
+    [setData],
+  );
+  const setPaymentMethods = useCallback(
+    (update: (prev: PaymentMethodDto[]) => PaymentMethodDto[]) =>
+      setData((prev) => ({ ...prev, paymentMethods: sortPaymentMethods(update(prev.paymentMethods)) })),
+    [setData],
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-    fetchLookups()
-      .then((lists) => {
-        if (!cancelled) apply(lists);
-      })
-      .catch(logLoadError);
-    return () => {
-      cancelled = true;
-    };
-  }, [apply]);
+  const addCategory = useCallback(
+    async (input: CategoryInput) => {
+      const created = await apiRequest<CategoryDto>("/api/categories", { method: "POST", body: input });
+      // Creating may move the "其他" catch-all down a step, so the server's list is the only reliable order.
+      const reordered = await apiRequest<CategoryDto[]>("/api/categories");
+      setCategories(() => reordered);
+      return created;
+    },
+    [setCategories],
+  );
 
-  const reload = useCallback(() => fetchLookups().then(apply).catch(logLoadError), [apply]);
+  const updateCategory = useCallback(
+    async (id: number, input: CategoryInput) => {
+      const updated = await apiRequest<CategoryDto>(`/api/categories/${id}`, { method: "PUT", body: input });
+      setCategories((prev) => prev.map((category) => (category.id === id ? updated : category)));
+      return updated;
+    },
+    [setCategories],
+  );
 
-  const addCategory = useCallback(async (input: CategoryInput) => {
-    const created = await apiRequest<CategoryDto>("/api/categories", { method: "POST", body: input });
-    setCategories((prev) => [...prev, created].sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id));
-    return created;
-  }, []);
-
-  const updateCategory = useCallback(async (id: number, input: CategoryInput) => {
-    const updated = await apiRequest<CategoryDto>(`/api/categories/${id}`, { method: "PUT", body: input });
-    setCategories((prev) => prev.map((category) => (category.id === id ? updated : category)));
-    return updated;
-  }, []);
-
-  const removeCategory = useCallback(async (id: number) => {
-    await apiRequest<void>(`/api/categories/${id}`, { method: "DELETE" });
-    setCategories((prev) => prev.filter((category) => category.id !== id));
-  }, []);
+  const removeCategory = useCallback(
+    async (id: number) => {
+      await apiRequest<void>(`/api/categories/${id}`, { method: "DELETE" });
+      setCategories((prev) => prev.filter((category) => category.id !== id));
+    },
+    [setCategories],
+  );
 
   const moveCategory = useCallback(
     async (id: number, offset: -1 | 1) => {
@@ -68,27 +82,40 @@ export function useLookups() {
         offset,
       );
       if (!ids) return;
-      setCategories(await apiRequest<CategoryDto[]>("/api/categories/order", { method: "PUT", body: { ids } }));
+      const saved = await apiRequest<CategoryDto[]>("/api/categories/order", { method: "PUT", body: { ids } });
+      setCategories(() => saved);
     },
-    [categories],
+    [categories, setCategories],
   );
 
-  const addPaymentMethod = useCallback(async (input: PaymentMethodInput) => {
-    const created = await apiRequest<PaymentMethodDto>("/api/payment-methods", { method: "POST", body: input });
-    setPaymentMethods((prev) => sortPaymentMethods([...prev, created]));
-    return created;
-  }, []);
+  const addPaymentMethod = useCallback(
+    async (input: PaymentMethodInput) => {
+      const created = await apiRequest<PaymentMethodDto>("/api/payment-methods", { method: "POST", body: input });
+      setPaymentMethods((prev) => [...prev, created]);
+      return created;
+    },
+    [setPaymentMethods],
+  );
 
-  const updatePaymentMethod = useCallback(async (id: number, input: PaymentMethodInput) => {
-    const updated = await apiRequest<PaymentMethodDto>(`/api/payment-methods/${id}`, { method: "PUT", body: input });
-    setPaymentMethods((prev) => sortPaymentMethods(prev.map((method) => (method.id === id ? updated : method))));
-    return updated;
-  }, []);
+  const updatePaymentMethod = useCallback(
+    async (id: number, input: PaymentMethodInput) => {
+      const updated = await apiRequest<PaymentMethodDto>(`/api/payment-methods/${id}`, {
+        method: "PUT",
+        body: input,
+      });
+      setPaymentMethods((prev) => prev.map((method) => (method.id === id ? updated : method)));
+      return updated;
+    },
+    [setPaymentMethods],
+  );
 
-  const removePaymentMethod = useCallback(async (id: number) => {
-    await apiRequest<void>(`/api/payment-methods/${id}`, { method: "DELETE" });
-    setPaymentMethods((prev) => prev.filter((method) => method.id !== id));
-  }, []);
+  const removePaymentMethod = useCallback(
+    async (id: number) => {
+      await apiRequest<void>(`/api/payment-methods/${id}`, { method: "DELETE" });
+      setPaymentMethods((prev) => prev.filter((method) => method.id !== id));
+    },
+    [setPaymentMethods],
+  );
 
   const movePaymentMethod = useCallback(
     async (id: number, offset: -1 | 1) => {
@@ -98,14 +125,16 @@ export function useLookups() {
         method: "PUT",
         body: { ids },
       });
-      setPaymentMethods(sortPaymentMethods(saved));
+      setPaymentMethods(() => saved);
     },
-    [paymentMethods],
+    [paymentMethods, setPaymentMethods],
   );
 
   return {
     categories,
     paymentMethods,
+    status,
+    loadError,
     reload,
     addCategory,
     updateCategory,

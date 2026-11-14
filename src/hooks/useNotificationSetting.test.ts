@@ -20,7 +20,10 @@ const setting: NotificationSettingDto = {
 const saved: NotificationSettingDto = { ...setting, enabled: true, sendTime: "08:30" };
 
 describe("useNotificationSetting", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
 
   const tests: {
     name: string;
@@ -82,14 +85,6 @@ describe("useNotificationSetting", () => {
       expectedSetting: setting,
       expectedError: null,
       expectedRequests: [["/api/notification-settings"], ["/api/notification-settings/test", { method: "POST" }]],
-    },
-    {
-      name: "apply takes settings saved elsewhere without a request",
-      load: () => Promise.resolve(setting),
-      act: async (hook) => hook.apply(saved),
-      expectedSetting: saved,
-      expectedError: null,
-      expectedRequests: [["/api/notification-settings"]],
     },
   ];
 

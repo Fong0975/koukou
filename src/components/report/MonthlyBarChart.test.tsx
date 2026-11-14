@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { MonthTotal } from "@/lib/yearReport";
+import type { MonthTotal } from "@/lib/billing/yearReport";
 import { MonthlyBarChart } from "./MonthlyBarChart";
 
 /** Twelve monthly totals, empty except for the given TWD totals. */

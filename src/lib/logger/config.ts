@@ -16,7 +16,7 @@ export interface LogConfig {
 }
 
 /** A resolved config plus a message for every setting that was invalid and fell back to its default. */
-export interface LogConfigResult {
+interface LogConfigResult {
   config: LogConfig;
   warnings: string[];
 }

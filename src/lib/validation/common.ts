@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isDateKey } from "@/lib/dateKey";
+import { isDateKey } from "@/lib/date/dateKey";
 
 /**
  * Trimmed, required text with a maximum length.
@@ -81,4 +81,31 @@ export const optionalDate = (label: string) =>
 /** The part of a zod refinement context that cross-field checks report through. */
 export interface IssueSink {
   addIssue(issue: { code: "custom"; path: (string | number)[]; message: string }): void;
+}
+
+/**
+ * Finds the items whose key already appeared earlier in a list, so each repeat can be reported where it is.
+ *
+ * @param items - The list.
+ * @param keyOf - The key that must be unique; keys are compared with `Set` semantics.
+ * @returns The positions of the repeats, ascending; the first occurrence of a key is never included.
+ */
+export function duplicateIndexes<T>(items: readonly T[], keyOf: (item: T) => unknown): number[] {
+  const seen = new Set<unknown>();
+  return items.flatMap((item, index) => {
+    const key = keyOf(item);
+    if (seen.has(key)) return [index];
+    seen.add(key);
+    return [];
+  });
+}
+
+/**
+ * Tells whether no two items of a list share a key.
+ *
+ * @param items - The list.
+ * @param keyOf - The key that must be unique; the item itself by default.
+ */
+export function isUniqueBy<T>(items: readonly T[], keyOf: (item: T) => unknown = (item) => item): boolean {
+  return duplicateIndexes(items, keyOf).length === 0;
 }

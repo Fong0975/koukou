@@ -10,8 +10,7 @@ export const pauseSchema = z.object({
   endDate: requiredDate("暫停結束日"),
 });
 
-export type PauseInput = z.input<typeof pauseSchema>;
-export type PauseData = z.output<typeof pauseSchema>;
+type PauseData = z.output<typeof pauseSchema>;
 
 /**
  * Reports each pause that ends before it starts.

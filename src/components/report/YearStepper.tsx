@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ChevronRightIcon } from "../Icons";
+import { ChevronLeftIcon, ChevronRightIcon } from "../ui/Icons";
 
 interface YearStepperProps {
   year: number;

@@ -1,4 +1,4 @@
-import { dateKeyToUtcDate } from "../dateKey";
+import { dateKeyToUtcDate, pad2 } from "../date/dateKey";
 import { WEEKDAY_LABELS } from "../labels";
 
 /**
@@ -28,8 +28,7 @@ export function formatMessageDate(date: string): string {
  */
 export function formatPaddedDate(date: string): string {
   const utc = dateKeyToUtcDate(date);
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${pad(utc.getUTCMonth() + 1)}/${pad(utc.getUTCDate())}(${WEEKDAY_LABELS[utc.getUTCDay()]})`;
+  return `${pad2(utc.getUTCMonth() + 1)}/${pad2(utc.getUTCDate())}(${WEEKDAY_LABELS[utc.getUTCDay()]})`;
 }
 
 /** Says when an event is, relative to today, e.g. "今天", "明天" or "3 天後". */

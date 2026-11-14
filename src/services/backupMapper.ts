@@ -1,15 +1,15 @@
-import { utcDateToDateKey } from "@/lib/dateKey";
-import { paymentTypeRank } from "@/lib/paymentMethodOrder";
+import { paymentTypeRank } from "@/lib/lookups/paymentMethodOrder";
 import type { BackupData } from "@/lib/validation/backupSchema";
 import type { BackupSubscriptionDto } from "@/types/dto";
-import { sortOrderAt } from "./reorderIds";
+import { sortOrderAt } from "./sortOrder";
 import { toAmountPeriodRows, toPauseRows, toReminderRows, toSubscriptionColumns } from "./subscriptionColumns";
 import {
-  reminderInclude,
+  childRowQueries,
+  serializeAmountPeriod,
   serializePause,
   serializeSubscriptionColumns,
-  toAmountString,
   toRemindersDto,
+  type AmountPeriodRecord,
   type PauseRecord,
   type SubscriptionColumnsRecord,
   type SubscriptionRecord,
@@ -20,7 +20,7 @@ export interface BackupSubscriptionRecord extends SubscriptionColumnsRecord {
   categoryId: number;
   paymentMethodId: number;
   schedules: Omit<SubscriptionRecord["schedules"][number], "id">[];
-  amountPeriods: Omit<SubscriptionRecord["amountPeriods"][number], "id">[];
+  amountPeriods: AmountPeriodRecord[];
   pauses: PauseRecord[];
   reminders: SubscriptionRecord["reminders"];
 }
@@ -38,19 +38,7 @@ export const backupSubscriptionSelect = {
   contractEndDate: true,
   note: true,
   createdAt: true,
-  schedules: {
-    select: { cycle: true, dayOfWeek: true, dayOfMonth: true, month: true },
-    orderBy: { id: "asc" },
-  },
-  amountPeriods: {
-    select: { amount: true, endDate: true },
-    orderBy: { endDate: "asc" },
-  },
-  pauses: {
-    select: { startDate: true, endDate: true },
-    orderBy: { startDate: "asc" },
-  },
-  reminders: reminderInclude,
+  ...childRowQueries,
 } as const;
 
 /**
@@ -64,10 +52,7 @@ export function toBackupSubscriptionDto(record: BackupSubscriptionRecord): Backu
     categoryId: record.categoryId,
     paymentMethodId: record.paymentMethodId,
     schedules: record.schedules,
-    amountPeriods: record.amountPeriods.map((period) => ({
-      amount: toAmountString(period.amount),
-      endDate: utcDateToDateKey(period.endDate),
-    })),
+    amountPeriods: record.amountPeriods.map(serializeAmountPeriod),
     pauses: record.pauses.map(serializePause),
     reminders: toRemindersDto(record.reminders),
   };
@@ -84,7 +69,7 @@ function compareNames(a: string, b: string): number {
  *
  * @param methods - The payment methods of a validated backup.
  */
-export function withPaymentMethodSortOrder(methods: BackupData["paymentMethods"]) {
+function withPaymentMethodSortOrder(methods: BackupData["paymentMethods"]) {
   const legacyOrder = [...methods].sort(
     (a, b) => paymentTypeRank(a.type) - paymentTypeRank(b.type) || compareNames(a.name, b.name) || a.id - b.id,
   );

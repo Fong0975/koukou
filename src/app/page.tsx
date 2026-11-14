@@ -1,4 +1,4 @@
-import { HomeView } from "@/components/HomeView";
+import { HomeView } from "@/components/layout/HomeView";
 
 /**
  * Home page: the billing calendar of recurring payments.

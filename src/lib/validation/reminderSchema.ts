@@ -4,11 +4,10 @@ import {
   MAX_CHARGE_REMINDER_DAYS_BEFORE,
   MAX_CUSTOM_CHARGE_REMINDERS,
 } from "@/lib/constants/reminders";
-import type { IssueSink } from "./common";
+import { countDaysAhead } from "@/lib/form/reminderDays";
+import { isUniqueBy, type IssueSink } from "./common";
 
 const ascending = <T extends number>(days: T[]) => [...days].sort((a, b) => a - b);
-
-const isUnique = (days: number[]) => new Set(days).size === days.length;
 
 const chargeDayMessage = `扣款提醒需介於 0–${MAX_CHARGE_REMINDER_DAYS_BEFORE} 天前`;
 
@@ -16,7 +15,7 @@ const chargeDayMessage = `扣款提醒需介於 0–${MAX_CHARGE_REMINDER_DAYS_B
  * Days ahead of each charge to send a reminder (0 = on the charge day). Besides the charge day
  * itself, at most {@link MAX_CUSTOM_CHARGE_REMINDERS} days may be chosen. Sorted ascending.
  */
-export const chargeReminderDaysSchema = z
+const chargeReminderDaysSchema = z
   .array(
     z
       .number({ error: "扣款提醒天數格式錯誤" })
@@ -25,19 +24,19 @@ export const chargeReminderDaysSchema = z
       .max(MAX_CHARGE_REMINDER_DAYS_BEFORE, chargeDayMessage),
     { error: "扣款提醒格式錯誤" },
   )
-  .refine(isUnique, "扣款提醒天數不可重複")
+  .refine((days) => isUniqueBy(days), "扣款提醒天數不可重複")
   .refine(
-    (days) => days.filter((day) => day > 0).length <= MAX_CUSTOM_CHARGE_REMINDERS,
+    (days) => countDaysAhead(days) <= MAX_CUSTOM_CHARGE_REMINDERS,
     `自訂提醒天數最多 ${MAX_CUSTOM_CHARGE_REMINDERS} 個`,
   )
   .transform(ascending);
 
 /** Days ahead of the contract end date to send a reminder, out of {@link EXPIRY_REMINDER_DAYS}. Sorted ascending. */
-export const expiryReminderDaysSchema = z
+const expiryReminderDaysSchema = z
   .array(z.literal(EXPIRY_REMINDER_DAYS, { error: `到期提醒只能選 ${EXPIRY_REMINDER_DAYS.join("、")} 天前` }), {
     error: "到期提醒格式錯誤",
   })
-  .refine(isUnique, "到期提醒天數不可重複")
+  .refine((days) => isUniqueBy(days), "到期提醒天數不可重複")
   .transform(ascending);
 
 /** A subscription's LINE reminders; none when omitted. */
@@ -50,9 +49,6 @@ export const remindersSchema = z
     { error: "提醒設定格式錯誤" },
   )
   .default({ chargeDaysBefore: [], expiryDaysBefore: [] });
-
-export type RemindersInput = z.input<typeof remindersSchema>;
-export type RemindersData = z.output<typeof remindersSchema>;
 
 /** The parts of a subscription that expiry reminders depend on. */
 interface ExpiryReminderFields {

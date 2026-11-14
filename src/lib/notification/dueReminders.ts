@@ -1,11 +1,11 @@
 import type { SubscriptionDto } from "@/types/dto";
-import { monthReserves, sumReserves } from "../amortization";
-import { monthOccurrences } from "../billingOccurrences";
-import { sumByCurrency, type CurrencyTotals } from "../billingSummary";
-import type { YearMonth } from "../calendarMonth";
-import { monthContractExpiries, type ContractExpiry } from "../contractExpiries";
-import { addDays, dateKeyToYearMonth } from "../dateKey";
-import { isPausedOn } from "../pauses";
+import { monthReserves, sumReserves } from "../billing/amortization";
+import { dayOccurrences, monthOccurrences } from "../billing/billingOccurrences";
+import type { YearMonth } from "../date/calendarMonth";
+import { monthContractExpiries, type ContractExpiry } from "../billing/contractExpiries";
+import { addDays } from "../date/dateKey";
+import { sumByCurrency, type CurrencyTotals } from "../billing/money";
+import { isPausedOn } from "../billing/pauses";
 
 /** An upcoming charge a subscription asked to be reminded of. */
 export interface ChargeReminder {
@@ -69,9 +69,7 @@ const byDateThenName = (a: { date: string; subscription: SubscriptionDto }, b: t
 function subscriptionChargeReminders(subscription: SubscriptionDto, today: string): ChargeReminder[] {
   return subscription.reminders.chargeDaysBefore.flatMap((daysBefore) => {
     const date = addDays(today, daysBefore);
-    return monthOccurrences([subscription], dateKeyToYearMonth(date))
-      .filter((occurrence) => occurrence.date === date)
-      .map((occurrence) => ({ date, daysBefore, subscription, amount: occurrence.amount }));
+    return dayOccurrences(subscription, date).map(({ amount }) => ({ date, daysBefore, subscription, amount }));
   });
 }
 

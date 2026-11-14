@@ -41,6 +41,9 @@ Desktop.ini
 .claude/settings.local.json
 CLAUDE.local.md
 
+# personal scratch notes
+note.md
+
 # deployment / secrets
 .vercel
 *.pem

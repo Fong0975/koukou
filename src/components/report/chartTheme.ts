@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { formatCents } from "@/lib/format";
+import { formatCents } from "@/lib/format/money";
 
 /** Axis labels: small and recessive, in the soft ink. */
 export const AXIS_TICK = { fontSize: 12, fill: "var(--color-ink-soft)" };

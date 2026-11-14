@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { optionalDate, requiredDate } from "./common";
+import { duplicateIndexes, isUniqueBy, optionalDate, requiredDate } from "./common";
 
 describe("requiredDate", () => {
   const schema = requiredDate("起始日");
@@ -49,6 +49,40 @@ describe("optionalDate", () => {
         expect(result.success).toBe(true);
         expect(result.data).toBe(tt.expected);
       }
+    });
+  }
+});
+
+describe("duplicateIndexes", () => {
+  const tests: { name: string; items: string[]; expected: number[] }[] = [
+    { name: "finds nothing in a unique list", items: ["a", "b"], expected: [] },
+    { name: "points at every repeat but not the first occurrence", items: ["a", "b", "a", "a"], expected: [2, 3] },
+    { name: "finds nothing in an empty list", items: [], expected: [] },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(duplicateIndexes(tt.items, (item) => item)).toEqual(tt.expected);
+    });
+  }
+});
+
+describe("isUniqueBy", () => {
+  type Item = { id: number };
+  const byId = (item: Item) => item.id;
+  const tests: { name: string; items: Item[]; keyOf?: (item: Item) => unknown; expected: boolean }[] = [
+    { name: "distinct keys", items: [{ id: 1 }, { id: 2 }], keyOf: byId, expected: true },
+    { name: "a repeated key", items: [{ id: 1 }, { id: 1 }], keyOf: byId, expected: false },
+    {
+      name: "compares the items themselves by default, so equal objects differ",
+      items: [{ id: 1 }, { id: 1 }],
+      expected: true,
+    },
+  ];
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(isUniqueBy(tt.items, tt.keyOf)).toBe(tt.expected);
     });
   }
 });

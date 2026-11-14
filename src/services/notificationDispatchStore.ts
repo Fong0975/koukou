@@ -1,5 +1,5 @@
 import type { DispatchKind, DispatchStatus } from "@/generated/prisma/enums";
-import { dateKeyToUtcDate } from "@/lib/dateKey";
+import { dateKeyToUtcDate } from "@/lib/date/dateKey";
 import { prisma } from "@/lib/db";
 
 /** Outcome of one of a day's messages. */

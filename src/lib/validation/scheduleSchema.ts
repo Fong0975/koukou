@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isUniqueBy } from "./common";
 
 /** Max days per month (index 0 = January); February allows 29 to cover leap years. */
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
@@ -46,7 +47,7 @@ export const scheduleSchema = z
   }));
 
 export type ScheduleInput = z.input<typeof scheduleSchema>;
-export type ScheduleData = z.output<typeof scheduleSchema>;
+type ScheduleData = z.output<typeof scheduleSchema>;
 
 /**
  * Builds a stable identity key used to detect duplicate schedules.
@@ -63,4 +64,4 @@ export const schedulesSchema = z
   .array(scheduleSchema, { error: "請設定扣款週期" })
   .min(1, "至少需要一個扣款週期")
   .max(20, "扣款週期最多 20 個")
-  .refine((schedules) => new Set(schedules.map(scheduleKey)).size === schedules.length, "扣款週期不可重複");
+  .refine((schedules) => isUniqueBy(schedules, scheduleKey), "扣款週期不可重複");

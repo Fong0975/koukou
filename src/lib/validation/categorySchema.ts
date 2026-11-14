@@ -21,4 +21,3 @@ export const categoryOrderSchema = z.object({ ids: orderedIds("類型") });
 
 export type CategoryInput = z.input<typeof categoryInputSchema>;
 export type CategoryData = z.output<typeof categoryInputSchema>;
-export type CategoryOrderData = z.output<typeof categoryOrderSchema>;
