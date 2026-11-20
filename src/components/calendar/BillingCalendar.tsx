@@ -11,6 +11,8 @@ interface BillingCalendarProps {
   today: CalendarDate;
   occurrences: Occurrence[];
   expiries: ContractExpiry[];
+  /** The month's formatted reserve total, shown on the 1st; null or omitted for none. */
+  reserveTotal?: string | null;
 }
 
 /**
@@ -24,14 +26,16 @@ function popupAlign(column: number): PopupAlign {
 }
 
 /**
- * Sunday-first month table marking each day's charges and contract expiries, like a wall calendar.
+ * Sunday-first month table marking each day's charges and contract expiries, and the month's reserve total on
+ * the 1st, like a wall calendar.
  *
  * @param props.month - The month to show.
  * @param props.today - Today's date, highlighted when it falls in this month.
  * @param props.occurrences - The month's charges.
  * @param props.expiries - The month's contract expiries.
+ * @param props.reserveTotal - The month's formatted reserve total, or null.
  */
-export function BillingCalendar({ month, today, occurrences, expiries }: BillingCalendarProps) {
+export function BillingCalendar({ month, today, occurrences, expiries, reserveTotal = null }: BillingCalendarProps) {
   const byDay = useMemo(() => groupByDay(occurrences), [occurrences]);
   const expiriesOnDay = useMemo(() => groupByDay(expiries), [expiries]);
   const weeks = useMemo(() => buildMonthGrid(month), [month]);
@@ -64,6 +68,7 @@ export function BillingCalendar({ month, today, occurrences, expiries }: Billing
                   isToday={day === todayDay}
                   occurrences={byDay.get(day) ?? []}
                   expiries={expiriesOnDay.get(day) ?? []}
+                  reserveTotal={day === 1 ? reserveTotal : null}
                   popupAlign={popupAlign(column)}
                 />
               ),

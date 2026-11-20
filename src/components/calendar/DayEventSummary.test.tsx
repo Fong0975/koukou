@@ -35,6 +35,7 @@ describe("DayEventSummary", () => {
     name: string;
     occurrences: Occurrence[];
     expiries: ContractExpiry[];
+    reserveTotal?: string;
     open?: (trigger: HTMLElement) => void;
     expectedLabel: string;
     expectedTrigger: string;
@@ -42,6 +43,8 @@ describe("DayEventSummary", () => {
     expectedCharges: string[] | null;
     /** The expiries section's heading and names, or null when not shown. */
     expectedExpiries: string[] | null;
+    /** The reserve row's text, or omitted when not shown. */
+    expectedReserve?: string;
   }[] = [
     {
       name: "shows only the count until opened",
@@ -78,7 +81,7 @@ describe("DayEventSummary", () => {
       expiries,
       open: (trigger) => fireEvent.click(trigger),
       expectedLabel: "15 日扣款項目（2 筆）、到期（1 筆）",
-      expectedTrigger: "21",
+      expectedTrigger: "12",
       expectedCharges: ["扣款項目", "🎬 NetflixNT$ 390", "記帳 AppUS$ 4.99"],
       expectedExpiries: ["到期", "📱 中華電信"],
     },
@@ -92,11 +95,43 @@ describe("DayEventSummary", () => {
       expectedCharges: null,
       expectedExpiries: ["到期", "📱 中華電信"],
     },
+    {
+      name: "counts the reserve total and lists it after the charges and expiries",
+      occurrences,
+      expiries,
+      reserveTotal: "NT$ 1,500",
+      open: (trigger) => fireEvent.click(trigger),
+      expectedLabel: "15 日扣款項目（2 筆）、到期（1 筆）、預扣",
+      expectedTrigger: "121",
+      expectedCharges: ["扣款項目", "🎬 NetflixNT$ 390", "記帳 AppUS$ 4.99"],
+      expectedExpiries: ["到期", "📱 中華電信"],
+      expectedReserve: "🗓️ 本月預扣合計NT$ 1,500",
+    },
+    {
+      name: "a day with only the reserve total",
+      occurrences: [],
+      expiries: [],
+      reserveTotal: "NT$ 1,500",
+      open: (trigger) => fireEvent.click(trigger),
+      expectedLabel: "15 日預扣",
+      expectedTrigger: "1",
+      expectedCharges: null,
+      expectedExpiries: null,
+      expectedReserve: "🗓️ 本月預扣合計NT$ 1,500",
+    },
   ];
 
   for (const tt of tests) {
     it(tt.name, () => {
-      render(<DayEventSummary day={15} occurrences={tt.occurrences} expiries={tt.expiries} align="start" />);
+      render(
+        <DayEventSummary
+          day={15}
+          occurrences={tt.occurrences}
+          expiries={tt.expiries}
+          reserveTotal={tt.reserveTotal ?? null}
+          align="start"
+        />,
+      );
       const trigger = screen.getByRole("button", { name: tt.expectedLabel });
 
       tt.open?.(trigger);
@@ -104,6 +139,7 @@ describe("DayEventSummary", () => {
       expect(trigger).toHaveTextContent(tt.expectedTrigger);
       expect(section("15 日扣款項目")).toEqual(tt.expectedCharges);
       expect(section("15 日到期")).toEqual(tt.expectedExpiries);
+      expect(screen.queryByText("本月預扣合計")?.closest("div")?.textContent).toBe(tt.expectedReserve);
     });
   }
 });

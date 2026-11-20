@@ -1,5 +1,6 @@
 import type { Occurrence } from "@/lib/billing/billingOccurrences";
 import type { ContractExpiry } from "@/lib/billing/contractExpiries";
+import { RESERVE_ICON, RESERVE_LABEL, RESERVE_TOTAL_NAME } from "@/lib/date/calendarDay";
 import { formatAmountText } from "@/lib/format/money";
 import type { SubscriptionDto } from "@/types/dto";
 import { HoverTapPopup, type PopupAlign } from "../ui/HoverTapPopup";
@@ -8,16 +9,19 @@ interface DayEventSummaryProps {
   day: number;
   occurrences: Occurrence[];
   expiries: ContractExpiry[];
+  /** The month's formatted reserve total, on the day that shows it. */
+  reserveTotal: string | null;
   align: PopupAlign;
 }
 
 /**
- * Builds the trigger's accessible name, e.g. "15 日扣款項目（2 筆）、到期（1 筆）".
+ * Builds the trigger's accessible name, e.g. "15 日扣款項目（2 筆）、到期（1 筆）、預扣".
  */
-function triggerLabel(day: number, chargeCount: number, expiryCount: number): string {
+function triggerLabel(day: number, chargeCount: number, expiryCount: number, hasReserve: boolean): string {
   const parts = [
     ...(chargeCount > 0 ? [`扣款項目（${chargeCount} 筆）`] : []),
     ...(expiryCount > 0 ? [`到期（${expiryCount} 筆）`] : []),
+    ...(hasReserve ? [RESERVE_LABEL] : []),
   ];
   return `${day} 日${parts.join("、")}`;
 }
@@ -61,39 +65,55 @@ function NameSection({ heading, headingClassName, label, items }: NameSectionPro
 }
 
 /**
- * Narrow-screen marker of a day's charges and contract expiries: a gold dot with the charge count and a red
- * dot with the expiry count that, on mouse hover or a tap, pop up their names under a heading per kind.
+ * Narrow-screen marker of a day's contract expiries, charges and reserve total, from most to least severe: a
+ * red dot with the expiry count, a gold dot with the charge count and a blue dot for the reserve that, on mouse
+ * hover or a tap, pop up their names under a heading per kind in the same order.
  *
  * @param props.day - Day of the month, used in the accessible names.
  * @param props.occurrences - Charges falling on this day.
- * @param props.expiries - Contracts ending on this day; this and `occurrences` must not both be empty.
+ * @param props.expiries - Contracts ending on this day.
+ * @param props.reserveTotal - The month's formatted reserve total on the day that shows it, otherwise null;
+ *   `occurrences`, `expiries` and this must not all be empty.
  * @param props.align - Edge the popup lines up with.
  */
-export function DayEventSummary({ day, occurrences, expiries, align }: DayEventSummaryProps) {
+export function DayEventSummary({ day, occurrences, expiries, reserveTotal, align }: DayEventSummaryProps) {
   return (
     <HoverTapPopup
-      label={triggerLabel(day, occurrences.length, expiries.length)}
+      label={triggerLabel(day, occurrences.length, expiries.length, reserveTotal !== null)}
       align={align}
       className="mt-1 sm:hidden"
       triggerClassName="flex w-full flex-wrap items-center justify-center gap-x-1.5 rounded-md px-1 py-0.5 font-num text-xs"
       trigger={
         <>
-          {occurrences.length > 0 && (
-            <span className="flex items-center gap-1 text-coin-600">
-              <span className="size-1.5 rounded-full bg-coin-400" />
-              {occurrences.length}
-            </span>
-          )}
           {expiries.length > 0 && (
             <span className="flex items-center gap-1 text-berry">
               <span className="size-1.5 rounded-full bg-berry" />
               {expiries.length}
             </span>
           )}
+          {occurrences.length > 0 && (
+            <span className="flex items-center gap-1 text-coin-600">
+              <span className="size-1.5 rounded-full bg-coin-400" />
+              {occurrences.length}
+            </span>
+          )}
+          {reserveTotal !== null && (
+            <span className="flex items-center gap-1 text-tide-600">
+              <span className="size-1.5 rounded-full bg-tide-400" />1
+            </span>
+          )}
         </>
       }
     >
       <div className="flex flex-col gap-3">
+        {expiries.length > 0 && (
+          <NameSection
+            heading="到期"
+            headingClassName="text-berry"
+            label={`${day} 日到期`}
+            items={expiries.map(({ subscription }) => ({ key: String(subscription.id), subscription }))}
+          />
+        )}
         {occurrences.length > 0 && (
           <NameSection
             heading="扣款項目"
@@ -106,13 +126,17 @@ export function DayEventSummary({ day, occurrences, expiries, align }: DayEventS
             }))}
           />
         )}
-        {expiries.length > 0 && (
-          <NameSection
-            heading="到期"
-            headingClassName="text-berry"
-            label={`${day} 日到期`}
-            items={expiries.map(({ subscription }) => ({ key: String(subscription.id), subscription }))}
-          />
+        {reserveTotal !== null && (
+          <div className="flex flex-col gap-1">
+            <p className="font-semibold text-tide-600">{RESERVE_LABEL}</p>
+            <div className="flex items-baseline justify-between gap-5 pl-3">
+              <span className="flex min-w-0 gap-1">
+                <span aria-hidden="true">{RESERVE_ICON} </span>
+                <span className="min-w-0 break-words">{RESERVE_TOTAL_NAME}</span>
+              </span>
+              <span className="shrink-0 font-num tabular-nums">{reserveTotal}</span>
+            </div>
+          </div>
         )}
       </div>
     </HoverTapPopup>

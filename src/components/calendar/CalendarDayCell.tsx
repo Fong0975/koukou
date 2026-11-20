@@ -2,6 +2,7 @@ import type { Occurrence } from "@/lib/billing/billingOccurrences";
 import { cellLabel, dayChips } from "@/lib/date/calendarDay";
 import type { ContractExpiry } from "@/lib/billing/contractExpiries";
 import { DayEventSummary } from "./DayEventSummary";
+import { HiddenChipsPopup } from "./HiddenChipsPopup";
 import type { PopupAlign } from "../ui/HoverTapPopup";
 
 interface CalendarDayCellProps {
@@ -10,30 +11,40 @@ interface CalendarDayCellProps {
   occurrences: Occurrence[];
   /** Contracts ending on this day. */
   expiries: ContractExpiry[];
+  /** The month's formatted reserve total when this is the day that shows it, otherwise null. */
+  reserveTotal?: string | null;
   /** Edge the narrow-screen popup lines up with. */
   popupAlign: PopupAlign;
 }
 
-/** Chips listed by name before the rest collapse into "+N". */
+/** Chips listed by name before the rest collapse into a "+N" chip that pops them up. */
 const MAX_CHIPS = 3;
 
 /**
- * One day of the billing calendar. Wide screens list the contract expiries and charges as chips; narrow
- * screens show dots with their counts instead, which pop up the names on hover or tap.
+ * One day of the billing calendar. Wide screens list the contract expiries, reserve total and charges as chips;
+ * narrow screens show dots with their counts instead, which pop up the names on hover or tap.
  *
  * @param props.day - Day of the month.
  * @param props.isToday - Highlights the date number.
  * @param props.occurrences - Charges falling on this day.
  * @param props.expiries - Contracts ending on this day.
+ * @param props.reserveTotal - The month's formatted reserve total on the day that shows it, otherwise null.
  * @param props.popupAlign - Edge the narrow-screen popup lines up with.
  */
-export function CalendarDayCell({ day, isToday, occurrences, expiries, popupAlign }: CalendarDayCellProps) {
-  const chips = dayChips(occurrences, expiries);
+export function CalendarDayCell({
+  day,
+  isToday,
+  occurrences,
+  expiries,
+  reserveTotal = null,
+  popupAlign,
+}: CalendarDayCellProps) {
+  const chips = dayChips(occurrences, expiries, reserveTotal);
   const hidden = chips.length - MAX_CHIPS;
 
   return (
     <td
-      aria-label={cellLabel(day, isToday, occurrences, expiries)}
+      aria-label={cellLabel(day, isToday, occurrences, expiries, reserveTotal)}
       className="h-16 rounded-xl bg-white/45 p-1 align-top sm:h-28 sm:p-1.5"
     >
       <span
@@ -53,9 +64,19 @@ export function CalendarDayCell({ day, isToday, occurrences, expiries, popupAlig
                 {chip.amount && <span className="self-end font-num tabular-nums">{chip.amount}</span>}
               </li>
             ))}
-            {hidden > 0 && <li className="px-1.5 text-xs text-ink-soft">+{hidden}</li>}
+            {hidden > 0 && (
+              <li>
+                <HiddenChipsPopup chips={chips.slice(MAX_CHIPS)} align={popupAlign} />
+              </li>
+            )}
           </ul>
-          <DayEventSummary day={day} occurrences={occurrences} expiries={expiries} align={popupAlign} />
+          <DayEventSummary
+            day={day}
+            occurrences={occurrences}
+            expiries={expiries}
+            reserveTotal={reserveTotal}
+            align={popupAlign}
+          />
         </>
       )}
     </td>
