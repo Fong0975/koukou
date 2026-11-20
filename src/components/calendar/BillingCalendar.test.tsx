@@ -16,6 +16,7 @@ describe("BillingCalendar", () => {
     today: CalendarDate;
     occurrences: Occurrence[];
     expiries?: ContractExpiry[];
+    reserveTotal?: string;
     expectedCells: string[];
     expectedMissing?: string[];
   }[] = [
@@ -41,6 +42,13 @@ describe("BillingCalendar", () => {
       expectedCells: ["1 日：Netflix；到期：Spotify", "20 日：到期：Netflix"],
     },
     {
+      name: "shows the reserve total on the 1st only",
+      today: { year: 2026, month: 3, day: 1 },
+      occurrences: [makeOccurrence(1, netflix, { scheduleId: 10 })],
+      reserveTotal: "NT$ 1,500",
+      expectedCells: ["1 日：Netflix；預扣：NT$ 1,500", "2 日"],
+    },
+    {
       name: "highlights today inside the shown month",
       today: { year: 2026, month: 4, day: 16 },
       occurrences: [],
@@ -58,7 +66,13 @@ describe("BillingCalendar", () => {
   for (const tt of tests) {
     it(tt.name, () => {
       render(
-        <BillingCalendar month={april} today={tt.today} occurrences={tt.occurrences} expiries={tt.expiries ?? []} />,
+        <BillingCalendar
+          month={april}
+          today={tt.today}
+          occurrences={tt.occurrences}
+          expiries={tt.expiries ?? []}
+          reserveTotal={tt.reserveTotal ?? null}
+        />,
       );
 
       expect(screen.getByRole("table", { name: "2026 年 4 月扣款行事曆" })).toBeInTheDocument();

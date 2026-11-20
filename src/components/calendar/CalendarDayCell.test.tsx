@@ -19,6 +19,7 @@ describe("CalendarDayCell", () => {
     isToday?: boolean;
     occurrences: Occurrence[];
     expiries?: ContractExpiry[];
+    reserveTotal?: string;
     expectedLabel: string;
     expectedChips: string[];
     /** Class marking each chip's kind, in chip order. */
@@ -78,6 +79,26 @@ describe("CalendarDayCell", () => {
       expectedChips: ["📱 中華電信 到期", "🎬 ANT$ 390", "🎬 BNT$ 390", "+1"],
       expectedCount: "31",
     },
+    {
+      name: "lists the reserve total between the expiries and the charges",
+      occurrences: [charge(1, "Netflix")],
+      expiries: [expiry(9, "中華電信")],
+      reserveTotal: "NT$ 1,500",
+      expectedLabel: "15 日：Netflix；到期：中華電信；預扣：NT$ 1,500",
+      expectedChips: ["📱 中華電信 到期", "🗓️ 預扣NT$ 1,500", "🎬 NetflixNT$ 390"],
+      expectedVariants: ["cal-chip-expiry", "cal-chip-reserve", "cal-chip-charge"],
+      expectedTitles: ["中華電信 到期", "預扣 NT$ 1,500", "Netflix NT$ 390"],
+      expectedCount: "111",
+    },
+    {
+      name: "a day with only the reserve total",
+      occurrences: [],
+      reserveTotal: "NT$ 1,500",
+      expectedLabel: "15 日：預扣：NT$ 1,500",
+      expectedChips: ["🗓️ 預扣NT$ 1,500"],
+      expectedVariants: ["cal-chip-reserve"],
+      expectedCount: "1",
+    },
   ];
 
   for (const tt of tests) {
@@ -91,6 +112,7 @@ describe("CalendarDayCell", () => {
                 isToday={tt.isToday ?? false}
                 occurrences={tt.occurrences}
                 expiries={tt.expiries ?? []}
+                reserveTotal={tt.reserveTotal ?? null}
                 popupAlign="start"
               />
             </tr>

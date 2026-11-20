@@ -1,10 +1,11 @@
 "use client";
 
-import { memo, useId } from "react";
+import { memo, useId, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useMonthCursor } from "@/hooks/useMonthCursor";
 import { useMonthData } from "@/hooks/useMonthData";
 import type { LoadStatus } from "@/hooks/useApiResource";
+import { reserveTotalText } from "@/lib/billing/reserveTotal";
 import type { SubscriptionDto } from "@/types/dto";
 import { BillingCalendar } from "./BillingCalendar";
 import { LoadErrorNotice } from "../ui/LoadErrorNotice";
@@ -42,6 +43,7 @@ export const CalendarSection = memo(function CalendarSection({
   const { today, cursor, setCursor } = useMonthCursor();
   const titleId = useId();
   const { occurrences, reserves, expiries, yearTotal, yearTwdCents, rates } = useMonthData(items, cursor);
+  const reserveTotal = useMemo(() => reserveTotalText(reserves, rates), [reserves, rates]);
 
   if (status === "error") return <LoadErrorNotice message={loadError} onRetry={onRetry} />;
 
@@ -56,7 +58,13 @@ export const CalendarSection = memo(function CalendarSection({
       {toolbarSlot ? createPortal(toolbar, toolbarSlot) : toolbar}
       {/* Raised so a day's charge popup near the bottom overlaps the cards below instead of hiding behind them. */}
       <section aria-labelledby={titleId} className="glass relative z-10 rounded-[1.75rem] p-3 sm:p-6">
-        <BillingCalendar month={cursor} today={today} occurrences={occurrences} expiries={expiries} />
+        <BillingCalendar
+          month={cursor}
+          today={today}
+          occurrences={occurrences}
+          expiries={expiries}
+          reserveTotal={reserveTotal}
+        />
       </section>
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="flex flex-col gap-6">
