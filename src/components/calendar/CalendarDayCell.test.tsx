@@ -27,6 +27,8 @@ describe("CalendarDayCell", () => {
     /** Hover tooltip of each chip, in chip order. */
     expectedTitles?: string[];
     expectedCount: string | null;
+    /** Text of the "+N" chip standing for the hidden chips, or omitted when there is none. */
+    expectedMore?: string;
   }[] = [
     { name: "a day without charges", occurrences: [], expectedLabel: "15 日", expectedChips: [], expectedCount: null },
     {
@@ -51,6 +53,7 @@ describe("CalendarDayCell", () => {
       expectedLabel: "15 日（今天）：A、B、C、D、E",
       expectedChips: ["🎬 ANT$ 390", "🎬 BNT$ 390", "🎬 CNT$ 390", "+2"],
       expectedCount: "5",
+      expectedMore: "+2",
     },
     {
       name: "lists contract expiries before the charges",
@@ -78,6 +81,7 @@ describe("CalendarDayCell", () => {
       expectedLabel: "15 日：A、B、C；到期：中華電信",
       expectedChips: ["📱 中華電信 到期", "🎬 ANT$ 390", "🎬 BNT$ 390", "+1"],
       expectedCount: "13",
+      expectedMore: "+1",
     },
     {
       name: "lists the reserve total after the expiries and the charges",
@@ -132,6 +136,9 @@ describe("CalendarDayCell", () => {
       }
       const count = within(cell).queryByRole("button", { name: /^15 日/ });
       expect(count?.textContent ?? null).toBe(tt.expectedCount);
+
+      const more = within(cell).queryByRole("button", { name: /^其餘 \d+ 個項目$/ });
+      expect(more?.textContent ?? null).toBe(tt.expectedMore ?? null);
     });
   }
 });

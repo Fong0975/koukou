@@ -5,6 +5,9 @@ import { formatAmountText } from "../format/money";
 /** Label of the reserve total shown on the first day of a month. */
 export const RESERVE_LABEL = "預扣";
 
+/** Name of the reserve total's row in a popup. */
+export const RESERVE_TOTAL_NAME = "本月預扣合計";
+
 /** Icon of the reserve total, in place of a category icon; the same one the summary notification uses. */
 export const RESERVE_ICON = "🗓️";
 
@@ -14,6 +17,8 @@ export interface Chip {
   variant: "expiry" | "reserve" | "charge";
   icon: string | null;
   label: string;
+  /** Plain name for listing under a group heading, without the kind's wording such as "到期". */
+  name: string;
   title: string;
   /** Formatted charge or reserve amount; null for an expiry. */
   amount: string | null;
@@ -38,6 +43,7 @@ export function dayChips(
       variant: "expiry",
       icon: subscription.category.icon,
       label: `${subscription.name} 到期`,
+      name: subscription.name,
       title: `${subscription.name} 到期`,
       amount: null,
     })),
@@ -48,6 +54,7 @@ export function dayChips(
         variant: "charge",
         icon: subscription.category.icon,
         label: subscription.name,
+        name: subscription.name,
         title: `${subscription.name} ${formatted}`,
         amount: formatted,
       };
@@ -60,6 +67,7 @@ export function dayChips(
             variant: "reserve",
             icon: RESERVE_ICON,
             label: RESERVE_LABEL,
+            name: RESERVE_TOTAL_NAME,
             title: `${RESERVE_LABEL} ${reserveTotal}`,
             amount: reserveTotal,
           } satisfies Chip,

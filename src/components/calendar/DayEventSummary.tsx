@@ -1,6 +1,6 @@
 import type { Occurrence } from "@/lib/billing/billingOccurrences";
 import type { ContractExpiry } from "@/lib/billing/contractExpiries";
-import { RESERVE_ICON, RESERVE_LABEL } from "@/lib/date/calendarDay";
+import { RESERVE_ICON, RESERVE_LABEL, RESERVE_TOTAL_NAME } from "@/lib/date/calendarDay";
 import { formatAmountText } from "@/lib/format/money";
 import type { SubscriptionDto } from "@/types/dto";
 import { HoverTapPopup, type PopupAlign } from "../ui/HoverTapPopup";
@@ -132,7 +132,7 @@ export function DayEventSummary({ day, occurrences, expiries, reserveTotal, alig
             <div className="flex items-baseline justify-between gap-5 pl-3">
               <span className="flex min-w-0 gap-1">
                 <span aria-hidden="true">{RESERVE_ICON} </span>
-                <span className="min-w-0 break-words">本月預扣合計</span>
+                <span className="min-w-0 break-words">{RESERVE_TOTAL_NAME}</span>
               </span>
               <span className="shrink-0 font-num tabular-nums">{reserveTotal}</span>
             </div>

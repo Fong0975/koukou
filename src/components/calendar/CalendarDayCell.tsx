@@ -2,6 +2,7 @@ import type { Occurrence } from "@/lib/billing/billingOccurrences";
 import { cellLabel, dayChips } from "@/lib/date/calendarDay";
 import type { ContractExpiry } from "@/lib/billing/contractExpiries";
 import { DayEventSummary } from "./DayEventSummary";
+import { HiddenChipsPopup } from "./HiddenChipsPopup";
 import type { PopupAlign } from "../ui/HoverTapPopup";
 
 interface CalendarDayCellProps {
@@ -16,7 +17,7 @@ interface CalendarDayCellProps {
   popupAlign: PopupAlign;
 }
 
-/** Chips listed by name before the rest collapse into "+N". */
+/** Chips listed by name before the rest collapse into a "+N" chip that pops them up. */
 const MAX_CHIPS = 3;
 
 /**
@@ -63,7 +64,11 @@ export function CalendarDayCell({
                 {chip.amount && <span className="self-end font-num tabular-nums">{chip.amount}</span>}
               </li>
             ))}
-            {hidden > 0 && <li className="px-1.5 text-xs text-ink-soft">+{hidden}</li>}
+            {hidden > 0 && (
+              <li>
+                <HiddenChipsPopup chips={chips.slice(MAX_CHIPS)} align={popupAlign} />
+              </li>
+            )}
           </ul>
           <DayEventSummary
             day={day}

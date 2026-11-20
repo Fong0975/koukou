@@ -242,6 +242,19 @@ body {
     color: var(--color-tide-600);
   }
 
+  /* The "+N" chip standing for the chips a day has no room to list; neutral, since it mixes every kind. */
+  .cal-chip-more {
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    background: rgb(91 107 85 / 0.12);
+    color: var(--color-ink-soft);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cal-chip-more:hover {
+    background: rgb(91 107 85 / 0.2);
+  }
+
   .icon-btn {
     display: inline-grid;
     place-items: center;
