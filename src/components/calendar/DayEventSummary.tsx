@@ -65,9 +65,9 @@ function NameSection({ heading, headingClassName, label, items }: NameSectionPro
 }
 
 /**
- * Narrow-screen marker of a day's charges, contract expiries and reserve total: a gold dot with the charge
- * count, a red dot with the expiry count and a blue dot for the reserve that, on mouse hover or a tap, pop up
- * their names under a heading per kind.
+ * Narrow-screen marker of a day's contract expiries, charges and reserve total, from most to least severe: a
+ * red dot with the expiry count, a gold dot with the charge count and a blue dot for the reserve that, on mouse
+ * hover or a tap, pop up their names under a heading per kind in the same order.
  *
  * @param props.day - Day of the month, used in the accessible names.
  * @param props.occurrences - Charges falling on this day.
@@ -85,16 +85,16 @@ export function DayEventSummary({ day, occurrences, expiries, reserveTotal, alig
       triggerClassName="flex w-full flex-wrap items-center justify-center gap-x-1.5 rounded-md px-1 py-0.5 font-num text-xs"
       trigger={
         <>
-          {occurrences.length > 0 && (
-            <span className="flex items-center gap-1 text-coin-600">
-              <span className="size-1.5 rounded-full bg-coin-400" />
-              {occurrences.length}
-            </span>
-          )}
           {expiries.length > 0 && (
             <span className="flex items-center gap-1 text-berry">
               <span className="size-1.5 rounded-full bg-berry" />
               {expiries.length}
+            </span>
+          )}
+          {occurrences.length > 0 && (
+            <span className="flex items-center gap-1 text-coin-600">
+              <span className="size-1.5 rounded-full bg-coin-400" />
+              {occurrences.length}
             </span>
           )}
           {reserveTotal !== null && (
@@ -106,6 +106,14 @@ export function DayEventSummary({ day, occurrences, expiries, reserveTotal, alig
       }
     >
       <div className="flex flex-col gap-3">
+        {expiries.length > 0 && (
+          <NameSection
+            heading="到期"
+            headingClassName="text-berry"
+            label={`${day} 日到期`}
+            items={expiries.map(({ subscription }) => ({ key: String(subscription.id), subscription }))}
+          />
+        )}
         {occurrences.length > 0 && (
           <NameSection
             heading="扣款項目"
@@ -116,14 +124,6 @@ export function DayEventSummary({ day, occurrences, expiries, reserveTotal, alig
               subscription,
               amount: formatAmountText(subscription.currency, amount),
             }))}
-          />
-        )}
-        {expiries.length > 0 && (
-          <NameSection
-            heading="到期"
-            headingClassName="text-berry"
-            label={`${day} 日到期`}
-            items={expiries.map(({ subscription }) => ({ key: String(subscription.id), subscription }))}
           />
         )}
         {reserveTotal !== null && (

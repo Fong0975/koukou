@@ -23,14 +23,14 @@ describe("dayChips", () => {
       ],
     },
     {
-      name: "puts the reserve total between the expiries and the charges",
+      name: "puts the reserve total after the expiries and the charges",
       occurrences: [makeOccurrence(15, netflix, { scheduleId: 10 })],
       expiries: [expiry],
       reserveTotal: "NT$ 1,500",
       expected: [
         { key: "expiry-3", variant: "expiry" },
-        { key: "reserve", variant: "reserve", icon: "🗓️", label: "預扣", title: "預扣 NT$ 1,500", amount: "NT$ 1,500" },
         { key: "1-10", variant: "charge" },
+        { key: "reserve", variant: "reserve", icon: "🗓️", label: "預扣", title: "預扣 NT$ 1,500", amount: "NT$ 1,500" },
       ],
     },
   ];

@@ -20,8 +20,8 @@ export interface Chip {
 }
 
 /**
- * Lists a calendar day's chips, contract expiries and the reserve total first so they are not the ones
- * collapsed into "+N".
+ * Lists a calendar day's chips from most to least severe: contract expiries, charges, then the reserve total,
+ * so the least severe are the ones collapsed into "+N".
  *
  * @param occurrences - The day's charges.
  * @param expiries - The contracts ending that day.
@@ -41,6 +41,17 @@ export function dayChips(
       title: `${subscription.name} 到期`,
       amount: null,
     })),
+    ...occurrences.map(({ subscription, scheduleId, amount }): Chip => {
+      const formatted = formatAmountText(subscription.currency, amount);
+      return {
+        key: `${subscription.id}-${scheduleId}`,
+        variant: "charge",
+        icon: subscription.category.icon,
+        label: subscription.name,
+        title: `${subscription.name} ${formatted}`,
+        amount: formatted,
+      };
+    }),
     ...(reserveTotal === null
       ? []
       : [
@@ -53,17 +64,6 @@ export function dayChips(
             amount: reserveTotal,
           } satisfies Chip,
         ]),
-    ...occurrences.map(({ subscription, scheduleId, amount }): Chip => {
-      const formatted = formatAmountText(subscription.currency, amount);
-      return {
-        key: `${subscription.id}-${scheduleId}`,
-        variant: "charge",
-        icon: subscription.category.icon,
-        label: subscription.name,
-        title: `${subscription.name} ${formatted}`,
-        amount: formatted,
-      };
-    }),
   ];
 }
 
